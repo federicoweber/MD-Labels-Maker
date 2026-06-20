@@ -18,7 +18,7 @@ export const FRONT = {
 export const FRONT_PRESETS: SizePreset[] = [
   { width: 34, height: 52 },
   { width: 36.5, height: 53.5 },
-  { width: 50, height: 35 },
+  { width: 35, height: 50 },
 ];
 
 export const SPINE = { padding: 1.5 } as const;

@@ -14,6 +14,8 @@ export interface LabelData {
   artistSize: number;
   /** Whether to show the artist line (off for mixtapes). */
   showArtist: boolean;
+  /** Track font size in mm (tracklist sheet). */
+  trackSize: number;
   /** Tracklist text, one track per line (for the optional jewel-case sheet). */
   tracklist: string;
 }

@@ -70,10 +70,25 @@ export default function FrontPreview({ data, size, update }: Props) {
           <img src={data.coverDataUrl} alt="" className="size-full object-cover" />
         ) : (
           <div
-            className="flex size-full items-center justify-center text-center"
-            style={{ background: '#d8d8d8', color: '#8a8a8a', fontSize: 2.2 * S }}
+            className="relative flex size-full items-center justify-center"
+            style={{ background: '#3f3d39' }}
           >
-            drop / click cover
+            {/* Crossing diagonals to signal an empty image slot */}
+            <svg
+              className="absolute inset-0 size-full"
+              viewBox="0 0 100 100"
+              preserveAspectRatio="none"
+              aria-hidden
+            >
+              <line x1="0" y1="0" x2="100" y2="100" stroke="#5b5852" strokeWidth="0.5" />
+              <line x1="100" y1="0" x2="0" y2="100" stroke="#5b5852" strokeWidth="0.5" />
+            </svg>
+            <div
+              className="relative border border-dashed px-2 py-1 text-center leading-tight"
+              style={{ borderColor: '#9b958a', color: '#cfc9bd', fontSize: 2.6 * S }}
+            >
+              DROP /<br />CLICK
+            </div>
           </div>
         )}
       </div>

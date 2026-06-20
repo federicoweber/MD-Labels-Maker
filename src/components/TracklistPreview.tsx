@@ -41,9 +41,9 @@ export default function TracklistPreview({ data, size, update }: Props) {
         className="label-field w-full flex-1 resize-none bg-transparent p-0 outline-none"
         style={{
           fontFamily: data.fontFamily,
-          fontSize: TRACKLIST.trackSize * S,
+          fontSize: data.trackSize * S,
           color: data.textColor,
-          lineHeight: 1.45,
+          lineHeight: 1.42,
         }}
         value={data.tracklist}
         placeholder={'One track per line\nTrack one\nTrack two'}

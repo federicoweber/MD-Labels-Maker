@@ -4,17 +4,18 @@ import { TRACKLIST, PREVIEW_PX_PER_MM, type SizePreset } from '@/lib/dimensions'
 
 type Props = LabelData & { size: SizePreset };
 
-const { padding, titleSize, artistSize, trackSize, trackGap } = TRACKLIST;
+const { padding, titleSize, artistSize } = TRACKLIST;
 
 /**
  * Optional tracklist sheet for the MD jewel case. Artist/album header plus an
  * auto-numbered, two-column list of tracks.
  */
 const TracklistSheet = forwardRef<SVGSVGElement, Props>(function TracklistSheet(
-  { album, artist, tracklist, textColor, bgColor, fontFamily, showArtist, size },
+  { album, artist, tracklist, textColor, bgColor, fontFamily, showArtist, trackSize, size },
   ref,
 ) {
   const { width: W, height: H } = size;
+  const trackGap = trackSize * 1.42;
   const titleY = padding + titleSize * 0.9;
   const artistY = titleY + artistSize + 1;
   const ruleY = (showArtist ? artistY : titleY) + 2.5;

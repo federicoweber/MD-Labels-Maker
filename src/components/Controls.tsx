@@ -152,6 +152,17 @@ export default function Controls({
         <Switch id="tracklist-toggle" checked={showTracklist} onCheckedChange={onToggleTracklist} />
       </div>
 
+      {showTracklist && (
+        <SizeSlider
+          id="track-size"
+          label="Track size"
+          value={data.trackSize}
+          min={1.5}
+          max={5}
+          onChange={(v) => update({ trackSize: v })}
+        />
+      )}
+
       <Separator />
 
       <div className="grid gap-2">

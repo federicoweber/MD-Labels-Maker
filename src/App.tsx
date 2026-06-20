@@ -13,6 +13,7 @@ import { exportSvgToPng } from '@/lib/exportPng';
 import { extractPalette, bestTextColor } from '@/lib/colors';
 import {
   FRONT,
+  TRACKLIST,
   FRONT_PRESETS,
   SPINE_PRESETS,
   TRACKLIST_PRESETS,
@@ -31,6 +32,7 @@ const INITIAL: LabelData = {
   titleSize: FRONT.titleSize,
   artistSize: FRONT.artistSize,
   showArtist: true,
+  trackSize: TRACKLIST.trackSize,
   tracklist: '',
 };
 
