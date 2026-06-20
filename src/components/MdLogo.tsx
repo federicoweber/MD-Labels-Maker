@@ -6,7 +6,7 @@ export default function MdLogo({ className }: { className?: string }) {
     <img
       src="/minidisc-logo.svg"
       alt="MiniDisc"
-      className={cn('h-10 w-auto dark:invert', className)}
+      className={cn('h-12 w-auto object-contain dark:invert', className)}
     />
   );
 }
