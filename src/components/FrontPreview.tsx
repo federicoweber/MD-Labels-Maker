@@ -87,7 +87,7 @@ export default function FrontPreview({ data, size, update }: Props) {
               className="relative border border-dashed px-2 py-1 text-center leading-tight"
               style={{ borderColor: '#9b958a', color: '#cfc9bd', fontSize: 2.6 * S }}
             >
-              DROP /<br />CLICK
+              DROP<br />CLICK
             </div>
           </div>
         )}
