@@ -56,10 +56,10 @@
 }
 
 @theme inline {
-  /* F500 Angular (WipEout) everywhere in the UI — text and numbers alike. */
-  --font-sans: 'F500 Angular', 'Roboto Mono', monospace;
-  --font-mono: 'F500 Angular', 'Roboto Mono', monospace;
-  --font-display: 'F500 Angular', 'Roboto Mono', monospace;
+  /* FX300 Angular (WipEout) everywhere in the UI — more readable than F500. */
+  --font-sans: 'FX300 Angular', 'Roboto Mono', monospace;
+  --font-mono: 'FX300 Angular', 'Roboto Mono', monospace;
+  --font-display: 'FX300 Angular', 'Roboto Mono', monospace;
 
   --radius-sm: calc(var(--radius) - 4px);
   --radius-md: calc(var(--radius) - 2px);
