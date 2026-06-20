@@ -11,11 +11,23 @@ const { padding, titleSize, artistSize } = TRACKLIST;
  * auto-numbered, two-column list of tracks.
  */
 const TracklistSheet = forwardRef<SVGSVGElement, Props>(function TracklistSheet(
-  { album, artist, tracklist, textColor, bgColor, fontFamily, showArtist, trackSize, size },
+  {
+    album,
+    artist,
+    tracklist,
+    textColor,
+    bgColor,
+    fontFamily,
+    showArtist,
+    trackSize,
+    letterSpacing,
+    lineHeight,
+    size,
+  },
   ref,
 ) {
   const { width: W, height: H } = size;
-  const trackGap = trackSize * 1.42;
+  const trackGap = trackSize * lineHeight;
   const titleY = padding + titleSize * 0.9;
   const artistY = titleY + artistSize + 1;
   const ruleY = (showArtist ? artistY : titleY) + 2.5;
@@ -46,11 +58,19 @@ const TracklistSheet = forwardRef<SVGSVGElement, Props>(function TracklistSheet(
         fontFamily={fontFamily}
         fontSize={titleSize}
         fontWeight={700}
+        letterSpacing={titleSize * letterSpacing}
       >
         {album || 'Album'}
       </text>
       {showArtist && (
-        <text x={padding} y={artistY} fill={textColor} fontFamily={fontFamily} fontSize={artistSize}>
+        <text
+          x={padding}
+          y={artistY}
+          fill={textColor}
+          fontFamily={fontFamily}
+          fontSize={artistSize}
+          letterSpacing={artistSize * letterSpacing}
+        >
           {artist || 'Artist'}
         </text>
       )}
@@ -77,6 +97,7 @@ const TracklistSheet = forwardRef<SVGSVGElement, Props>(function TracklistSheet(
             fill={textColor}
             fontFamily={fontFamily}
             fontSize={trackSize}
+            letterSpacing={trackSize * letterSpacing}
           >
             {i + 1}. {track}
           </text>

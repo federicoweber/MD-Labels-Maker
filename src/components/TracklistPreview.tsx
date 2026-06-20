@@ -26,14 +26,29 @@ export default function TracklistPreview({ data, size, update, onFocusField }: P
         background: data.bgColor,
         padding: PAD,
         color: data.textColor,
-        boxShadow: 'inset 0 0 0 1.5px #000',
+        boxShadow: 'inset 0 0 0 1px #000',
       }}
     >
-      <div style={{ fontFamily: data.fontFamily, fontSize: TRACKLIST.titleSize * S, fontWeight: 700, lineHeight: 1.05 }}>
+      <div
+        style={{
+          fontFamily: data.fontFamily,
+          fontSize: TRACKLIST.titleSize * S,
+          fontWeight: 700,
+          lineHeight: 1.05,
+          letterSpacing: `${data.letterSpacing}em`,
+        }}
+      >
         {data.album || 'Album'}
       </div>
       {data.showArtist && (
-        <div style={{ fontFamily: data.fontFamily, fontSize: TRACKLIST.artistSize * S, lineHeight: 1.2 }}>
+        <div
+          style={{
+            fontFamily: data.fontFamily,
+            fontSize: TRACKLIST.artistSize * S,
+            lineHeight: 1.2,
+            letterSpacing: `${data.letterSpacing}em`,
+          }}
+        >
           {data.artist || 'Artist'}
         </div>
       )}
@@ -44,7 +59,8 @@ export default function TracklistPreview({ data, size, update, onFocusField }: P
           fontFamily: data.fontFamily,
           fontSize: data.trackSize * S,
           color: data.textColor,
-          lineHeight: 1.42,
+          lineHeight: data.lineHeight,
+          letterSpacing: `${data.letterSpacing}em`,
         }}
         value={data.tracklist}
         placeholder={'One track per line\nTrack one\nTrack two'}

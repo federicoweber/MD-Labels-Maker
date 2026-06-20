@@ -157,7 +157,8 @@ export default function FrontPreview({ data, size, update, onFocusField }: Props
             fontSize: data.titleSize * S,
             fontWeight: 700,
             color: data.textColor,
-            lineHeight: 1.15,
+            lineHeight: data.lineHeight,
+            letterSpacing: `${data.letterSpacing}em`,
           }}
         />
         {data.showArtist && (
@@ -168,6 +169,7 @@ export default function FrontPreview({ data, size, update, onFocusField }: Props
               fontSize: data.artistSize * S,
               color: data.textColor,
               lineHeight: 1.1,
+              letterSpacing: `${data.letterSpacing}em`,
             }}
             value={data.artist}
             placeholder="Artist"
@@ -189,7 +191,8 @@ export default function FrontPreview({ data, size, update, onFocusField }: Props
           d={`M ${FRONT.chamfer},0 H ${size.width} V ${size.height} H 0 V ${FRONT.chamfer} Z`}
           fill="none"
           stroke="#000"
-          strokeWidth={0.7}
+          strokeWidth={2}
+          vectorEffect="non-scaling-stroke"
         />
       </svg>
 

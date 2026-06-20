@@ -19,8 +19,6 @@ import {
   SPINE_PRESETS,
   TRACKLIST_PRESETS,
 } from '@/lib/dimensions';
-import { useTheme } from '@/hooks/use-theme';
-
 const DEFAULT_FONT = 'Roboto Mono';
 
 const INITIAL: LabelData = {
@@ -34,6 +32,8 @@ const INITIAL: LabelData = {
   artistSize: FRONT.artistSize,
   showArtist: true,
   trackSize: TRACKLIST.trackSize,
+  letterSpacing: 0,
+  lineHeight: 1.2,
   tracklist: '',
 };
 
@@ -46,7 +46,6 @@ function slug(s: string): string {
 }
 
 export default function App() {
-  const { theme, toggle } = useTheme();
   const [data, setData] = useState<LabelData>(INITIAL);
   const [palette, setPalette] = useState<string[]>([]);
   const [frontSize, setFrontSize] = useState(FRONT_PRESETS[0]);
@@ -144,8 +143,6 @@ export default function App() {
         onToggleTracklist={setShowTracklist}
         onExport={onExport}
         exporting={exporting}
-        theme={theme}
-        onToggleTheme={toggle}
       />
 
       <main className="flex flex-1 flex-wrap content-start items-start gap-12 overflow-auto bg-background p-12">

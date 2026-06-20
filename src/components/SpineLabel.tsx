@@ -6,7 +6,7 @@ type Props = LabelData & { size: SizePreset };
 
 /** MiniDisc spine label — a thin strip with a centred caption. */
 const SpineLabel = forwardRef<SVGSVGElement, Props>(function SpineLabel(
-  { album, artist, textColor, bgColor, fontFamily, showArtist, size },
+  { album, artist, textColor, bgColor, fontFamily, showArtist, letterSpacing, size },
   ref,
 ) {
   const { width: W, height: H } = size;
@@ -29,6 +29,7 @@ const SpineLabel = forwardRef<SVGSVGElement, Props>(function SpineLabel(
         fontFamily={fontFamily}
         fontSize={H * 0.66}
         fontWeight={700}
+        letterSpacing={H * 0.66 * letterSpacing}
         textAnchor="middle"
         dominantBaseline="central"
       >

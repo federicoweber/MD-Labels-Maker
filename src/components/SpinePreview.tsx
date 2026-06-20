@@ -12,7 +12,7 @@ export default function SpinePreview({ data, size }: { data: LabelData; size: Si
   return (
     <div
       className="flex items-center justify-center overflow-hidden"
-      style={{ width: W, height: H, background: data.bgColor, boxShadow: 'inset 0 0 0 1.5px #000' }}
+      style={{ width: W, height: H, background: data.bgColor, boxShadow: 'inset 0 0 0 1px #000' }}
     >
       <span
         className="truncate"
@@ -21,6 +21,7 @@ export default function SpinePreview({ data, size }: { data: LabelData; size: Si
           fontSize: size.height * 0.66 * S,
           fontWeight: 700,
           color: data.textColor,
+          letterSpacing: `${data.letterSpacing}em`,
         }}
       >
         {caption}

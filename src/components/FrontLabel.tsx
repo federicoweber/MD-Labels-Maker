@@ -11,7 +11,20 @@ type Props = LabelData & { size: SizePreset };
  * title and an optional artist. Clipped to a chamfered top-left corner.
  */
 const FrontLabel = forwardRef<SVGSVGElement, Props>(function FrontLabel(
-  { coverDataUrl, album, artist, textColor, bgColor, fontFamily, titleSize, artistSize, showArtist, size },
+  {
+    coverDataUrl,
+    album,
+    artist,
+    textColor,
+    bgColor,
+    fontFamily,
+    titleSize,
+    artistSize,
+    showArtist,
+    letterSpacing,
+    lineHeight,
+    size,
+  },
   ref,
 ) {
   const { width: W, height: H } = size;
@@ -24,7 +37,7 @@ const FrontLabel = forwardRef<SVGSVGElement, Props>(function FrontLabel(
   const textMaxWidth = (portrait ? W : W - cover) - 2 * padding;
 
   const titleLines = wrapText(album || 'Album', fontFamily, titleSize, textMaxWidth, 700);
-  const titleLH = titleSize * 1.15;
+  const titleLH = titleSize * lineHeight;
   const firstBaseline = textTop + titleSize * 0.85;
   const lastTitleBaseline = firstBaseline + (titleLines.length - 1) * titleLH;
   const artistBaseline = lastTitleBaseline + artistSize + 1.4;
@@ -75,7 +88,13 @@ const FrontLabel = forwardRef<SVGSVGElement, Props>(function FrontLabel(
           </>
         )}
 
-        <text fill={textColor} fontFamily={fontFamily} fontSize={titleSize} fontWeight={700}>
+        <text
+          fill={textColor}
+          fontFamily={fontFamily}
+          fontSize={titleSize}
+          fontWeight={700}
+          letterSpacing={titleSize * letterSpacing}
+        >
           {titleLines.map((line, i) => (
             <tspan key={i} x={textX} y={firstBaseline + i * titleLH}>
               {line || ' '}
@@ -89,6 +108,7 @@ const FrontLabel = forwardRef<SVGSVGElement, Props>(function FrontLabel(
             fill={textColor}
             fontFamily={fontFamily}
             fontSize={artistSize}
+            letterSpacing={artistSize * letterSpacing}
           >
             {artist || 'Artist'}
           </text>

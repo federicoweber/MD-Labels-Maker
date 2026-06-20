@@ -16,6 +16,10 @@ export interface LabelData {
   showArtist: boolean;
   /** Track font size in mm (tracklist sheet). */
   trackSize: number;
+  /** Label text tracking (letter-spacing) in em. */
+  letterSpacing: number;
+  /** Label text line-height multiplier. */
+  lineHeight: number;
   /** Tracklist text, one track per line (for the optional jewel-case sheet). */
   tracklist: string;
 }

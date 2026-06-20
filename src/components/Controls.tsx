@@ -1,4 +1,4 @@
-import { Download, Moon, Sun } from 'lucide-react';
+import { Download } from 'lucide-react';
 import type { LabelData } from '@/lib/types';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
@@ -21,8 +21,6 @@ interface ControlsProps {
   onToggleTracklist: (on: boolean) => void;
   onExport: (which: ExportTarget) => void;
   exporting: ExportTarget | null;
-  theme: 'light' | 'dark';
-  onToggleTheme: () => void;
 }
 
 export default function Controls({
@@ -37,24 +35,11 @@ export default function Controls({
   onToggleTracklist,
   onExport,
   exporting,
-  theme,
-  onToggleTheme,
 }: ControlsProps) {
   return (
     <aside className="flex w-[300px] shrink-0 flex-col gap-5 overflow-y-auto border-r bg-card p-5">
-      <header className="flex items-start justify-between gap-2">
-        <h1 className="text-3xl leading-[0.9] font-bold tracking-tight uppercase">
-          MiniDisc Label Maker
-        </h1>
-        <Button
-          variant="ghost"
-          size="icon"
-          className="shrink-0"
-          onClick={onToggleTheme}
-          aria-label="Toggle theme"
-        >
-          {theme === 'dark' ? <Sun /> : <Moon />}
-        </Button>
+      <header>
+        <h1 className="text-3xl leading-[0.95] font-bold uppercase">MiniDisc Label Maker</h1>
       </header>
 
       <p className="text-xs text-muted-foreground">
@@ -99,20 +84,14 @@ export default function Controls({
       <Separator />
 
       <div className="grid gap-2">
-        <Button className="notch-tr" onClick={() => onExport('front')} disabled={exporting !== null}>
+        <Button onClick={() => onExport('front')} disabled={exporting !== null}>
           <Download /> {exporting === 'front' ? 'Exporting…' : 'Front PNG'}
         </Button>
-        <Button
-          className="notch-tr"
-          variant="outline"
-          onClick={() => onExport('spine')}
-          disabled={exporting !== null}
-        >
+        <Button variant="outline" onClick={() => onExport('spine')} disabled={exporting !== null}>
           <Download /> {exporting === 'spine' ? 'Exporting…' : 'Spine PNG'}
         </Button>
         {showTracklist && (
           <Button
-            className="notch-tr"
             variant="outline"
             onClick={() => onExport('tracklist')}
             disabled={exporting !== null}
