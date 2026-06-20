@@ -1,122 +1,119 @@
-import { useState } from 'react'
-import reactLogo from './assets/react.svg'
-import viteLogo from './assets/vite.svg'
-import heroImg from './assets/hero.png'
-import './App.css'
+import { useEffect, useRef, useState } from 'react';
+import FrontLabel from './components/FrontLabel';
+import type { LabelData } from './components/FrontLabel';
+import SpineLabel from './components/SpineLabel';
+import Controls from './components/Controls';
+import { fetchFontList, loadFontForPreview } from './lib/fonts';
+import { exportSvgToPng } from './lib/exportPng';
+import { FRONT, SPINE } from './lib/dimensions';
 
-function App() {
-  const [count, setCount] = useState(0)
+const DEFAULT_FONT = 'Roboto';
 
-  return (
-    <>
-      <section id="center">
-        <div className="hero">
-          <img src={heroImg} className="base" width="170" height="179" alt="" />
-          <img src={reactLogo} className="framework" alt="React logo" />
-          <img src={viteLogo} className="vite" alt="Vite logo" />
-        </div>
-        <div>
-          <h1>Get started</h1>
-          <p>
-            Edit <code>src/App.tsx</code> and save to test <code>HMR</code>
-          </p>
-        </div>
-        <button
-          type="button"
-          className="counter"
-          onClick={() => setCount((count) => count + 1)}
-        >
-          Count is {count}
-        </button>
-      </section>
+const INITIAL: LabelData = {
+  coverDataUrl: null,
+  album: '',
+  artist: '',
+  textColor: '#ffffff',
+  bgColor: '#ff00ff',
+  fontFamily: DEFAULT_FONT,
+};
 
-      <div className="ticks"></div>
-
-      <section id="next-steps">
-        <div id="docs">
-          <svg className="icon" role="presentation" aria-hidden="true">
-            <use href="/icons.svg#documentation-icon"></use>
-          </svg>
-          <h2>Documentation</h2>
-          <p>Your questions, answered</p>
-          <ul>
-            <li>
-              <a href="https://vite.dev/" target="_blank">
-                <img className="logo" src={viteLogo} alt="" />
-                Explore Vite
-              </a>
-            </li>
-            <li>
-              <a href="https://react.dev/" target="_blank">
-                <img className="button-icon" src={reactLogo} alt="" />
-                Learn more
-              </a>
-            </li>
-          </ul>
-        </div>
-        <div id="social">
-          <svg className="icon" role="presentation" aria-hidden="true">
-            <use href="/icons.svg#social-icon"></use>
-          </svg>
-          <h2>Connect with us</h2>
-          <p>Join the Vite community</p>
-          <ul>
-            <li>
-              <a href="https://github.com/vitejs/vite" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#github-icon"></use>
-                </svg>
-                GitHub
-              </a>
-            </li>
-            <li>
-              <a href="https://chat.vite.dev/" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#discord-icon"></use>
-                </svg>
-                Discord
-              </a>
-            </li>
-            <li>
-              <a href="https://x.com/vite_js" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#x-icon"></use>
-                </svg>
-                X.com
-              </a>
-            </li>
-            <li>
-              <a href="https://bsky.app/profile/vite.dev" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#bluesky-icon"></use>
-                </svg>
-                Bluesky
-              </a>
-            </li>
-          </ul>
-        </div>
-      </section>
-
-      <div className="ticks"></div>
-      <section id="spacer"></section>
-    </>
-  )
+function slug(s: string): string {
+  return s
+    .trim()
+    .replace(/[^a-z0-9]+/gi, '-')
+    .replace(/^-+|-+$/g, '')
+    .toLowerCase();
 }
 
-export default App
+export default function App() {
+  const [data, setData] = useState<LabelData>(INITIAL);
+  const [families, setFamilies] = useState<string[]>([]);
+  const [fontsLoading, setFontsLoading] = useState(true);
+  const [usingFallback, setUsingFallback] = useState(false);
+  const [fontError, setFontError] = useState<string | null>(null);
+  const [exporting, setExporting] = useState<'front' | 'spine' | null>(null);
+
+  const frontRef = useRef<SVGSVGElement>(null);
+  const spineRef = useRef<SVGSVGElement>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    fetchFontList().then((res) => {
+      if (cancelled) return;
+      setFamilies(res.families);
+      setUsingFallback(res.usingFallback);
+      setFontsLoading(false);
+    });
+    loadFontForPreview(DEFAULT_FONT).catch(() => {});
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  const update = (patch: Partial<LabelData>) => setData((d) => ({ ...d, ...patch }));
+
+  async function onFontSelect(family: string) {
+    update({ fontFamily: family });
+    setFontError(null);
+    try {
+      await loadFontForPreview(family);
+    } catch {
+      setFontError(`Couldn't load "${family}". Check your connection.`);
+    }
+  }
+
+  async function onExport(which: 'front' | 'spine') {
+    const svg = which === 'front' ? frontRef.current : spineRef.current;
+    if (!svg) return;
+    setExporting(which);
+    try {
+      const base =
+        [data.artist, data.album].map(slug).filter(Boolean).join('-') || 'minidisc';
+      const dims = which === 'front' ? FRONT : SPINE;
+      await exportSvgToPng(svg, {
+        fontFamily: data.fontFamily,
+        widthMm: dims.width,
+        heightMm: dims.height,
+        filename: `${base}-${which}.png`,
+      });
+    } catch (err) {
+      console.error(err);
+      setFontError('Export failed — see console for details.');
+    } finally {
+      setExporting(null);
+    }
+  }
+
+  return (
+    <div className="app">
+      <Controls
+        data={data}
+        update={update}
+        onFontSelect={onFontSelect}
+        families={families}
+        fontsLoading={fontsLoading}
+        usingFallback={usingFallback}
+        fontError={fontError}
+        onExport={onExport}
+        exporting={exporting}
+      />
+
+      <main className="stage">
+        <section className="preview">
+          <h2 className="preview__heading">Front</h2>
+          <div className="preview__frame">
+            <FrontLabel ref={frontRef} {...data} />
+          </div>
+        </section>
+
+        <section className="preview">
+          <h2 className="preview__heading">Spine</h2>
+          <div className="preview__frame">
+            <SpineLabel ref={spineRef} {...data} />
+          </div>
+        </section>
+      </main>
+    </div>
+  );
+}
