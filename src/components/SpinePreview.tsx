@@ -6,7 +6,7 @@ const H = SPINE.height * S;
 
 /** Spine preview (60×3mm scaled). Caption is derived from artist + album. */
 export default function SpinePreview({ data }: { data: LabelData }) {
-  const caption = [data.artist || 'Artist', data.album || 'Title'].join(' - ');
+  const caption = [data.album || 'Title', data.artist || 'Artist'].join(' - ');
   return (
     <div
       className="flex items-center justify-center overflow-hidden shadow-xl"

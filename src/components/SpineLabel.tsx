@@ -9,7 +9,7 @@ const SpineLabel = forwardRef<SVGSVGElement, LabelData>(function SpineLabel(
   { album, artist, textColor, bgColor, fontFamily },
   ref,
 ) {
-  const caption = [artist || 'Artist', album || 'Title'].join(' - ');
+  const caption = [album || 'Title', artist || 'Artist'].join(' - ');
   return (
     <svg
       ref={ref}

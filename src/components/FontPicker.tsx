@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Check, ChevronsUpDown } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
@@ -9,6 +9,7 @@ import {
   CommandItem,
   CommandList,
 } from '@/components/ui/command';
+import { loadMenuFonts } from '@/lib/fonts';
 import { cn } from '@/lib/utils';
 
 interface FontPickerProps {
@@ -31,6 +32,11 @@ export default function FontPicker({ value, families, onChange, loading }: FontP
     return matches.slice(0, MAX_RESULTS);
   }, [query, families]);
 
+  // Load the visible fonts (subset to their names) so each renders in itself.
+  useEffect(() => {
+    if (open) loadMenuFonts(results);
+  }, [open, results]);
+
   return (
     <Popover open={open} onOpenChange={setOpen}>
       <PopoverTrigger asChild>
@@ -41,7 +47,9 @@ export default function FontPicker({ value, families, onChange, loading }: FontP
           disabled={loading}
           className="w-full justify-between font-normal"
         >
-          <span className="truncate">{loading ? 'Loading fonts…' : value}</span>
+          <span className="truncate" style={{ fontFamily: `'${value}', sans-serif` }}>
+            {loading ? 'Loading fonts…' : value}
+          </span>
           <ChevronsUpDown className="opacity-50" />
         </Button>
       </PopoverTrigger>
@@ -60,7 +68,7 @@ export default function FontPicker({ value, families, onChange, loading }: FontP
                 }}
               >
                 <Check className={cn(family === value ? 'opacity-100' : 'opacity-0')} />
-                {family}
+                <span style={{ fontFamily: `'${family}', sans-serif` }}>{family}</span>
               </CommandItem>
             ))}
           </CommandList>
