@@ -4,59 +4,62 @@
 @custom-variant dark (&:is(.dark *));
 
 /*
- * Strictly black & white UI. There are NO chromatic accents anywhere — every
- * token is pure grayscale (hue/chroma = 0) so the album art is the only colour
- * on screen. Light and dark are mirror images of each other.
+ * WipEout-inspired warm-gray UI. Everything is grayscale so the album art and
+ * the sampled cover colours are the only chroma on screen. Black borders
+ * separate the labels from the solid background. Light = warm mid-gray (like the
+ * WipEout team-select screen), dark = deep gray.
  */
 :root {
   --radius: 0.625rem;
 
-  --background: oklch(1 0 0);
-  --foreground: oklch(0.145 0 0);
-  --card: oklch(1 0 0);
-  --card-foreground: oklch(0.145 0 0);
-  --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.145 0 0);
-  --primary: oklch(0.145 0 0);
-  --primary-foreground: oklch(0.985 0 0);
-  --secondary: oklch(0.97 0 0);
-  --secondary-foreground: oklch(0.205 0 0);
-  --muted: oklch(0.97 0 0);
-  --muted-foreground: oklch(0.556 0 0);
-  --accent: oklch(0.97 0 0);
-  --accent-foreground: oklch(0.205 0 0);
-  --destructive: oklch(0.45 0 0);
-  --destructive-foreground: oklch(0.985 0 0);
-  --border: oklch(0.922 0 0);
-  --input: oklch(0.922 0 0);
-  --ring: oklch(0.708 0 0);
+  --background: #6e6a63;
+  --foreground: #16150f;
+  --card: #78736a;
+  --card-foreground: #16150f;
+  --popover: #78736a;
+  --popover-foreground: #16150f;
+  --primary: #16150f;
+  --primary-foreground: #ece8e0;
+  --secondary: #837e73;
+  --secondary-foreground: #16150f;
+  --muted: #837e73;
+  --muted-foreground: #34312a;
+  --accent: #837e73;
+  --accent-foreground: #16150f;
+  --destructive: #2a2420;
+  --destructive-foreground: #ece8e0;
+  --border: #111110;
+  --input: #111110;
+  --ring: #16150f;
 }
 
 .dark {
-  --background: oklch(0.145 0 0);
-  --foreground: oklch(0.985 0 0);
-  --card: oklch(0.205 0 0);
-  --card-foreground: oklch(0.985 0 0);
-  --popover: oklch(0.205 0 0);
-  --popover-foreground: oklch(0.985 0 0);
-  --primary: oklch(0.985 0 0);
-  --primary-foreground: oklch(0.205 0 0);
-  --secondary: oklch(0.269 0 0);
-  --secondary-foreground: oklch(0.985 0 0);
-  --muted: oklch(0.269 0 0);
-  --muted-foreground: oklch(0.708 0 0);
-  --accent: oklch(0.269 0 0);
-  --accent-foreground: oklch(0.985 0 0);
-  --destructive: oklch(0.75 0 0);
-  --destructive-foreground: oklch(0.205 0 0);
-  --border: oklch(1 0 0 / 12%);
-  --input: oklch(1 0 0 / 16%);
-  --ring: oklch(0.556 0 0);
+  --background: #36342e;
+  --foreground: #ece8e0;
+  --card: #423f38;
+  --card-foreground: #ece8e0;
+  --popover: #423f38;
+  --popover-foreground: #ece8e0;
+  --primary: #ece8e0;
+  --primary-foreground: #1a1a17;
+  --secondary: #514d45;
+  --secondary-foreground: #ece8e0;
+  --muted: #514d45;
+  --muted-foreground: #b3ada1;
+  --accent: #514d45;
+  --accent-foreground: #ece8e0;
+  --destructive: #c9c2b5;
+  --destructive-foreground: #1a1a17;
+  --border: #000000;
+  --input: #000000;
+  --ring: #cfc9bd;
 }
 
 @theme inline {
-  --font-sans: 'Roboto Mono', ui-monospace, SFMono-Regular, Menlo, monospace;
-  --font-mono: 'Roboto Mono', ui-monospace, SFMono-Regular, Menlo, monospace;
+  /* F500 Angular (WipEout) everywhere in the UI — text and numbers alike. */
+  --font-sans: 'F500 Angular', 'Roboto Mono', monospace;
+  --font-mono: 'F500 Angular', 'Roboto Mono', monospace;
+  --font-display: 'F500 Angular', 'Roboto Mono', monospace;
 
   --radius-sm: calc(var(--radius) - 4px);
   --radius-md: calc(var(--radius) - 2px);
@@ -92,6 +95,33 @@
     @apply bg-background text-foreground;
     font-family: var(--font-sans);
   }
+  /* WipEout F500 Angular for prominent UI chrome; body stays readable mono. */
+  h1,
+  h2,
+  h3,
+  label,
+  button,
+  select {
+    font-family: var(--font-display);
+    letter-spacing: 0.01em;
+  }
+}
+
+/* No drop shadows anywhere (label borders are drawn with inline inset shadows). */
+.shadow-2xs,
+.shadow-xs,
+.shadow-sm,
+.shadow,
+.shadow-md,
+.shadow-lg,
+.shadow-xl,
+.shadow-2xl {
+  box-shadow: none;
+}
+
+/* WipEout-style notched top-right corner. */
+.notch-tr {
+  clip-path: polygon(0 0, calc(100% - 0.45rem) 0, 100% 0.45rem, 100% 100%, 0 100%);
 }
 
 /* Inline editable label fields inherit the label's own colour. */
@@ -100,13 +130,3 @@
   opacity: 0.45;
 }
 
-/* Subtle grayscale checkerboard for the preview stage (adapts to theme). */
-.checkerboard {
-  background-image:
-    linear-gradient(45deg, var(--muted) 25%, transparent 25%),
-    linear-gradient(-45deg, var(--muted) 25%, transparent 25%),
-    linear-gradient(45deg, transparent 75%, var(--muted) 75%),
-    linear-gradient(-45deg, transparent 75%, var(--muted) 75%);
-  background-size: 20px 20px;
-  background-position: 0 0, 0 10px, 10px -10px, -10px 0;
-}

@@ -11,8 +11,8 @@ export default function SpinePreview({ data, size }: { data: LabelData; size: Si
       : data.album || 'Title';
   return (
     <div
-      className="flex items-center justify-center overflow-hidden shadow-xl"
-      style={{ width: W, height: H, background: data.bgColor }}
+      className="flex items-center justify-center overflow-hidden"
+      style={{ width: W, height: H, background: data.bgColor, boxShadow: 'inset 0 0 0 1.5px #000' }}
     >
       <span
         className="truncate"

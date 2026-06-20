@@ -2,8 +2,7 @@ import { useEffect, useRef } from 'react';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Input } from '@/components/ui/input';
-import { rgbToHex } from '@/lib/colors';
-import { cn } from '@/lib/utils';
+import { bestTextColor, hexToRgb, rgbToHex } from '@/lib/colors';
 
 interface ColorControlProps {
   value: string;
@@ -12,10 +11,15 @@ interface ColorControlProps {
   palette: string[];
 }
 
+const rgbLabel = (hex: string) => {
+  const { r, g, b } = hexToRgb(hex);
+  return `${r}R ${g}G ${b}B`;
+};
+
 /**
- * Background-colour control: a swatch button that opens a tabbed popover for
- * picking a colour sampled from the cover (swatches), eyedropping any pixel of
- * the cover, or choosing a freeform colour.
+ * Background-colour control. A swatch button opens a tabbed popover for picking
+ * a colour from the cover (WipEout team-select style swatch bars), eyedropping
+ * any pixel, or choosing a freeform colour.
  */
 export default function ColorControl({ value, onChange, coverDataUrl, palette }: ColorControlProps) {
   return (
@@ -23,16 +27,13 @@ export default function ColorControl({ value, onChange, coverDataUrl, palette }:
       <PopoverTrigger asChild>
         <button
           type="button"
-          className="flex h-9 w-full items-center gap-2 rounded-md border border-input bg-transparent px-2 text-sm shadow-xs transition-colors hover:bg-accent focus-visible:ring-[3px] focus-visible:ring-ring/50 focus-visible:outline-none"
+          className="notch-tr flex h-9 w-full items-center px-3 text-sm tracking-wide transition-transform hover:translate-x-0.5 focus-visible:outline-none"
+          style={{ background: value, color: bestTextColor(value) }}
         >
-          <span
-            className="size-5 shrink-0 rounded-sm border border-border"
-            style={{ backgroundColor: value }}
-          />
-          <span className="font-mono tabular-nums">{value.toUpperCase()}</span>
+          {rgbLabel(value)}
         </button>
       </PopoverTrigger>
-      <PopoverContent className="w-64 p-3" align="start">
+      <PopoverContent className="notch-tr w-64 p-3" align="start">
         <Tabs defaultValue="cover">
           <TabsList className="w-full">
             <TabsTrigger value="cover" className="flex-1">
@@ -48,22 +49,26 @@ export default function ColorControl({ value, onChange, coverDataUrl, palette }:
 
           <TabsContent value="cover" className="pt-3">
             {palette.length > 0 ? (
-              <div className="grid grid-cols-5 gap-2">
-                {palette.map((hex) => (
-                  <button
-                    key={hex}
-                    type="button"
-                    title={hex}
-                    onClick={() => onChange(hex)}
-                    className={cn(
-                      'aspect-square rounded-md border transition-transform hover:scale-105',
-                      value.toLowerCase() === hex.toLowerCase()
-                        ? 'border-foreground ring-2 ring-ring'
-                        : 'border-border',
-                    )}
-                    style={{ backgroundColor: hex }}
-                  />
-                ))}
+              <div className="flex flex-col gap-1">
+                {palette.map((hex) => {
+                  const selected = value.toLowerCase() === hex.toLowerCase();
+                  return (
+                    <button
+                      key={hex}
+                      type="button"
+                      onClick={() => onChange(hex)}
+                      className="notch-tr flex h-7 items-center px-2 text-[11px] tracking-wide transition-transform hover:translate-x-0.5"
+                      style={{
+                        background: hex,
+                        color: bestTextColor(hex),
+                        fontFamily: 'var(--font-display)',
+                      }}
+                    >
+                      <span className="mr-1 w-3">{selected ? '▶' : ''}</span>
+                      {rgbLabel(hex)}
+                    </button>
+                  );
+                })}
               </div>
             ) : (
               <p className="text-xs text-muted-foreground">Drop a cover to sample colours.</p>

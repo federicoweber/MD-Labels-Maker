@@ -7,6 +7,7 @@ import { Switch } from '@/components/ui/switch';
 import { Separator } from '@/components/ui/separator';
 import ColorControl from './ColorControl';
 import FontPicker from './FontPicker';
+import MdLogo from './MdLogo';
 
 export type ExportTarget = 'front' | 'spine' | 'tracklist';
 
@@ -47,9 +48,17 @@ export default function Controls({
 
   return (
     <aside className="flex w-[300px] shrink-0 flex-col gap-5 overflow-y-auto border-r bg-card p-5">
-      <header className="flex items-center justify-between">
-        <h1 className="text-base font-semibold tracking-tight">MiniDisc Label Maker</h1>
-        <Button variant="ghost" size="icon" onClick={onToggleTheme} aria-label="Toggle theme">
+      <header className="flex items-start justify-between gap-2">
+        <h1 className="text-3xl leading-[0.9] font-bold tracking-tight uppercase">
+          MiniDisc Label Maker
+        </h1>
+        <Button
+          variant="ghost"
+          size="icon"
+          className="shrink-0"
+          onClick={onToggleTheme}
+          aria-label="Toggle theme"
+        >
           {theme === 'dark' ? <Sun /> : <Moon />}
         </Button>
       </header>
@@ -146,14 +155,20 @@ export default function Controls({
       <Separator />
 
       <div className="grid gap-2">
-        <Button onClick={() => onExport('front')} disabled={exporting !== null}>
+        <Button className="notch-tr" onClick={() => onExport('front')} disabled={exporting !== null}>
           <Download /> {exporting === 'front' ? 'Exporting…' : 'Front PNG'}
         </Button>
-        <Button variant="outline" onClick={() => onExport('spine')} disabled={exporting !== null}>
+        <Button
+          className="notch-tr"
+          variant="outline"
+          onClick={() => onExport('spine')}
+          disabled={exporting !== null}
+        >
           <Download /> {exporting === 'spine' ? 'Exporting…' : 'Spine PNG'}
         </Button>
         {showTracklist && (
           <Button
+            className="notch-tr"
             variant="outline"
             onClick={() => onExport('tracklist')}
             disabled={exporting !== null}
@@ -162,6 +177,8 @@ export default function Controls({
           </Button>
         )}
       </div>
+
+      <MdLogo className="mt-auto pt-2" />
     </aside>
   );
 }

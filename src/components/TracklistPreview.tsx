@@ -18,8 +18,15 @@ export default function TracklistPreview({ data, size, update }: Props) {
   const PAD = TRACKLIST.padding * S;
   return (
     <div
-      className="flex flex-col shadow-xl"
-      style={{ width: W, height: H, background: data.bgColor, padding: PAD, color: data.textColor }}
+      className="flex flex-col"
+      style={{
+        width: W,
+        height: H,
+        background: data.bgColor,
+        padding: PAD,
+        color: data.textColor,
+        boxShadow: 'inset 0 0 0 1.5px #000',
+      }}
     >
       <div style={{ fontFamily: data.fontFamily, fontSize: TRACKLIST.titleSize * S, fontWeight: 700, lineHeight: 1.05 }}>
         {data.album || 'Album'}

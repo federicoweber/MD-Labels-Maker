@@ -145,7 +145,7 @@ export default function App() {
         onToggleTheme={toggle}
       />
 
-      <main className="checkerboard flex flex-1 flex-wrap content-start items-start gap-12 overflow-auto p-12">
+      <main className="flex flex-1 flex-wrap content-start items-start gap-12 overflow-auto bg-background p-12">
         <section className="flex flex-col gap-2">
           <SizeSelect label="Front" value={frontSize} presets={FRONT_PRESETS} onChange={setFrontSize} />
           <FrontPreview data={data} size={frontSize} update={update} />

@@ -42,8 +42,14 @@ export default function FrontPreview({ data, size, update }: Props) {
 
   return (
     <div
-      className="relative shadow-xl select-none"
-      style={{ width: W, height: H, background: data.bgColor, clipPath: CLIP }}
+      className="relative select-none"
+      style={{
+        width: W,
+        height: H,
+        background: data.bgColor,
+        clipPath: CLIP,
+        boxShadow: 'inset 0 0 0 1.5px #000',
+      }}
     >
       <div
         className="absolute top-0 left-0 cursor-pointer overflow-hidden"

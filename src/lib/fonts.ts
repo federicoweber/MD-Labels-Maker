@@ -27,6 +27,38 @@ export const CURATED_FONTS = [
 
 const API_KEY = import.meta.env.VITE_GOOGLE_FONTS_API_KEY as string | undefined;
 
+/**
+ * Bundled WipEout fonts (from NR74W/WipEout-Fonts), served from /public/fonts.
+ * Available in the picker and embeddable for export like Google fonts.
+ */
+export const WIPEOUT_FONTS: { family: string; file: string }[] = [
+  { family: 'F500 Angular', file: 'F500-Angular.ttf' },
+  { family: 'FX300 Angular', file: 'FX300-Angular.ttf' },
+  { family: 'F5000', file: 'F5000.ttf' },
+  { family: 'Amalgama', file: 'Amalgama.ttf' },
+];
+
+const WIPEOUT_NAMES = WIPEOUT_FONTS.map((f) => f.family);
+const WIPEOUT_SET = new Set(WIPEOUT_NAMES);
+const WIPEOUT_FILE = new Map(WIPEOUT_FONTS.map((f) => [f.family, f.file]));
+
+export function isLocalFont(family: string): boolean {
+  return WIPEOUT_SET.has(family);
+}
+
+/** Register @font-face for every bundled WipEout font (call once at startup). */
+export function injectLocalFontFaces(): void {
+  if (document.getElementById('wipeout-fontfaces')) return;
+  const css = WIPEOUT_FONTS.map(
+    (f) =>
+      `@font-face{font-family:'${f.family}';src:url('/fonts/${f.file}') format('truetype');font-display:swap;}`,
+  ).join('\n');
+  const style = document.createElement('style');
+  style.id = 'wipeout-fontfaces';
+  style.textContent = css;
+  document.head.appendChild(style);
+}
+
 export interface FontListResult {
   families: string[];
   usingFallback: boolean;
@@ -35,7 +67,7 @@ export interface FontListResult {
 /** Fetch the full Google Fonts list (popularity-sorted) or the curated fallback. */
 export async function fetchFontList(): Promise<FontListResult> {
   if (!API_KEY) {
-    return { families: CURATED_FONTS, usingFallback: true };
+    return { families: [...WIPEOUT_NAMES, ...CURATED_FONTS], usingFallback: true };
   }
   try {
     const res = await fetch(
@@ -43,10 +75,10 @@ export async function fetchFontList(): Promise<FontListResult> {
     );
     if (!res.ok) throw new Error(`Google Fonts API ${res.status}`);
     const data = (await res.json()) as { items: { family: string }[] };
-    return { families: data.items.map((i) => i.family), usingFallback: false };
+    return { families: [...WIPEOUT_NAMES, ...data.items.map((i) => i.family)], usingFallback: false };
   } catch (err) {
     console.warn('Falling back to curated font list:', err);
-    return { families: CURATED_FONTS, usingFallback: true };
+    return { families: [...WIPEOUT_NAMES, ...CURATED_FONTS], usingFallback: true };
   }
 }
 
@@ -89,7 +121,8 @@ const menuLoaded = new Set<string>();
  * `text` param) so the payload stays tiny even for dozens of families.
  */
 export function loadMenuFonts(families: string[]): void {
-  const fresh = families.filter((f) => !menuLoaded.has(f));
+  // Local WipEout fonts are already registered via @font-face.
+  const fresh = families.filter((f) => !menuLoaded.has(f) && !WIPEOUT_SET.has(f));
   if (fresh.length === 0) return;
   fresh.forEach((f) => menuLoaded.add(f));
 
@@ -105,6 +138,12 @@ const loadedForPreview = new Set<string>();
 
 /** Inject a font into the document and wait until it is ready to render. */
 export async function loadFontForPreview(family: string): Promise<void> {
+  if (WIPEOUT_SET.has(family)) {
+    // Already registered via @font-face; just ensure it's loaded.
+    await document.fonts.load(`16px "${family}"`).catch(() => {});
+    await document.fonts.ready;
+    return;
+  }
   if (!loadedForPreview.has(family)) {
     const css = await fetchFontCss(family);
     const style = document.createElement('style');
@@ -140,6 +179,12 @@ const WOFF2_URL = /url\((https:\/\/fonts\.gstatic\.com\/[^)]+?\.woff2)\)/g;
  * SVG that is rasterised through an <img>, so the bytes must be embedded.
  */
 export async function buildEmbeddedFontCss(family: string): Promise<string> {
+  // Local WipEout fonts: inline the bundled TTF directly.
+  const localFile = WIPEOUT_FILE.get(family);
+  if (localFile) {
+    const dataUrl = await fetchAsDataUrl(`/fonts/${localFile}`);
+    return `@font-face{font-family:'${family}';src:url(${dataUrl}) format('truetype');font-weight:400 700;}`;
+  }
   const css = await fetchFontCss(family);
   const fileUrls = [...new Set([...css.matchAll(WOFF2_URL)].map((m) => m[1]))];
   const dataUrls = await Promise.all(fileUrls.map(fetchAsDataUrl));
