@@ -9,19 +9,60 @@ interface ColorControlProps {
   onChange: (hex: string) => void;
   coverDataUrl: string | null;
   palette: string[];
+  /** 'bg' → Cover / Pick / Custom. 'text' → Grays / Cover / Custom. */
+  kind?: 'bg' | 'text';
 }
+
+const GRAYS = ['#000000', '#3f3f3f', '#808080', '#bfbfbf', '#ffffff'];
 
 const rgbLabel = (hex: string) => {
   const { r, g, b } = hexToRgb(hex);
   return `${r}R ${g}G ${b}B`;
 };
 
+/** WipEout team-select style swatch bars. */
+function SwatchBars({
+  colors,
+  value,
+  onChange,
+}: {
+  colors: string[];
+  value: string;
+  onChange: (hex: string) => void;
+}) {
+  return (
+    <div className="flex flex-col gap-1">
+      {colors.map((hex) => {
+        const selected = value.toLowerCase() === hex.toLowerCase();
+        return (
+          <button
+            key={hex}
+            type="button"
+            onClick={() => onChange(hex)}
+            className="notch-tr flex h-7 items-center px-2 text-[11px] tracking-wide transition-transform hover:translate-x-0.5"
+            style={{ background: hex, color: bestTextColor(hex), fontFamily: 'var(--font-display)' }}
+          >
+            <span className="mr-1 w-3">{selected ? '▶' : ''}</span>
+            {rgbLabel(hex)}
+          </button>
+        );
+      })}
+    </div>
+  );
+}
+
 /**
- * Background-colour control. A swatch button opens a tabbed popover for picking
- * a colour from the cover (WipEout team-select style swatch bars), eyedropping
- * any pixel, or choosing a freeform colour.
+ * Colour control. A swatch button opens a tabbed popover. Background uses
+ * Cover / Pick / Custom; text uses Grays / Cover / Custom.
  */
-export default function ColorControl({ value, onChange, coverDataUrl, palette }: ColorControlProps) {
+export default function ColorControl({
+  value,
+  onChange,
+  coverDataUrl,
+  palette,
+  kind = 'bg',
+}: ColorControlProps) {
+  const isText = kind === 'text';
   return (
     <Popover>
       <PopoverTrigger asChild>
@@ -34,54 +75,49 @@ export default function ColorControl({ value, onChange, coverDataUrl, palette }:
         </button>
       </PopoverTrigger>
       <PopoverContent className="notch-tr w-64 p-3" align="start">
-        <Tabs defaultValue="cover">
+        <Tabs defaultValue={isText ? 'grays' : 'cover'}>
           <TabsList className="w-full">
+            {isText && (
+              <TabsTrigger value="grays" className="flex-1">
+                Grays
+              </TabsTrigger>
+            )}
             <TabsTrigger value="cover" className="flex-1">
               Cover
             </TabsTrigger>
-            <TabsTrigger value="pick" className="flex-1">
-              Pick
-            </TabsTrigger>
+            {!isText && (
+              <TabsTrigger value="pick" className="flex-1">
+                Pick
+              </TabsTrigger>
+            )}
             <TabsTrigger value="custom" className="flex-1">
               Custom
             </TabsTrigger>
           </TabsList>
 
+          {isText && (
+            <TabsContent value="grays" className="pt-3">
+              <SwatchBars colors={GRAYS} value={value} onChange={onChange} />
+            </TabsContent>
+          )}
+
           <TabsContent value="cover" className="pt-3">
             {palette.length > 0 ? (
-              <div className="flex flex-col gap-1">
-                {palette.map((hex) => {
-                  const selected = value.toLowerCase() === hex.toLowerCase();
-                  return (
-                    <button
-                      key={hex}
-                      type="button"
-                      onClick={() => onChange(hex)}
-                      className="notch-tr flex h-7 items-center px-2 text-[11px] tracking-wide transition-transform hover:translate-x-0.5"
-                      style={{
-                        background: hex,
-                        color: bestTextColor(hex),
-                        fontFamily: 'var(--font-display)',
-                      }}
-                    >
-                      <span className="mr-1 w-3">{selected ? '▶' : ''}</span>
-                      {rgbLabel(hex)}
-                    </button>
-                  );
-                })}
-              </div>
+              <SwatchBars colors={palette} value={value} onChange={onChange} />
             ) : (
               <p className="text-xs text-muted-foreground">Drop a cover to sample colours.</p>
             )}
           </TabsContent>
 
-          <TabsContent value="pick" className="pt-3">
-            {coverDataUrl ? (
-              <Eyedropper coverDataUrl={coverDataUrl} onPick={onChange} />
-            ) : (
-              <p className="text-xs text-muted-foreground">Drop a cover to eyedrop from it.</p>
-            )}
-          </TabsContent>
+          {!isText && (
+            <TabsContent value="pick" className="pt-3">
+              {coverDataUrl ? (
+                <Eyedropper coverDataUrl={coverDataUrl} onPick={onChange} />
+              ) : (
+                <p className="text-xs text-muted-foreground">Drop a cover to eyedrop from it.</p>
+              )}
+            </TabsContent>
+          )}
 
           <TabsContent value="custom" className="space-y-2 pt-3">
             <div className="flex items-center gap-2">

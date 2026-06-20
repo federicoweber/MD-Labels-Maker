@@ -5,6 +5,7 @@ interface Props {
   data: LabelData;
   size: SizePreset;
   update: (patch: Partial<LabelData>) => void;
+  onFocusField: () => void;
 }
 
 /**
@@ -12,7 +13,7 @@ interface Props {
  * (+ artist when shown); tracks are typed directly, one per line. The hidden
  * SVG twin renders the final numbered, two-column layout for export.
  */
-export default function TracklistPreview({ data, size, update }: Props) {
+export default function TracklistPreview({ data, size, update, onFocusField }: Props) {
   const W = size.width * S;
   const H = size.height * S;
   const PAD = TRACKLIST.padding * S;
@@ -48,6 +49,7 @@ export default function TracklistPreview({ data, size, update }: Props) {
         value={data.tracklist}
         placeholder={'One track per line\nTrack one\nTrack two'}
         onChange={(e) => update({ tracklist: e.target.value })}
+        onFocus={onFocusField}
       />
     </div>
   );

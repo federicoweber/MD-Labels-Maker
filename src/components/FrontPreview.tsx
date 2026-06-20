@@ -1,4 +1,4 @@
-import { useLayoutEffect, useRef, useState } from 'react';
+import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { X } from 'lucide-react';
 import type { LabelData } from '@/lib/types';
 import { FRONT, PREVIEW_PX_PER_MM as S, frontCoverSize, type SizePreset } from '@/lib/dimensions';
@@ -7,6 +7,7 @@ interface Props {
   data: LabelData;
   size: SizePreset;
   update: (patch: Partial<LabelData>) => void;
+  onFocusField: (field: 'title' | 'artist') => void;
 }
 
 function readImageFile(file: File): Promise<string> {
@@ -22,9 +23,32 @@ function readImageFile(file: File): Promise<string> {
  * Editable front-label preview: drop/click the cover on it, and type a
  * multiline title + optional artist in place. The hidden SVG twin exports.
  */
-export default function FrontPreview({ data, size, update }: Props) {
+export default function FrontPreview({ data, size, update, onFocusField }: Props) {
   const fileInput = useRef<HTMLInputElement>(null);
   const [dragOver, setDragOver] = useState(false);
+  const [pageDragging, setPageDragging] = useState(false);
+
+  // Detect a file being dragged anywhere on the page to prompt "DROP".
+  useEffect(() => {
+    const hasFiles = (e: DragEvent) => e.dataTransfer?.types?.includes('Files');
+    const on = (e: DragEvent) => {
+      if (hasFiles(e)) setPageDragging(true);
+    };
+    const off = (e: DragEvent) => {
+      if (!e.relatedTarget) setPageDragging(false);
+    };
+    const end = () => setPageDragging(false);
+    window.addEventListener('dragover', on);
+    window.addEventListener('dragenter', on);
+    window.addEventListener('dragleave', off);
+    window.addEventListener('drop', end);
+    return () => {
+      window.removeEventListener('dragover', on);
+      window.removeEventListener('dragenter', on);
+      window.removeEventListener('dragleave', off);
+      window.removeEventListener('drop', end);
+    };
+  }, []);
 
   const W = size.width * S;
   const H = size.height * S;
@@ -70,25 +94,38 @@ export default function FrontPreview({ data, size, update }: Props) {
           <img src={data.coverDataUrl} alt="" className="size-full object-cover" />
         ) : (
           <div
-            className="relative flex size-full items-center justify-center"
-            style={{ background: '#3f3d39' }}
+            className="relative flex size-full items-center justify-center opacity-65 transition-opacity hover:opacity-100"
+            style={{ background: '#3f3d39', color: '#cfc9bd' }}
           >
-            {/* Crossing diagonals to signal an empty image slot */}
+            {/* Dashed crossing diagonals to signal an empty image slot */}
             <svg
               className="absolute inset-0 size-full"
               viewBox="0 0 100 100"
               preserveAspectRatio="none"
               aria-hidden
             >
-              <line x1="0" y1="0" x2="100" y2="100" stroke="#5b5852" strokeWidth="0.5" />
-              <line x1="100" y1="0" x2="0" y2="100" stroke="#5b5852" strokeWidth="0.5" />
+              <line
+                x1="0"
+                y1="0"
+                x2="100"
+                y2="100"
+                stroke="#8a857c"
+                strokeWidth="0.6"
+                strokeDasharray="3 2"
+              />
+              <line
+                x1="100"
+                y1="0"
+                x2="0"
+                y2="100"
+                stroke="#8a857c"
+                strokeWidth="0.6"
+                strokeDasharray="3 2"
+              />
             </svg>
-            <div
-              className="relative border border-dashed px-2 py-1 text-center leading-tight"
-              style={{ borderColor: '#9b958a', color: '#cfc9bd', fontSize: 2.6 * S }}
-            >
-              DROP<br />CLICK
-            </div>
+            <span className="relative tracking-wide" style={{ fontSize: 3 * S }}>
+              {pageDragging ? 'DROP' : 'COVER'}
+            </span>
           </div>
         )}
       </div>
@@ -120,6 +157,7 @@ export default function FrontPreview({ data, size, update }: Props) {
           value={data.album}
           placeholder="Album"
           onChange={(v) => update({ album: v })}
+          onFocus={() => onFocusField('title')}
           style={{
             fontFamily: data.fontFamily,
             fontSize: data.titleSize * S,
@@ -140,6 +178,7 @@ export default function FrontPreview({ data, size, update }: Props) {
             value={data.artist}
             placeholder="Artist"
             onChange={(e) => update({ artist: e.target.value })}
+            onFocus={() => onFocusField('artist')}
           />
         )}
       </div>
@@ -160,11 +199,13 @@ function AutoTextarea({
   value,
   placeholder,
   onChange,
+  onFocus,
   style,
 }: {
   value: string;
   placeholder: string;
   onChange: (v: string) => void;
+  onFocus?: () => void;
   style: React.CSSProperties;
 }) {
   const ref = useRef<HTMLTextAreaElement>(null);
@@ -184,6 +225,7 @@ function AutoTextarea({
       value={value}
       placeholder={placeholder}
       onChange={(e) => onChange(e.target.value)}
+      onFocus={onFocus}
     />
   );
 }

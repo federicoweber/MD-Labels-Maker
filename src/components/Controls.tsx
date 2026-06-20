@@ -1,11 +1,9 @@
 import { Download, Moon, Sun } from 'lucide-react';
 import type { LabelData } from '@/lib/types';
-import { hexToRgb, rgbToHex } from '@/lib/colors';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { Separator } from '@/components/ui/separator';
-import ColorControl from './ColorControl';
 import FontPicker from './FontPicker';
 import MdLogo from './MdLogo';
 
@@ -19,7 +17,6 @@ interface ControlsProps {
   fontsLoading: boolean;
   usingFallback: boolean;
   fontError: string | null;
-  palette: string[];
   showTracklist: boolean;
   onToggleTracklist: (on: boolean) => void;
   onExport: (which: ExportTarget) => void;
@@ -36,7 +33,6 @@ export default function Controls({
   fontsLoading,
   usingFallback,
   fontError,
-  palette,
   showTracklist,
   onToggleTracklist,
   onExport,
@@ -44,8 +40,6 @@ export default function Controls({
   theme,
   onToggleTheme,
 }: ControlsProps) {
-  const textLevel = hexToRgb(data.textColor).r;
-
   return (
     <aside className="flex w-[300px] shrink-0 flex-col gap-5 overflow-y-auto border-r bg-card p-5">
       <header className="flex items-start justify-between gap-2">
@@ -64,70 +58,11 @@ export default function Controls({
       </header>
 
       <p className="text-xs text-muted-foreground">
-        Drop a cover and type the title, artist, and tracks directly on the labels.
+        Drop a cover and type the title, artist, and tracks directly on the labels. Click a text
+        field to size and colour it.
       </p>
 
       <Separator />
-
-      <div className="grid gap-2">
-        <Label>Background</Label>
-        <ColorControl
-          value={data.bgColor}
-          onChange={(hex) => update({ bgColor: hex })}
-          coverDataUrl={data.coverDataUrl}
-          palette={palette}
-        />
-      </div>
-
-      <div className="grid gap-2">
-        <div className="flex items-center justify-between">
-          <Label htmlFor="text-shade">Text shade</Label>
-          <span className="text-xs text-muted-foreground">
-            {textLevel === 0 ? 'Black' : textLevel === 255 ? 'White' : `Gray ${textLevel}`}
-          </span>
-        </div>
-        <input
-          id="text-shade"
-          type="range"
-          min={0}
-          max={255}
-          value={textLevel}
-          onChange={(e) =>
-            update({ textColor: rgbToHex({ r: +e.target.value, g: +e.target.value, b: +e.target.value }) })
-          }
-          className="w-full accent-foreground"
-        />
-      </div>
-
-      <div className="flex items-center justify-between">
-        <Label htmlFor="show-artist">Show artist</Label>
-        <Switch
-          id="show-artist"
-          checked={data.showArtist}
-          onCheckedChange={(v) => update({ showArtist: v })}
-        />
-      </div>
-
-      <div className={`grid gap-3 ${data.showArtist ? 'grid-cols-2' : 'grid-cols-1'}`}>
-        <SizeSlider
-          id="title-size"
-          label="Title size"
-          value={data.titleSize}
-          min={2}
-          max={10}
-          onChange={(v) => update({ titleSize: v })}
-        />
-        {data.showArtist && (
-          <SizeSlider
-            id="artist-size"
-            label="Artist size"
-            value={data.artistSize}
-            min={1.5}
-            max={7}
-            onChange={(v) => update({ artistSize: v })}
-          />
-        )}
-      </div>
 
       <div className="grid gap-2">
         <Label>Font</Label>
@@ -148,20 +83,18 @@ export default function Controls({
       <Separator />
 
       <div className="flex items-center justify-between">
+        <Label htmlFor="show-artist">Show artist</Label>
+        <Switch
+          id="show-artist"
+          checked={data.showArtist}
+          onCheckedChange={(v) => update({ showArtist: v })}
+        />
+      </div>
+
+      <div className="flex items-center justify-between">
         <Label htmlFor="tracklist-toggle">Tracklist sheet</Label>
         <Switch id="tracklist-toggle" checked={showTracklist} onCheckedChange={onToggleTracklist} />
       </div>
-
-      {showTracklist && (
-        <SizeSlider
-          id="track-size"
-          label="Track size"
-          value={data.trackSize}
-          min={1.5}
-          max={5}
-          onChange={(v) => update({ trackSize: v })}
-        />
-      )}
 
       <Separator />
 
@@ -191,40 +124,5 @@ export default function Controls({
 
       <MdLogo className="mt-auto pt-2" />
     </aside>
-  );
-}
-
-function SizeSlider({
-  id,
-  label,
-  value,
-  min,
-  max,
-  onChange,
-}: {
-  id: string;
-  label: string;
-  value: number;
-  min: number;
-  max: number;
-  onChange: (v: number) => void;
-}) {
-  return (
-    <div className="grid gap-2">
-      <div className="flex items-center justify-between">
-        <Label htmlFor={id}>{label}</Label>
-        <span className="text-xs text-muted-foreground">{value.toFixed(1)}mm</span>
-      </div>
-      <input
-        id={id}
-        type="range"
-        min={min}
-        max={max}
-        step={0.1}
-        value={value}
-        onChange={(e) => onChange(+e.target.value)}
-        className="w-full accent-foreground"
-      />
-    </div>
   );
 }

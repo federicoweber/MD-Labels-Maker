@@ -7,6 +7,7 @@ import FrontPreview from '@/components/FrontPreview';
 import SpinePreview from '@/components/SpinePreview';
 import TracklistPreview from '@/components/TracklistPreview';
 import SizeSelect from '@/components/SizeSelect';
+import LabelControls from '@/components/LabelControls';
 import Controls, { type ExportTarget } from '@/components/Controls';
 import { fetchFontList, loadFontForPreview } from '@/lib/fonts';
 import { exportSvgToPng } from '@/lib/exportPng';
@@ -56,6 +57,7 @@ export default function App() {
   const [usingFallback, setUsingFallback] = useState(false);
   const [fontError, setFontError] = useState<string | null>(null);
   const [showTracklist, setShowTracklist] = useState(false);
+  const [focusedField, setFocusedField] = useState<'title' | 'artist' | 'track' | null>(null);
   const [exporting, setExporting] = useState<ExportTarget | null>(null);
 
   const frontRef = useRef<SVGSVGElement>(null);
@@ -138,7 +140,6 @@ export default function App() {
         fontsLoading={fontsLoading}
         usingFallback={usingFallback}
         fontError={fontError}
-        palette={palette}
         showTracklist={showTracklist}
         onToggleTracklist={setShowTracklist}
         onExport={onExport}
@@ -150,7 +151,20 @@ export default function App() {
       <main className="flex flex-1 flex-wrap content-start items-start gap-12 overflow-auto bg-background p-12">
         <section className="flex flex-col gap-2">
           <SizeSelect label="Front" value={frontSize} presets={FRONT_PRESETS} onChange={setFrontSize} />
-          <FrontPreview data={data} size={frontSize} update={update} />
+          <FrontPreview data={data} size={frontSize} update={update} onFocusField={setFocusedField} />
+          {(focusedField === 'title' || focusedField === 'artist') && (
+            <LabelControls
+              sizeId={`${focusedField}-size`}
+              sizeLabel={focusedField === 'artist' ? 'Artist size' : 'Title size'}
+              sizeValue={focusedField === 'artist' ? data.artistSize : data.titleSize}
+              sizeMin={focusedField === 'artist' ? 1.5 : 2}
+              sizeMax={focusedField === 'artist' ? 7 : 10}
+              onSize={(v) => update(focusedField === 'artist' ? { artistSize: v } : { titleSize: v })}
+              data={data}
+              update={update}
+              palette={palette}
+            />
+          )}
         </section>
 
         <section className="flex flex-col gap-2">
@@ -166,7 +180,25 @@ export default function App() {
               presets={TRACKLIST_PRESETS}
               onChange={setTracklistSize}
             />
-            <TracklistPreview data={data} size={tracklistSize} update={update} />
+            <TracklistPreview
+              data={data}
+              size={tracklistSize}
+              update={update}
+              onFocusField={() => setFocusedField('track')}
+            />
+            {focusedField === 'track' && (
+              <LabelControls
+                sizeId="track-size"
+                sizeLabel="Track size"
+                sizeValue={data.trackSize}
+                sizeMin={1.5}
+                sizeMax={5}
+                onSize={(v) => update({ trackSize: v })}
+                data={data}
+                update={update}
+                palette={palette}
+              />
+            )}
           </section>
         )}
       </main>
