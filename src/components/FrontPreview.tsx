@@ -67,13 +67,7 @@ export default function FrontPreview({ data, size, update, onFocusField }: Props
   return (
     <div
       className="relative select-none"
-      style={{
-        width: W,
-        height: H,
-        background: data.bgColor,
-        clipPath: CLIP,
-        boxShadow: 'inset 0 0 0 1.5px #000',
-      }}
+      style={{ width: W, height: H, background: data.bgColor, clipPath: CLIP }}
     >
       <div
         className="absolute top-0 left-0 cursor-pointer overflow-hidden"
@@ -182,6 +176,22 @@ export default function FrontPreview({ data, size, update, onFocusField }: Props
           />
         )}
       </div>
+
+      {/* Border tracing the chamfered outline (clipped to half-width = uniform edge) */}
+      <svg
+        className="pointer-events-none absolute inset-0"
+        style={{ width: W, height: H }}
+        viewBox={`0 0 ${size.width} ${size.height}`}
+        preserveAspectRatio="none"
+        aria-hidden
+      >
+        <path
+          d={`M ${FRONT.chamfer},0 H ${size.width} V ${size.height} H 0 V ${FRONT.chamfer} Z`}
+          fill="none"
+          stroke="#000"
+          strokeWidth={0.7}
+        />
+      </svg>
 
       <input
         ref={fileInput}
