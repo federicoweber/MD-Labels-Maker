@@ -1,4 +1,15 @@
-import { useMemo, useRef, useState } from 'react';
+import { useMemo, useState } from 'react';
+import { Check, ChevronsUpDown } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import {
+  Command,
+  CommandEmpty,
+  CommandInput,
+  CommandItem,
+  CommandList,
+} from '@/components/ui/command';
+import { cn } from '@/lib/utils';
 
 interface FontPickerProps {
   value: string;
@@ -7,68 +18,54 @@ interface FontPickerProps {
   loading?: boolean;
 }
 
-const MAX_RESULTS = 100;
+const MAX_RESULTS = 80;
 
-/** Searchable combobox over the Google Fonts list. */
+/** Searchable Google Fonts combobox (shadcn Command + Popover). */
 export default function FontPicker({ value, families, onChange, loading }: FontPickerProps) {
-  const [query, setQuery] = useState('');
   const [open, setOpen] = useState(false);
-  const blurTimer = useRef<number | undefined>(undefined);
+  const [query, setQuery] = useState('');
 
   const results = useMemo(() => {
     const q = query.trim().toLowerCase();
-    const matches = q
-      ? families.filter((f) => f.toLowerCase().includes(q))
-      : families;
+    const matches = q ? families.filter((f) => f.toLowerCase().includes(q)) : families;
     return matches.slice(0, MAX_RESULTS);
   }, [query, families]);
 
-  function select(family: string) {
-    onChange(family);
-    setQuery('');
-    setOpen(false);
-  }
-
   return (
-    <div className="font-picker">
-      <input
-        type="text"
-        className="font-picker__input"
-        placeholder={loading ? 'Loading fonts…' : 'Search fonts…'}
-        value={open ? query : value}
-        disabled={loading}
-        onChange={(e) => {
-          setQuery(e.target.value);
-          setOpen(true);
-        }}
-        onFocus={() => {
-          setQuery('');
-          setOpen(true);
-        }}
-        onBlur={() => {
-          blurTimer.current = window.setTimeout(() => setOpen(false), 150);
-        }}
-      />
-      {open && results.length > 0 && (
-        <ul className="font-picker__list">
-          {results.map((family) => (
-            <li key={family}>
-              <button
-                type="button"
-                className="font-picker__option"
-                // Fire before input blur so the selection registers.
-                onMouseDown={(e) => {
-                  e.preventDefault();
-                  window.clearTimeout(blurTimer.current);
-                  select(family);
+    <Popover open={open} onOpenChange={setOpen}>
+      <PopoverTrigger asChild>
+        <Button
+          variant="outline"
+          role="combobox"
+          aria-expanded={open}
+          disabled={loading}
+          className="w-full justify-between font-normal"
+        >
+          <span className="truncate">{loading ? 'Loading fonts…' : value}</span>
+          <ChevronsUpDown className="opacity-50" />
+        </Button>
+      </PopoverTrigger>
+      <PopoverContent className="w-(--radix-popover-trigger-width) p-0" align="start">
+        <Command shouldFilter={false}>
+          <CommandInput placeholder="Search fonts…" value={query} onValueChange={setQuery} />
+          <CommandList>
+            <CommandEmpty>No fonts found.</CommandEmpty>
+            {results.map((family) => (
+              <CommandItem
+                key={family}
+                value={family}
+                onSelect={() => {
+                  onChange(family);
+                  setOpen(false);
                 }}
               >
+                <Check className={cn(family === value ? 'opacity-100' : 'opacity-0')} />
                 {family}
-              </button>
-            </li>
-          ))}
-        </ul>
-      )}
-    </div>
+              </CommandItem>
+            ))}
+          </CommandList>
+        </Command>
+      </PopoverContent>
+    </Popover>
   );
 }

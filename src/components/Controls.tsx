@@ -1,6 +1,14 @@
-import { useRef, useState } from 'react';
-import type { LabelData } from './FrontLabel';
+import { Download, Moon, Sun } from 'lucide-react';
+import type { LabelData } from '@/lib/types';
+import { hexToRgb, rgbToHex } from '@/lib/colors';
+import { Button } from '@/components/ui/button';
+import { Label } from '@/components/ui/label';
+import { Switch } from '@/components/ui/switch';
+import { Separator } from '@/components/ui/separator';
+import ColorControl from './ColorControl';
 import FontPicker from './FontPicker';
+
+export type ExportTarget = 'front' | 'spine' | 'tracklist';
 
 interface ControlsProps {
   data: LabelData;
@@ -10,17 +18,13 @@ interface ControlsProps {
   fontsLoading: boolean;
   usingFallback: boolean;
   fontError: string | null;
-  onExport: (which: 'front' | 'spine') => void;
-  exporting: 'front' | 'spine' | null;
-}
-
-function readImageFile(file: File): Promise<string> {
-  return new Promise((resolve, reject) => {
-    const reader = new FileReader();
-    reader.onload = () => resolve(reader.result as string);
-    reader.onerror = reject;
-    reader.readAsDataURL(file);
-  });
+  palette: string[];
+  showTracklist: boolean;
+  onToggleTracklist: (on: boolean) => void;
+  onExport: (which: ExportTarget) => void;
+  exporting: ExportTarget | null;
+  theme: 'light' | 'dark';
+  onToggleTheme: () => void;
 }
 
 export default function Controls({
@@ -31,150 +35,103 @@ export default function Controls({
   fontsLoading,
   usingFallback,
   fontError,
+  palette,
+  showTracklist,
+  onToggleTracklist,
   onExport,
   exporting,
+  theme,
+  onToggleTheme,
 }: ControlsProps) {
-  const fileInput = useRef<HTMLInputElement>(null);
-  const [dragOver, setDragOver] = useState(false);
-
-  async function handleFiles(files: FileList | null) {
-    const file = files?.[0];
-    if (!file || !file.type.startsWith('image/')) return;
-    update({ coverDataUrl: await readImageFile(file) });
-  }
+  const textLevel = hexToRgb(data.textColor).r;
 
   return (
-    <div className="controls">
-      <h1 className="controls__title">MiniDisc Label Maker</h1>
+    <aside className="flex w-[300px] shrink-0 flex-col gap-5 overflow-y-auto border-r bg-card p-5">
+      <header className="flex items-center justify-between">
+        <h1 className="text-base font-semibold tracking-tight">MiniDisc Label Maker</h1>
+        <Button variant="ghost" size="icon" onClick={onToggleTheme} aria-label="Toggle theme">
+          {theme === 'dark' ? <Sun /> : <Moon />}
+        </Button>
+      </header>
 
-      <div
-        className={`dropzone${dragOver ? ' dropzone--over' : ''}`}
-        onClick={() => fileInput.current?.click()}
-        onDragOver={(e) => {
-          e.preventDefault();
-          setDragOver(true);
-        }}
-        onDragLeave={() => setDragOver(false)}
-        onDrop={(e) => {
-          e.preventDefault();
-          setDragOver(false);
-          void handleFiles(e.dataTransfer.files);
-        }}
-      >
-        {data.coverDataUrl ? (
-          <img className="dropzone__preview" src={data.coverDataUrl} alt="Album cover" />
-        ) : (
-          <span className="dropzone__hint">Drop album cover here, or click to browse</span>
-        )}
-        <input
-          ref={fileInput}
-          type="file"
-          accept="image/*"
-          hidden
-          onChange={(e) => void handleFiles(e.target.files)}
-        />
-      </div>
-      {data.coverDataUrl && (
-        <button
-          type="button"
-          className="link-button"
-          onClick={() => update({ coverDataUrl: null })}
-        >
-          Remove cover
-        </button>
-      )}
+      <p className="text-xs text-muted-foreground">
+        Drop a cover and type the title, artist, and tracks directly on the labels.
+      </p>
 
-      <label className="field">
-        <span className="field__label">Artist</span>
-        <input
-          type="text"
-          value={data.artist}
-          placeholder="Artist"
-          onChange={(e) => update({ artist: e.target.value })}
-        />
-      </label>
+      <Separator />
 
-      <label className="field">
-        <span className="field__label">Album title</span>
-        <input
-          type="text"
-          value={data.album}
-          placeholder="Album"
-          onChange={(e) => update({ album: e.target.value })}
-        />
-      </label>
-
-      <div className="field-row">
-        <ColorField
-          label="Text color"
-          value={data.textColor}
-          onChange={(v) => update({ textColor: v })}
-        />
-        <ColorField
-          label="Background"
+      <div className="grid gap-2">
+        <Label>Background</Label>
+        <ColorControl
           value={data.bgColor}
-          onChange={(v) => update({ bgColor: v })}
+          onChange={(hex) => update({ bgColor: hex })}
+          coverDataUrl={data.coverDataUrl}
+          palette={palette}
         />
       </div>
 
-      <label className="field">
-        <span className="field__label">
-          Font {usingFallback && <em className="field__note">(curated list — add an API key for all fonts)</em>}
-        </span>
+      <div className="grid gap-2">
+        <div className="flex items-center justify-between">
+          <Label htmlFor="text-shade">Text shade</Label>
+          <span className="text-xs text-muted-foreground">
+            {textLevel === 0 ? 'Black' : textLevel === 255 ? 'White' : `Gray ${textLevel}`}
+          </span>
+        </div>
+        <input
+          id="text-shade"
+          type="range"
+          min={0}
+          max={255}
+          value={textLevel}
+          onChange={(e) =>
+            update({ textColor: rgbToHex({ r: +e.target.value, g: +e.target.value, b: +e.target.value }) })
+          }
+          className="w-full accent-foreground"
+        />
+      </div>
+
+      <div className="grid gap-2">
+        <Label>Font</Label>
         <FontPicker
           value={data.fontFamily}
           families={families}
           onChange={onFontSelect}
           loading={fontsLoading}
         />
-        {fontError && <span className="field__error">{fontError}</span>}
-      </label>
-
-      <div className="export">
-        <button
-          type="button"
-          onClick={() => onExport('front')}
-          disabled={exporting !== null}
-        >
-          {exporting === 'front' ? 'Exporting…' : 'Download front PNG'}
-        </button>
-        <button
-          type="button"
-          onClick={() => onExport('spine')}
-          disabled={exporting !== null}
-        >
-          {exporting === 'spine' ? 'Exporting…' : 'Download spine PNG'}
-        </button>
+        {usingFallback && (
+          <p className="text-xs text-muted-foreground">
+            Curated list — add a Google Fonts API key for all fonts.
+          </p>
+        )}
+        {fontError && <p className="text-xs text-destructive">{fontError}</p>}
       </div>
-    </div>
-  );
-}
 
-function ColorField({
-  label,
-  value,
-  onChange,
-}: {
-  label: string;
-  value: string;
-  onChange: (v: string) => void;
-}) {
-  return (
-    <label className="field color-field">
-      <span className="field__label">{label}</span>
-      <span className="color-field__row">
-        <input
-          type="color"
-          value={value}
-          onChange={(e) => onChange(e.target.value)}
-        />
-        <input
-          type="text"
-          className="color-field__hex"
-          value={value}
-          onChange={(e) => onChange(e.target.value)}
-        />
-      </span>
-    </label>
+      <Separator />
+
+      <div className="flex items-center justify-between">
+        <Label htmlFor="tracklist-toggle">Tracklist sheet</Label>
+        <Switch id="tracklist-toggle" checked={showTracklist} onCheckedChange={onToggleTracklist} />
+      </div>
+
+      <Separator />
+
+      <div className="grid gap-2">
+        <Button onClick={() => onExport('front')} disabled={exporting !== null}>
+          <Download /> {exporting === 'front' ? 'Exporting…' : 'Front PNG'}
+        </Button>
+        <Button variant="outline" onClick={() => onExport('spine')} disabled={exporting !== null}>
+          <Download /> {exporting === 'spine' ? 'Exporting…' : 'Spine PNG'}
+        </Button>
+        {showTracklist && (
+          <Button
+            variant="outline"
+            onClick={() => onExport('tracklist')}
+            disabled={exporting !== null}
+          >
+            <Download /> {exporting === 'tracklist' ? 'Exporting…' : 'Tracklist PNG'}
+          </Button>
+        )}
+      </div>
+    </aside>
   );
 }

@@ -1,13 +1,10 @@
 import { forwardRef } from 'react';
-import type { LabelData } from './FrontLabel';
-import { SPINE, PREVIEW_PX_PER_MM } from '../lib/dimensions';
+import type { LabelData } from '@/lib/types';
+import { SPINE, PREVIEW_PX_PER_MM } from '@/lib/dimensions';
 
 const { width: W, height: H, textSize } = SPINE;
 
-/**
- * MiniDisc spine label: 58.59×3.79mm. A coloured strip with the
- * "Artist - Title" caption, centred.
- */
+/** MiniDisc spine label — 60×3mm strip with a centred "Artist - Title". */
 const SpineLabel = forwardRef<SVGSVGElement, LabelData>(function SpineLabel(
   { album, artist, textColor, bgColor, fontFamily },
   ref,

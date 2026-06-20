@@ -94,6 +94,12 @@
   }
 }
 
+/* Inline editable label fields inherit the label's own colour. */
+.label-field::placeholder {
+  color: currentColor;
+  opacity: 0.45;
+}
+
 /* Subtle grayscale checkerboard for the preview stage (adapts to theme). */
 .checkerboard {
   background-image:
