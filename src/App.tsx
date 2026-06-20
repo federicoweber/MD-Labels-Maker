@@ -6,11 +6,17 @@ import TracklistSheet from '@/components/TracklistSheet';
 import FrontPreview from '@/components/FrontPreview';
 import SpinePreview from '@/components/SpinePreview';
 import TracklistPreview from '@/components/TracklistPreview';
+import SizeSelect from '@/components/SizeSelect';
 import Controls, { type ExportTarget } from '@/components/Controls';
 import { fetchFontList, loadFontForPreview } from '@/lib/fonts';
 import { exportSvgToPng } from '@/lib/exportPng';
 import { extractPalette, bestTextColor } from '@/lib/colors';
-import { FRONT, SPINE, TRACKLIST } from '@/lib/dimensions';
+import {
+  FRONT,
+  FRONT_PRESETS,
+  SPINE_PRESETS,
+  TRACKLIST_PRESETS,
+} from '@/lib/dimensions';
 import { useTheme } from '@/hooks/use-theme';
 
 const DEFAULT_FONT = 'Roboto';
@@ -24,6 +30,7 @@ const INITIAL: LabelData = {
   fontFamily: DEFAULT_FONT,
   titleSize: FRONT.titleSize,
   artistSize: FRONT.artistSize,
+  showArtist: true,
   tracklist: '',
 };
 
@@ -39,6 +46,9 @@ export default function App() {
   const { theme, toggle } = useTheme();
   const [data, setData] = useState<LabelData>(INITIAL);
   const [palette, setPalette] = useState<string[]>([]);
+  const [frontSize, setFrontSize] = useState(FRONT_PRESETS[0]);
+  const [spineSize, setSpineSize] = useState(SPINE_PRESETS[0]);
+  const [tracklistSize, setTracklistSize] = useState(TRACKLIST_PRESETS[0]);
   const [families, setFamilies] = useState<string[]>([]);
   const [fontsLoading, setFontsLoading] = useState(true);
   const [usingFallback, setUsingFallback] = useState(false);
@@ -101,7 +111,7 @@ export default function App() {
     setExporting(which);
     try {
       const base = [data.artist, data.album].map(slug).filter(Boolean).join('-') || 'minidisc';
-      const dims = which === 'front' ? FRONT : which === 'spine' ? SPINE : TRACKLIST;
+      const dims = which === 'front' ? frontSize : which === 'spine' ? spineSize : tracklistSize;
       await exportSvgToPng(svg, {
         fontFamily: data.fontFamily,
         widthMm: dims.width,
@@ -136,36 +146,35 @@ export default function App() {
       />
 
       <main className="checkerboard flex flex-1 flex-wrap content-start items-start gap-12 overflow-auto p-12">
-        <Preview heading={`Front · ${FRONT.width}×${FRONT.height}mm`}>
-          <FrontPreview data={data} update={update} />
-        </Preview>
-        <Preview heading={`Spine · ${SPINE.width}×${SPINE.height}mm`}>
-          <SpinePreview data={data} />
-        </Preview>
+        <section className="flex flex-col gap-2">
+          <SizeSelect label="Front" value={frontSize} presets={FRONT_PRESETS} onChange={setFrontSize} />
+          <FrontPreview data={data} size={frontSize} update={update} />
+        </section>
+
+        <section className="flex flex-col gap-2">
+          <SizeSelect label="Spine" value={spineSize} presets={SPINE_PRESETS} onChange={setSpineSize} />
+          <SpinePreview data={data} size={spineSize} />
+        </section>
+
         {showTracklist && (
-          <Preview heading={`Tracklist · ${TRACKLIST.width}×${TRACKLIST.height}mm`}>
-            <TracklistPreview data={data} update={update} />
-          </Preview>
+          <section className="flex flex-col gap-2">
+            <SizeSelect
+              label="Tracklist"
+              value={tracklistSize}
+              presets={TRACKLIST_PRESETS}
+              onChange={setTracklistSize}
+            />
+            <TracklistPreview data={data} size={tracklistSize} update={update} />
+          </section>
         )}
       </main>
 
       {/* Hidden SVG twins — the precise, vector source used for PNG export. */}
       <div aria-hidden className="pointer-events-none fixed top-0 -left-[99999px] opacity-0">
-        <FrontLabel ref={frontRef} {...data} />
-        <SpineLabel ref={spineRef} {...data} />
-        <TracklistSheet ref={tracklistRef} {...data} />
+        <FrontLabel ref={frontRef} {...data} size={frontSize} />
+        <SpineLabel ref={spineRef} {...data} size={spineSize} />
+        <TracklistSheet ref={tracklistRef} {...data} size={tracklistSize} />
       </div>
     </div>
-  );
-}
-
-function Preview({ heading, children }: { heading: string; children: React.ReactNode }) {
-  return (
-    <section className="flex flex-col gap-2">
-      <h2 className="text-xs font-medium tracking-wide text-muted-foreground uppercase">
-        {heading}
-      </h2>
-      {children}
-    </section>
   );
 }

@@ -1,15 +1,17 @@
 import { forwardRef } from 'react';
 import type { LabelData } from '@/lib/types';
-import { SPINE, PREVIEW_PX_PER_MM } from '@/lib/dimensions';
+import { PREVIEW_PX_PER_MM, type SizePreset } from '@/lib/dimensions';
 
-const { width: W, height: H, textSize } = SPINE;
+type Props = LabelData & { size: SizePreset };
 
-/** MiniDisc spine label — 60×3mm strip with a centred "Artist - Title". */
-const SpineLabel = forwardRef<SVGSVGElement, LabelData>(function SpineLabel(
-  { album, artist, textColor, bgColor, fontFamily },
+/** MiniDisc spine label — a thin strip with a centred caption. */
+const SpineLabel = forwardRef<SVGSVGElement, Props>(function SpineLabel(
+  { album, artist, textColor, bgColor, fontFamily, showArtist, size },
   ref,
 ) {
-  const caption = [album || 'Title', artist || 'Artist'].join(' - ');
+  const { width: W, height: H } = size;
+  const caption =
+    showArtist && artist ? `${album || 'Title'} - ${artist}` : album || 'Title';
   return (
     <svg
       ref={ref}
@@ -25,7 +27,7 @@ const SpineLabel = forwardRef<SVGSVGElement, LabelData>(function SpineLabel(
         y={H / 2}
         fill={textColor}
         fontFamily={fontFamily}
-        fontSize={textSize}
+        fontSize={H * 0.66}
         fontWeight={700}
         textAnchor="middle"
         dominantBaseline="central"

@@ -1,26 +1,27 @@
 import { forwardRef } from 'react';
 import type { LabelData } from '@/lib/types';
-import { TRACKLIST, PREVIEW_PX_PER_MM } from '@/lib/dimensions';
+import { TRACKLIST, PREVIEW_PX_PER_MM, type SizePreset } from '@/lib/dimensions';
 
-const { width: W, height: H, padding, titleSize, artistSize, trackSize, trackGap } = TRACKLIST;
+type Props = LabelData & { size: SizePreset };
 
-const titleY = padding + titleSize * 0.9;
-const artistY = titleY + artistSize + 1;
-const ruleY = artistY + 2.5;
-const tracksTop = ruleY + 4;
-
-// Two columns spanning the landscape width.
-const colX = [padding, W / 2 + 1];
-const maxRows = Math.floor((H - tracksTop - padding) / trackGap);
+const { padding, titleSize, artistSize, trackSize, trackGap } = TRACKLIST;
 
 /**
- * Optional tracklist sheet for the MD jewel case — 70×50mm landscape. Artist /
- * album header plus an auto-numbered, two-column list of tracks.
+ * Optional tracklist sheet for the MD jewel case. Artist/album header plus an
+ * auto-numbered, two-column list of tracks.
  */
-const TracklistSheet = forwardRef<SVGSVGElement, LabelData>(function TracklistSheet(
-  { album, artist, tracklist, textColor, bgColor, fontFamily },
+const TracklistSheet = forwardRef<SVGSVGElement, Props>(function TracklistSheet(
+  { album, artist, tracklist, textColor, bgColor, fontFamily, showArtist, size },
   ref,
 ) {
+  const { width: W, height: H } = size;
+  const titleY = padding + titleSize * 0.9;
+  const artistY = titleY + artistSize + 1;
+  const ruleY = (showArtist ? artistY : titleY) + 2.5;
+  const tracksTop = ruleY + 4;
+  const colX = [padding, W / 2 + 1];
+  const maxRows = Math.max(1, Math.floor((H - tracksTop - padding) / trackGap));
+
   const tracks = tracklist
     .split('\n')
     .map((t) => t.trim())
@@ -47,9 +48,11 @@ const TracklistSheet = forwardRef<SVGSVGElement, LabelData>(function TracklistSh
       >
         {album || 'Album'}
       </text>
-      <text x={padding} y={artistY} fill={textColor} fontFamily={fontFamily} fontSize={artistSize}>
-        {artist || 'Artist'}
-      </text>
+      {showArtist && (
+        <text x={padding} y={artistY} fill={textColor} fontFamily={fontFamily} fontSize={artistSize}>
+          {artist || 'Artist'}
+        </text>
+      )}
 
       <line
         x1={padding}
@@ -64,7 +67,7 @@ const TracklistSheet = forwardRef<SVGSVGElement, LabelData>(function TracklistSh
       {tracks.map((track, i) => {
         const col = Math.floor(i / maxRows);
         const row = i % maxRows;
-        if (col > 1) return null; // overflow beyond two columns is clipped
+        if (col > 1) return null;
         return (
           <text
             key={i}

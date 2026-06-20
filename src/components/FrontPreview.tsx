@@ -1,17 +1,11 @@
 import { useLayoutEffect, useRef, useState } from 'react';
 import { X } from 'lucide-react';
 import type { LabelData } from '@/lib/types';
-import { FRONT, PREVIEW_PX_PER_MM as S } from '@/lib/dimensions';
-
-const W = FRONT.width * S;
-const H = FRONT.height * S;
-const COVER = FRONT.coverSize * S;
-const PAD = FRONT.padding * S;
-const CH = FRONT.chamfer * S;
-const CLIP = `polygon(${CH}px 0, 100% 0, 100% 100%, 0 100%, 0 ${CH}px)`;
+import { FRONT, PREVIEW_PX_PER_MM as S, frontCoverSize, type SizePreset } from '@/lib/dimensions';
 
 interface Props {
   data: LabelData;
+  size: SizePreset;
   update: (patch: Partial<LabelData>) => void;
 }
 
@@ -25,12 +19,20 @@ function readImageFile(file: File): Promise<string> {
 }
 
 /**
- * Editable front-label preview (34×52mm scaled): drop/click the cover on it,
- * and type a multiline title + artist in place. The hidden SVG twin exports.
+ * Editable front-label preview: drop/click the cover on it, and type a
+ * multiline title + optional artist in place. The hidden SVG twin exports.
  */
-export default function FrontPreview({ data, update }: Props) {
+export default function FrontPreview({ data, size, update }: Props) {
   const fileInput = useRef<HTMLInputElement>(null);
   const [dragOver, setDragOver] = useState(false);
+
+  const W = size.width * S;
+  const H = size.height * S;
+  const cover = frontCoverSize(size) * S;
+  const portrait = size.height >= size.width;
+  const PAD = FRONT.padding * S;
+  const CH = FRONT.chamfer * S;
+  const CLIP = `polygon(${CH}px 0, 100% 0, 100% 100%, 0 100%, 0 ${CH}px)`;
 
   async function handleFiles(files: FileList | null) {
     const file = files?.[0];
@@ -45,7 +47,7 @@ export default function FrontPreview({ data, update }: Props) {
     >
       <div
         className="absolute top-0 left-0 cursor-pointer overflow-hidden"
-        style={{ width: W, height: COVER, outline: dragOver ? '2px dashed #fff' : 'none', outlineOffset: -2 }}
+        style={{ width: cover, height: cover, outline: dragOver ? '2px dashed #fff' : 'none', outlineOffset: -2 }}
         onClick={() => fileInput.current?.click()}
         onDragOver={(e) => {
           e.preventDefault();
@@ -63,7 +65,7 @@ export default function FrontPreview({ data, update }: Props) {
         ) : (
           <div
             className="flex size-full items-center justify-center text-center"
-            style={{ background: '#d8d8d8', color: '#8a8a8a', fontSize: 2.4 * S }}
+            style={{ background: '#d8d8d8', color: '#8a8a8a', fontSize: 2.2 * S }}
           >
             drop / click cover
           </div>
@@ -82,8 +84,17 @@ export default function FrontPreview({ data, update }: Props) {
         </button>
       )}
 
-      {/* Text band — inline editable, title wraps + grows */}
-      <div className="absolute left-0 flex flex-col" style={{ top: COVER, width: W, padding: PAD, gap: 0.6 * S }}>
+      {/* Text area — below the cover (portrait) or to its right (landscape) */}
+      <div
+        className="absolute flex flex-col justify-start"
+        style={{
+          top: portrait ? cover : 0,
+          left: portrait ? 0 : cover,
+          width: portrait ? W : W - cover,
+          padding: PAD,
+          gap: 0.6 * S,
+        }}
+      >
         <AutoTextarea
           value={data.album}
           placeholder="Album"
@@ -96,18 +107,20 @@ export default function FrontPreview({ data, update }: Props) {
             lineHeight: 1.15,
           }}
         />
-        <input
-          className="label-field w-full bg-transparent p-0 outline-none"
-          style={{
-            fontFamily: data.fontFamily,
-            fontSize: data.artistSize * S,
-            color: data.textColor,
-            lineHeight: 1.1,
-          }}
-          value={data.artist}
-          placeholder="Artist"
-          onChange={(e) => update({ artist: e.target.value })}
-        />
+        {data.showArtist && (
+          <input
+            className="label-field w-full bg-transparent p-0 outline-none"
+            style={{
+              fontFamily: data.fontFamily,
+              fontSize: data.artistSize * S,
+              color: data.textColor,
+              lineHeight: 1.1,
+            }}
+            value={data.artist}
+            placeholder="Artist"
+            onChange={(e) => update({ artist: e.target.value })}
+          />
+        )}
       </div>
 
       <input

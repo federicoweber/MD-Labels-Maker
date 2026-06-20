@@ -1,12 +1,14 @@
 import type { LabelData } from '@/lib/types';
-import { SPINE, PREVIEW_PX_PER_MM as S } from '@/lib/dimensions';
+import { PREVIEW_PX_PER_MM as S, type SizePreset } from '@/lib/dimensions';
 
-const W = SPINE.width * S;
-const H = SPINE.height * S;
-
-/** Spine preview (60×3mm scaled). Caption is derived from artist + album. */
-export default function SpinePreview({ data }: { data: LabelData }) {
-  const caption = [data.album || 'Title', data.artist || 'Artist'].join(' - ');
+/** Spine preview. Caption is derived from title (+ artist when shown). */
+export default function SpinePreview({ data, size }: { data: LabelData; size: SizePreset }) {
+  const W = size.width * S;
+  const H = size.height * S;
+  const caption =
+    data.showArtist && data.artist
+      ? `${data.album || 'Title'} - ${data.artist}`
+      : data.album || 'Title';
   return (
     <div
       className="flex items-center justify-center overflow-hidden shadow-xl"
@@ -16,7 +18,7 @@ export default function SpinePreview({ data }: { data: LabelData }) {
         className="truncate"
         style={{
           fontFamily: data.fontFamily,
-          fontSize: SPINE.textSize * S,
+          fontSize: size.height * 0.66 * S,
           fontWeight: 700,
           color: data.textColor,
         }}

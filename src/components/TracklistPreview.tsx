@@ -1,21 +1,21 @@
 import type { LabelData } from '@/lib/types';
-import { TRACKLIST, PREVIEW_PX_PER_MM as S } from '@/lib/dimensions';
-
-const W = TRACKLIST.width * S;
-const H = TRACKLIST.height * S;
-const PAD = TRACKLIST.padding * S;
+import { TRACKLIST, PREVIEW_PX_PER_MM as S, type SizePreset } from '@/lib/dimensions';
 
 interface Props {
   data: LabelData;
+  size: SizePreset;
   update: (patch: Partial<LabelData>) => void;
 }
 
 /**
- * Editable tracklist-sheet preview (70×50mm scaled, landscape). Header is
- * derived from artist/album; tracks are typed directly (one per line). The
- * hidden SVG twin renders the final numbered, two-column layout for export.
+ * Editable tracklist-sheet preview (landscape). Header is derived from album
+ * (+ artist when shown); tracks are typed directly, one per line. The hidden
+ * SVG twin renders the final numbered, two-column layout for export.
  */
-export default function TracklistPreview({ data, update }: Props) {
+export default function TracklistPreview({ data, size, update }: Props) {
+  const W = size.width * S;
+  const H = size.height * S;
+  const PAD = TRACKLIST.padding * S;
   return (
     <div
       className="flex flex-col shadow-xl"
@@ -24,9 +24,11 @@ export default function TracklistPreview({ data, update }: Props) {
       <div style={{ fontFamily: data.fontFamily, fontSize: TRACKLIST.titleSize * S, fontWeight: 700, lineHeight: 1.05 }}>
         {data.album || 'Album'}
       </div>
-      <div style={{ fontFamily: data.fontFamily, fontSize: TRACKLIST.artistSize * S, lineHeight: 1.2 }}>
-        {data.artist || 'Artist'}
-      </div>
+      {data.showArtist && (
+        <div style={{ fontFamily: data.fontFamily, fontSize: TRACKLIST.artistSize * S, lineHeight: 1.2 }}>
+          {data.artist || 'Artist'}
+        </div>
+      )}
       <div className="my-1 w-full" style={{ height: 1, background: data.textColor, opacity: 0.6 }} />
       <textarea
         className="label-field w-full flex-1 resize-none bg-transparent p-0 outline-none"

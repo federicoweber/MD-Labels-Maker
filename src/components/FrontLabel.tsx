@@ -1,28 +1,35 @@
 import { forwardRef } from 'react';
 import type { LabelData } from '@/lib/types';
-import { FRONT, PREVIEW_PX_PER_MM } from '@/lib/dimensions';
+import { FRONT, PREVIEW_PX_PER_MM, frontCoverSize, type SizePreset } from '@/lib/dimensions';
 import { wrapText } from '@/lib/text';
 
-const { width: W, height: H, coverSize, chamfer, padding } = FRONT;
-const bandTop = H - FRONT.bandHeight;
-
-// Outline with a chamfered top-left corner (like a real MiniDisc).
-const OUTLINE = `M ${chamfer},0 H ${W} V ${H} H 0 V ${chamfer} Z`;
+type Props = LabelData & { size: SizePreset };
 
 /**
- * MiniDisc front/top label — 34×52mm. Square cover on top, coloured text band
- * below with a wrapping, size-adjustable title and a size-adjustable artist.
- * Clipped to a chamfered-corner outline.
+ * MiniDisc front/top (face) label. Square cover sits on top (portrait) or on
+ * the left (landscape); the remaining area holds a wrapping, size-adjustable
+ * title and an optional artist. Clipped to a chamfered top-left corner.
  */
-const FrontLabel = forwardRef<SVGSVGElement, LabelData>(function FrontLabel(
-  { coverDataUrl, album, artist, textColor, bgColor, fontFamily, titleSize, artistSize },
+const FrontLabel = forwardRef<SVGSVGElement, Props>(function FrontLabel(
+  { coverDataUrl, album, artist, textColor, bgColor, fontFamily, titleSize, artistSize, showArtist, size },
   ref,
 ) {
-  const titleLines = wrapText(album || 'Album', fontFamily, titleSize, W - 2 * padding, 700);
+  const { width: W, height: H } = size;
+  const cover = frontCoverSize(size);
+  const portrait = H >= W;
+  const { chamfer, padding } = FRONT;
+
+  const textX = (portrait ? 0 : cover) + padding;
+  const textTop = (portrait ? cover : 0) + padding;
+  const textMaxWidth = (portrait ? W : W - cover) - 2 * padding;
+
+  const titleLines = wrapText(album || 'Album', fontFamily, titleSize, textMaxWidth, 700);
   const titleLH = titleSize * 1.15;
-  const firstBaseline = bandTop + padding + titleSize * 0.85;
+  const firstBaseline = textTop + titleSize * 0.85;
   const lastTitleBaseline = firstBaseline + (titleLines.length - 1) * titleLH;
   const artistBaseline = lastTitleBaseline + artistSize + 1.4;
+
+  const OUTLINE = `M ${chamfer},0 H ${W} V ${H} H 0 V ${chamfer} Z`;
 
   return (
     <svg
@@ -47,16 +54,16 @@ const FrontLabel = forwardRef<SVGSVGElement, LabelData>(function FrontLabel(
             href={coverDataUrl}
             x={0}
             y={0}
-            width={W}
-            height={coverSize}
+            width={cover}
+            height={cover}
             preserveAspectRatio="xMidYMid slice"
           />
         ) : (
           <>
-            <rect x={0} y={0} width={W} height={coverSize} fill="#d8d8d8" />
+            <rect x={0} y={0} width={cover} height={cover} fill="#d8d8d8" />
             <text
-              x={W / 2}
-              y={coverSize / 2}
+              x={cover / 2}
+              y={cover / 2}
               fill="#8a8a8a"
               fontFamily="'Roboto Mono', monospace"
               fontSize={2.4}
@@ -70,20 +77,22 @@ const FrontLabel = forwardRef<SVGSVGElement, LabelData>(function FrontLabel(
 
         <text fill={textColor} fontFamily={fontFamily} fontSize={titleSize} fontWeight={700}>
           {titleLines.map((line, i) => (
-            <tspan key={i} x={padding} y={firstBaseline + i * titleLH}>
-              {line || ' '}
+            <tspan key={i} x={textX} y={firstBaseline + i * titleLH}>
+              {line || ' '}
             </tspan>
           ))}
         </text>
-        <text
-          x={padding}
-          y={artistBaseline}
-          fill={textColor}
-          fontFamily={fontFamily}
-          fontSize={artistSize}
-        >
-          {artist || 'Artist'}
-        </text>
+        {showArtist && (
+          <text
+            x={textX}
+            y={artistBaseline}
+            fill={textColor}
+            fontFamily={fontFamily}
+            fontSize={artistSize}
+          >
+            {artist || 'Artist'}
+          </text>
+        )}
       </g>
     </svg>
   );

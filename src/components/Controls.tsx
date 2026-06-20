@@ -90,7 +90,16 @@ export default function Controls({
         />
       </div>
 
-      <div className="grid grid-cols-2 gap-3">
+      <div className="flex items-center justify-between">
+        <Label htmlFor="show-artist">Show artist</Label>
+        <Switch
+          id="show-artist"
+          checked={data.showArtist}
+          onCheckedChange={(v) => update({ showArtist: v })}
+        />
+      </div>
+
+      <div className={`grid gap-3 ${data.showArtist ? 'grid-cols-2' : 'grid-cols-1'}`}>
         <SizeSlider
           id="title-size"
           label="Title size"
@@ -99,14 +108,16 @@ export default function Controls({
           max={10}
           onChange={(v) => update({ titleSize: v })}
         />
-        <SizeSlider
-          id="artist-size"
-          label="Artist size"
-          value={data.artistSize}
-          min={1.5}
-          max={7}
-          onChange={(v) => update({ artistSize: v })}
-        />
+        {data.showArtist && (
+          <SizeSlider
+            id="artist-size"
+            label="Artist size"
+            value={data.artistSize}
+            min={1.5}
+            max={7}
+            onChange={(v) => update({ artistSize: v })}
+          />
+        )}
       </div>
 
       <div className="grid gap-2">
