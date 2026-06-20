@@ -21,7 +21,7 @@ import {
 } from '@/lib/dimensions';
 import { useTheme } from '@/hooks/use-theme';
 
-const DEFAULT_FONT = 'Roboto';
+const DEFAULT_FONT = 'Roboto Mono';
 
 const INITIAL: LabelData = {
   coverDataUrl: null,

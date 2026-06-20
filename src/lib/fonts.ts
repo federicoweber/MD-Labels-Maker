@@ -1,31 +1,17 @@
 // Google Fonts integration: list fetching (Developer API), on-demand loading
 // for the live preview, and font-file inlining for PNG export.
 
-/** Curated fallback list, used when no API key is configured. */
+/** Curated Google Fonts offered in the picker. */
 export const CURATED_FONTS = [
-  'Roboto',
-  'Open Sans',
-  'Montserrat',
-  'Lato',
-  'Poppins',
-  'Oswald',
-  'Raleway',
   'Inter',
-  'Bebas Neue',
-  'Playfair Display',
-  'Merriweather',
-  'Anton',
-  'Archivo',
+  'Space Mono',
   'Space Grotesk',
-  'DM Sans',
-  'Work Sans',
-  'Josefin Sans',
-  'Abril Fatface',
-  'Pacifico',
-  'Permanent Marker',
+  'Fira Sans',
+  'Roboto',
+  'Roboto Mono',
+  'Playfair Display',
+  'Inconsolata',
 ];
-
-const API_KEY = import.meta.env.VITE_GOOGLE_FONTS_API_KEY as string | undefined;
 
 /**
  * Bundled WipEout fonts (from NR74W/WipEout-Fonts), served from /public/fonts.
@@ -64,22 +50,9 @@ export interface FontListResult {
   usingFallback: boolean;
 }
 
-/** Fetch the full Google Fonts list (popularity-sorted) or the curated fallback. */
+/** The bundled WipEout fonts plus the curated Google Fonts. */
 export async function fetchFontList(): Promise<FontListResult> {
-  if (!API_KEY) {
-    return { families: [...WIPEOUT_NAMES, ...CURATED_FONTS], usingFallback: true };
-  }
-  try {
-    const res = await fetch(
-      `https://www.googleapis.com/webfonts/v1/webfonts?sort=popularity&key=${API_KEY}`,
-    );
-    if (!res.ok) throw new Error(`Google Fonts API ${res.status}`);
-    const data = (await res.json()) as { items: { family: string }[] };
-    return { families: [...WIPEOUT_NAMES, ...data.items.map((i) => i.family)], usingFallback: false };
-  } catch (err) {
-    console.warn('Falling back to curated font list:', err);
-    return { families: [...WIPEOUT_NAMES, ...CURATED_FONTS], usingFallback: true };
-  }
+  return { families: [...WIPEOUT_NAMES, ...CURATED_FONTS], usingFallback: false };
 }
 
 /** css2 family token, e.g. "Open+Sans". */
