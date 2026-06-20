@@ -1,4 +1,4 @@
-import { useRef, useState } from 'react';
+import { useLayoutEffect, useRef, useState } from 'react';
 import { X } from 'lucide-react';
 import type { LabelData } from '@/lib/types';
 import { FRONT, PREVIEW_PX_PER_MM as S } from '@/lib/dimensions';
@@ -25,9 +25,8 @@ function readImageFile(file: File): Promise<string> {
 }
 
 /**
- * Editable front-label preview (34×52mm scaled): drop/click the cover directly
- * on it, and type the title / artist in place. The hidden SVG twin is what
- * actually exports.
+ * Editable front-label preview (34×52mm scaled): drop/click the cover on it,
+ * and type a multiline title + artist in place. The hidden SVG twin exports.
  */
 export default function FrontPreview({ data, update }: Props) {
   const fileInput = useRef<HTMLInputElement>(null);
@@ -44,7 +43,6 @@ export default function FrontPreview({ data, update }: Props) {
       className="relative shadow-xl select-none"
       style={{ width: W, height: H, background: data.bgColor, clipPath: CLIP }}
     >
-      {/* Cover area — drop target + click to browse */}
       <div
         className="absolute top-0 left-0 cursor-pointer overflow-hidden"
         style={{ width: W, height: COVER, outline: dragOver ? '2px dashed #fff' : 'none', outlineOffset: -2 }}
@@ -76,7 +74,7 @@ export default function FrontPreview({ data, update }: Props) {
         <button
           type="button"
           onClick={() => update({ coverDataUrl: null })}
-          className="absolute right-1 top-1 grid size-5 place-items-center rounded-sm bg-black/55 text-white"
+          className="absolute top-1 grid size-5 place-items-center rounded-sm bg-black/55 text-white"
           aria-label="Remove cover"
           style={{ left: CH }}
         >
@@ -84,29 +82,25 @@ export default function FrontPreview({ data, update }: Props) {
         </button>
       )}
 
-      {/* Text band — inline editable */}
-      <div
-        className="absolute left-0 flex flex-col justify-start"
-        style={{ top: COVER, width: W, height: H - COVER, padding: PAD, gap: 1 * S }}
-      >
-        <input
-          className="label-field w-full bg-transparent p-0 outline-none"
-          style={{
-            fontFamily: data.fontFamily,
-            fontSize: FRONT.titleSize * S,
-            fontWeight: 700,
-            color: data.textColor,
-            lineHeight: 1.05,
-          }}
+      {/* Text band — inline editable, title wraps + grows */}
+      <div className="absolute left-0 flex flex-col" style={{ top: COVER, width: W, padding: PAD, gap: 0.6 * S }}>
+        <AutoTextarea
           value={data.album}
           placeholder="Album"
-          onChange={(e) => update({ album: e.target.value })}
+          onChange={(v) => update({ album: v })}
+          style={{
+            fontFamily: data.fontFamily,
+            fontSize: data.titleSize * S,
+            fontWeight: 700,
+            color: data.textColor,
+            lineHeight: 1.15,
+          }}
         />
         <input
           className="label-field w-full bg-transparent p-0 outline-none"
           style={{
             fontFamily: data.fontFamily,
-            fontSize: FRONT.artistSize * S,
+            fontSize: data.artistSize * S,
             color: data.textColor,
             lineHeight: 1.1,
           }}
@@ -124,5 +118,38 @@ export default function FrontPreview({ data, update }: Props) {
         onChange={(e) => void handleFiles(e.target.files)}
       />
     </div>
+  );
+}
+
+/** A transparent, auto-growing textarea that blends into the label. */
+function AutoTextarea({
+  value,
+  placeholder,
+  onChange,
+  style,
+}: {
+  value: string;
+  placeholder: string;
+  onChange: (v: string) => void;
+  style: React.CSSProperties;
+}) {
+  const ref = useRef<HTMLTextAreaElement>(null);
+  useLayoutEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+    el.style.height = 'auto';
+    el.style.height = `${el.scrollHeight}px`;
+  }, [value, style.fontSize, style.fontFamily]);
+
+  return (
+    <textarea
+      ref={ref}
+      rows={1}
+      className="label-field w-full resize-none overflow-hidden bg-transparent p-0 outline-none"
+      style={style}
+      value={value}
+      placeholder={placeholder}
+      onChange={(e) => onChange(e.target.value)}
+    />
   );
 }

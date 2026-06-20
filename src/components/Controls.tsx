@@ -90,6 +90,25 @@ export default function Controls({
         />
       </div>
 
+      <div className="grid grid-cols-2 gap-3">
+        <SizeSlider
+          id="title-size"
+          label="Title size"
+          value={data.titleSize}
+          min={2}
+          max={10}
+          onChange={(v) => update({ titleSize: v })}
+        />
+        <SizeSlider
+          id="artist-size"
+          label="Artist size"
+          value={data.artistSize}
+          min={1.5}
+          max={7}
+          onChange={(v) => update({ artistSize: v })}
+        />
+      </div>
+
       <div className="grid gap-2">
         <Label>Font</Label>
         <FontPicker
@@ -133,5 +152,40 @@ export default function Controls({
         )}
       </div>
     </aside>
+  );
+}
+
+function SizeSlider({
+  id,
+  label,
+  value,
+  min,
+  max,
+  onChange,
+}: {
+  id: string;
+  label: string;
+  value: number;
+  min: number;
+  max: number;
+  onChange: (v: number) => void;
+}) {
+  return (
+    <div className="grid gap-2">
+      <div className="flex items-center justify-between">
+        <Label htmlFor={id}>{label}</Label>
+        <span className="text-xs text-muted-foreground">{value.toFixed(1)}mm</span>
+      </div>
+      <input
+        id={id}
+        type="range"
+        min={min}
+        max={max}
+        step={0.1}
+        value={value}
+        onChange={(e) => onChange(+e.target.value)}
+        className="w-full accent-foreground"
+      />
+    </div>
   );
 }

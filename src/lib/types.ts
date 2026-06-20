@@ -8,6 +8,10 @@ export interface LabelData {
   /** Background / accent colour (hex), sampled from the cover or chosen. */
   bgColor: string;
   fontFamily: string;
+  /** Title font size in mm (front label). */
+  titleSize: number;
+  /** Artist font size in mm (front label). */
+  artistSize: number;
   /** Tracklist text, one track per line (for the optional jewel-case sheet). */
   tracklist: string;
 }

@@ -1,24 +1,29 @@
 import { forwardRef } from 'react';
 import type { LabelData } from '@/lib/types';
 import { FRONT, PREVIEW_PX_PER_MM } from '@/lib/dimensions';
+import { wrapText } from '@/lib/text';
 
-const { width: W, height: H, coverSize, bandHeight, chamfer, padding, titleSize, artistSize } = FRONT;
-const bandTop = H - bandHeight;
-const titleY = bandTop + padding + titleSize * 0.9;
-const artistY = titleY + artistSize + 1.2;
+const { width: W, height: H, coverSize, chamfer, padding } = FRONT;
+const bandTop = H - FRONT.bandHeight;
 
 // Outline with a chamfered top-left corner (like a real MiniDisc).
 const OUTLINE = `M ${chamfer},0 H ${W} V ${H} H 0 V ${chamfer} Z`;
 
 /**
- * MiniDisc front/top label — 34×52mm. A full-width square album cover sits at
- * the top; an 18mm coloured band below holds the title and artist. The whole
- * label is clipped to a chamfered-corner outline.
+ * MiniDisc front/top label — 34×52mm. Square cover on top, coloured text band
+ * below with a wrapping, size-adjustable title and a size-adjustable artist.
+ * Clipped to a chamfered-corner outline.
  */
 const FrontLabel = forwardRef<SVGSVGElement, LabelData>(function FrontLabel(
-  { coverDataUrl, album, artist, textColor, bgColor, fontFamily },
+  { coverDataUrl, album, artist, textColor, bgColor, fontFamily, titleSize, artistSize },
   ref,
 ) {
+  const titleLines = wrapText(album || 'Album', fontFamily, titleSize, W - 2 * padding, 700);
+  const titleLH = titleSize * 1.15;
+  const firstBaseline = bandTop + padding + titleSize * 0.85;
+  const lastTitleBaseline = firstBaseline + (titleLines.length - 1) * titleLH;
+  const artistBaseline = lastTitleBaseline + artistSize + 1.4;
+
   return (
     <svg
       ref={ref}
@@ -35,10 +40,8 @@ const FrontLabel = forwardRef<SVGSVGElement, LabelData>(function FrontLabel(
       </defs>
 
       <g clipPath="url(#front-clip)">
-        {/* Background band fills the whole label first (shows through chamfer-free areas) */}
         <rect x={0} y={0} width={W} height={H} fill={bgColor} />
 
-        {/* Square album cover */}
         {coverDataUrl ? (
           <image
             href={coverDataUrl}
@@ -65,18 +68,20 @@ const FrontLabel = forwardRef<SVGSVGElement, LabelData>(function FrontLabel(
           </>
         )}
 
-        {/* Title + artist in the band */}
+        <text fill={textColor} fontFamily={fontFamily} fontSize={titleSize} fontWeight={700}>
+          {titleLines.map((line, i) => (
+            <tspan key={i} x={padding} y={firstBaseline + i * titleLH}>
+              {line || ' '}
+            </tspan>
+          ))}
+        </text>
         <text
           x={padding}
-          y={titleY}
+          y={artistBaseline}
           fill={textColor}
           fontFamily={fontFamily}
-          fontSize={titleSize}
-          fontWeight={700}
+          fontSize={artistSize}
         >
-          {album || 'Album'}
-        </text>
-        <text x={padding} y={artistY} fill={textColor} fontFamily={fontFamily} fontSize={artistSize}>
           {artist || 'Artist'}
         </text>
       </g>

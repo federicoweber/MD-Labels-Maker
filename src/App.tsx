@@ -22,6 +22,8 @@ const INITIAL: LabelData = {
   textColor: '#000000',
   bgColor: '#808080',
   fontFamily: DEFAULT_FONT,
+  titleSize: FRONT.titleSize,
+  artistSize: FRONT.artistSize,
   tracklist: '',
 };
 
