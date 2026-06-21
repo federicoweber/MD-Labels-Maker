@@ -1,26 +1,26 @@
+import JSZip from 'jszip';
 import { mmToPx } from './dimensions';
 import { buildEmbeddedFontCss } from './fonts';
 
 const SVGNS = 'http://www.w3.org/2000/svg';
 
-interface ExportOptions {
+interface RenderOptions {
   fontFamily: string;
   widthMm: number;
   heightMm: number;
-  filename: string;
 }
 
 /**
- * Rasterise an SVG label element to a print-resolution PNG and download it.
+ * Rasterise an SVG label element to a print-resolution PNG blob.
  *
  * The cover image is already a data URI, and the chosen web font is embedded as
  * base64 @font-face CSS — both are required because a browser will not load any
  * external resource referenced by an SVG that is drawn onto a canvas.
  */
-export async function exportSvgToPng(
+export async function renderSvgToPngBlob(
   svg: SVGSVGElement,
-  { fontFamily, widthMm, heightMm, filename }: ExportOptions,
-): Promise<void> {
+  { fontFamily, widthMm, heightMm }: RenderOptions,
+): Promise<Blob> {
   const widthPx = Math.round(mmToPx(widthMm));
   const heightPx = Math.round(mmToPx(heightMm));
 
@@ -48,12 +48,37 @@ export async function exportSvgToPng(
     const ctx = canvas.getContext('2d');
     if (!ctx) throw new Error('Could not get canvas 2D context');
     ctx.drawImage(img, 0, 0, widthPx, heightPx);
-
-    const blob = await canvasToBlob(canvas);
-    downloadBlob(blob, filename);
+    return await canvasToBlob(canvas);
   } finally {
     URL.revokeObjectURL(svgUrl);
   }
+}
+
+export interface ZipLabel {
+  svg: SVGSVGElement;
+  widthMm: number;
+  heightMm: number;
+  /** File name inside the zip, e.g. "front.png". */
+  name: string;
+}
+
+/** Render every label to a PNG and download them together as a single zip. */
+export async function downloadLabelsZip(
+  labels: ZipLabel[],
+  fontFamily: string,
+  zipName: string,
+): Promise<void> {
+  const zip = new JSZip();
+  for (const label of labels) {
+    const blob = await renderSvgToPngBlob(label.svg, {
+      fontFamily,
+      widthMm: label.widthMm,
+      heightMm: label.heightMm,
+    });
+    zip.file(label.name, blob);
+  }
+  const out = await zip.generateAsync({ type: 'blob' });
+  downloadBlob(out, zipName);
 }
 
 function loadImage(url: string): Promise<HTMLImageElement> {

@@ -1,3 +1,4 @@
+import { Pipette } from 'lucide-react';
 import { bestTextColor, hexToRgb } from '@/lib/colors';
 
 interface ColorPickerProps {
@@ -27,7 +28,7 @@ export default function ColorPicker({ value, onChange, colors, emptyHint }: Colo
             key={hex}
             type="button"
             onClick={() => onChange(hex)}
-            className="flex h-6 items-center px-2 text-[9px] transition-transform hover:translate-x-0.5"
+            className="notch-tr flex h-6 items-center px-2 text-[9px] transition-transform hover:translate-x-0.5"
             style={{ background: hex, color: bestTextColor(hex) }}
           >
             <span className="mr-1 w-2.5">{selected ? '▶' : ''}</span>
@@ -35,16 +36,24 @@ export default function ColorPicker({ value, onChange, colors, emptyHint }: Colo
           </button>
         );
       })}
-      <div className="mt-1 flex items-center gap-2">
-        <input
-          type="color"
-          value={value}
-          onChange={(e) => onChange(e.target.value)}
-          className="size-6 cursor-pointer rounded-sm border border-input bg-transparent p-0.5"
-          aria-label="Custom colour"
-        />
-        <span className="font-mono text-[9px] text-muted-foreground">{rgbLabel(value)}</span>
-      </div>
+
+      {/* Freeform colour: a swatch with a picker icon that opens the OS picker. */}
+      <label className="mt-1 flex cursor-pointer items-center gap-2">
+        <span
+          className="notch-tr relative inline-flex size-6 items-center justify-center"
+          style={{ background: value, color: bestTextColor(value) }}
+        >
+          <Pipette className="size-3" />
+          <input
+            type="color"
+            value={value}
+            onChange={(e) => onChange(e.target.value)}
+            className="absolute inset-0 cursor-pointer opacity-0"
+            aria-label="Custom colour"
+          />
+        </span>
+        <span className="text-[9px] text-muted-foreground">{rgbLabel(value)}</span>
+      </label>
     </div>
   );
 }

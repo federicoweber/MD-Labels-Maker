@@ -8,9 +8,9 @@ import SpinePreview from '@/components/SpinePreview';
 import TracklistPreview from '@/components/TracklistPreview';
 import SizeSelect from '@/components/SizeSelect';
 import LabelControls from '@/components/LabelControls';
-import Controls, { type ExportTarget } from '@/components/Controls';
+import Controls from '@/components/Controls';
 import { fetchFontList, loadFontForPreview } from '@/lib/fonts';
-import { exportSvgToPng } from '@/lib/exportPng';
+import { downloadLabelsZip, type ZipLabel } from '@/lib/exportPng';
 import { extractPalette, bestTextColor } from '@/lib/colors';
 import {
   FRONT,
@@ -57,7 +57,7 @@ export default function App() {
   const [fontError, setFontError] = useState<string | null>(null);
   const [showTracklist, setShowTracklist] = useState(false);
   const [focusedField, setFocusedField] = useState<'title' | 'artist' | 'track' | null>(null);
-  const [exporting, setExporting] = useState<ExportTarget | null>(null);
+  const [exporting, setExporting] = useState(false);
 
   const frontRef = useRef<SVGSVGElement>(null);
   const spineRef = useRef<SVGSVGElement>(null);
@@ -107,25 +107,38 @@ export default function App() {
     }
   }
 
-  async function onExport(which: ExportTarget) {
-    const ref = which === 'front' ? frontRef : which === 'spine' ? spineRef : tracklistRef;
-    const svg = ref.current;
-    if (!svg) return;
-    setExporting(which);
+  async function onExport() {
+    setExporting(true);
     try {
       const base = [data.artist, data.album].map(slug).filter(Boolean).join('-') || 'minidisc';
-      const dims = which === 'front' ? frontSize : which === 'spine' ? spineSize : tracklistSize;
-      await exportSvgToPng(svg, {
-        fontFamily: data.fontFamily,
-        widthMm: dims.width,
-        heightMm: dims.height,
-        filename: `${base}-${which}.png`,
-      });
+      const labels: ZipLabel[] = [];
+      if (frontRef.current)
+        labels.push({
+          svg: frontRef.current,
+          widthMm: frontSize.width,
+          heightMm: frontSize.height,
+          name: 'front.png',
+        });
+      if (spineRef.current)
+        labels.push({
+          svg: spineRef.current,
+          widthMm: spineSize.width,
+          heightMm: spineSize.height,
+          name: 'spine.png',
+        });
+      if (showTracklist && tracklistRef.current)
+        labels.push({
+          svg: tracklistRef.current,
+          widthMm: tracklistSize.width,
+          heightMm: tracklistSize.height,
+          name: 'tracklist.png',
+        });
+      await downloadLabelsZip(labels, data.fontFamily, `${base}-minidisc-labels.zip`);
     } catch (err) {
       console.error(err);
       setFontError('Export failed — see console for details.');
     } finally {
-      setExporting(null);
+      setExporting(false);
     }
   }
 

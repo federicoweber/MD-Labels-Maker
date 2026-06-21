@@ -33,9 +33,13 @@
 
 @theme inline {
   /* FX300 Angular (WipEout) everywhere in the UI — more readable than F500. */
-  --font-sans: 'FX300 Angular', 'Roboto Mono', monospace;
-  --font-mono: 'FX300 Angular', 'Roboto Mono', monospace;
-  --font-display: 'FX300 Angular', 'Roboto Mono', monospace;
+  /* WipEout typography: angular display font for headings, system sans for the
+     smaller UI (bold), matching wipeout3.app. */
+  --font-sans: ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial,
+    sans-serif;
+  --font-mono: ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial,
+    sans-serif;
+  --font-display: 'FX300 Angular', ui-sans-serif, sans-serif;
 
   --radius-sm: calc(var(--radius) - 4px);
   --radius-md: calc(var(--radius) - 2px);
@@ -74,17 +78,23 @@
   body {
     @apply bg-background text-foreground;
     font-family: var(--font-sans);
-    letter-spacing: 0.12em;
+    letter-spacing: 0.02em;
   }
-  /* FX300 Angular display font for prominent UI chrome. */
-  h1,
+  /* Angular display font for the big title. */
+  h1 {
+    font-family: var(--font-display);
+    letter-spacing: 0.04em;
+  }
+  /* Smaller UI chrome: bold uppercase system sans (WipEout style). */
   h2,
   h3,
   label,
   button,
-  select {
-    font-family: var(--font-display);
-    letter-spacing: 0.12em;
+  select,
+  [role='tab'] {
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
   }
 }
 
@@ -98,6 +108,11 @@
 .shadow-xl,
 .shadow-2xl {
   box-shadow: none;
+}
+
+/* WipEout dog-ear: a small clipped top-right corner for buttons and tabs. */
+.notch-tr {
+  clip-path: polygon(0 0, calc(100% - 0.5rem) 0, 100% 0.5rem, 100% 100%, 0 100%);
 }
 
 /* Inline editable label fields inherit the label's own colour. */
