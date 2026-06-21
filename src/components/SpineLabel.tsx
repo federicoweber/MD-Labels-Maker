@@ -11,7 +11,7 @@ const SpineLabel = forwardRef<SVGSVGElement, Props>(function SpineLabel(
 ) {
   const { width: W, height: H } = size;
   const caption =
-    showArtist && artist ? `${album || 'Title'} - ${artist}` : album || 'Title';
+    showArtist && artist ? `${album || 'Album'} - ${artist}` : album || 'Album';
   return (
     <svg
       ref={ref}

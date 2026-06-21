@@ -12,7 +12,7 @@ export interface TypoField {
   linkSwitch?: { checked: boolean; onChange: (v: boolean) => void };
   font?: { value: string; onChange: (family: string) => void };
   size: { id: string; value: number; min: number; max: number; onChange: (v: number) => void };
-  opacity: { id: string; value: number; onChange: (v: number) => void };
+  opacity?: { id: string; value: number; onChange: (v: number) => void };
 }
 
 interface Props {
@@ -61,7 +61,7 @@ export default function LabelControls({ fields, families, fontsLoading, data, up
               </div>
               {f.linkSwitch && (
                 <div className="flex items-center justify-between">
-                  <Label htmlFor={`${f.key}-link`}>Same font as title</Label>
+                  <Label htmlFor={`${f.key}-link`}>Same font as album</Label>
                   <Switch
                     id={`${f.key}-link`}
                     checked={f.linkSwitch.checked}
@@ -88,16 +88,18 @@ export default function LabelControls({ fields, families, fontsLoading, data, up
                 max={f.size.max}
                 onChange={f.size.onChange}
               />
-              <SizeSlider
-                id={f.opacity.id}
-                label="Opacity"
-                value={f.opacity.value}
-                min={0}
-                max={1}
-                step={0.05}
-                format={(v) => `${Math.round(v * 100)}%`}
-                onChange={f.opacity.onChange}
-              />
+              {f.opacity && (
+                <SizeSlider
+                  id={f.opacity.id}
+                  label="Opacity"
+                  value={f.opacity.value}
+                  min={0}
+                  max={1}
+                  step={0.05}
+                  format={(v) => `${Math.round(v * 100)}%`}
+                  onChange={f.opacity.onChange}
+                />
+              )}
             </div>
           ))}
 

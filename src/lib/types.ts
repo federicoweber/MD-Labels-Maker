@@ -31,4 +31,10 @@ export interface LabelData {
   lineHeight: number;
   /** Tracklist text, one track per line (for the optional jewel-case sheet). */
   tracklist: string;
+  /** Show a miniature cover next to the tracklist header. */
+  showTracklistCover: boolean;
+  /** Album year, shown bottom-left of the front label when enabled. */
+  year: string;
+  showYear: boolean;
+  yearSize: number;
 }

@@ -12,6 +12,7 @@ const { padding, titleSize, artistSize } = TRACKLIST;
  */
 const TracklistSheet = forwardRef<SVGSVGElement, Props>(function TracklistSheet(
   {
+    coverDataUrl,
     album,
     artist,
     tracklist,
@@ -21,6 +22,7 @@ const TracklistSheet = forwardRef<SVGSVGElement, Props>(function TracklistSheet(
     artistFont,
     trackFont,
     showArtist,
+    showTracklistCover,
     trackSize,
     titleOpacity,
     artistOpacity,
@@ -56,6 +58,17 @@ const TracklistSheet = forwardRef<SVGSVGElement, Props>(function TracklistSheet(
     >
       <rect x={0} y={0} width={W} height={H} fill={bgColor} />
 
+      {showTracklistCover && coverDataUrl && (
+        <image
+          href={coverDataUrl}
+          x={W - padding - (ruleY - padding)}
+          y={padding}
+          width={ruleY - padding}
+          height={ruleY - padding}
+          preserveAspectRatio="xMidYMid slice"
+        />
+      )}
+
       <text
         x={padding}
         y={titleY}
@@ -66,7 +79,7 @@ const TracklistSheet = forwardRef<SVGSVGElement, Props>(function TracklistSheet(
         fillOpacity={titleOpacity}
         letterSpacing={titleSize * letterSpacing}
       >
-        {album || 'Title'}
+        {album || 'Album'}
       </text>
       {showArtist && (
         <text
@@ -78,7 +91,7 @@ const TracklistSheet = forwardRef<SVGSVGElement, Props>(function TracklistSheet(
           fillOpacity={artistOpacity}
           letterSpacing={artistSize * letterSpacing}
         >
-          {artist || 'Subtitle'}
+          {artist || 'Artist'}
         </text>
       )}
 

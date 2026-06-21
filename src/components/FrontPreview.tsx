@@ -1,5 +1,5 @@
 import { useEffect, useLayoutEffect, useRef, useState } from 'react';
-import { X } from 'lucide-react';
+import { ChevronLeft, ChevronRight, X } from 'lucide-react';
 import type { LabelData } from '@/lib/types';
 import { FRONT, PREVIEW_PX_PER_MM as S, frontCoverSize, type SizePreset } from '@/lib/dimensions';
 
@@ -7,6 +7,10 @@ interface Props {
   data: LabelData;
   size: SizePreset;
   update: (patch: Partial<LabelData>) => void;
+  onCover: (dataUrl: string | null) => void;
+  coverCount: number;
+  coverIndex: number;
+  onCycleCover: (dir: number) => void;
 }
 
 function readImageFile(file: File): Promise<string> {
@@ -22,7 +26,15 @@ function readImageFile(file: File): Promise<string> {
  * Editable front-label preview: drop/click the cover on it, and type a
  * multiline title + optional artist in place. The hidden SVG twin exports.
  */
-export default function FrontPreview({ data, size, update }: Props) {
+export default function FrontPreview({
+  data,
+  size,
+  update,
+  onCover,
+  coverCount,
+  coverIndex,
+  onCycleCover,
+}: Props) {
   const fileInput = useRef<HTMLInputElement>(null);
   const [dragOver, setDragOver] = useState(false);
   const [pageDragging, setPageDragging] = useState(false);
@@ -60,7 +72,7 @@ export default function FrontPreview({ data, size, update }: Props) {
   async function handleFiles(files: FileList | null) {
     const file = files?.[0];
     if (!file || !file.type.startsWith('image/')) return;
-    update({ coverDataUrl: await readImageFile(file) });
+    onCover(await readImageFile(file));
   }
 
   return (
@@ -121,12 +133,41 @@ export default function FrontPreview({ data, size, update }: Props) {
             </span>
           </div>
         )}
+        {data.coverDataUrl && coverCount > 1 && (
+          <>
+            <button
+              type="button"
+              aria-label="Previous cover"
+              onClick={(e) => {
+                e.stopPropagation();
+                onCycleCover(-1);
+              }}
+              className="absolute top-1/2 left-1 grid size-5 -translate-y-1/2 place-items-center bg-black/55 text-white"
+            >
+              <ChevronLeft size={14} />
+            </button>
+            <button
+              type="button"
+              aria-label="Next cover"
+              onClick={(e) => {
+                e.stopPropagation();
+                onCycleCover(1);
+              }}
+              className="absolute top-1/2 right-1 grid size-5 -translate-y-1/2 place-items-center bg-black/55 text-white"
+            >
+              <ChevronRight size={14} />
+            </button>
+            <span className="absolute right-1 bottom-1 bg-black/55 px-1 text-[9px] text-white">
+              {coverIndex + 1}/{coverCount}
+            </span>
+          </>
+        )}
       </div>
 
       {data.coverDataUrl && (
         <button
           type="button"
-          onClick={() => update({ coverDataUrl: null })}
+          onClick={() => onCover(null)}
           className="absolute top-1 grid size-5 place-items-center rounded-sm bg-black/55 text-white"
           aria-label="Remove cover"
           style={{ left: CH }}
@@ -148,7 +189,7 @@ export default function FrontPreview({ data, size, update }: Props) {
       >
         <AutoTextarea
           value={data.album}
-          placeholder="Title"
+          placeholder="Album"
           onChange={(v) => update({ album: v })}
           style={{
             fontFamily: data.titleFont,
@@ -172,11 +213,29 @@ export default function FrontPreview({ data, size, update }: Props) {
               letterSpacing: `${data.letterSpacing}em`,
             }}
             value={data.artist}
-            placeholder="Subtitle"
+            placeholder="Artist"
             onChange={(e) => update({ artist: e.target.value })}
           />
         )}
       </div>
+
+      {data.showYear && (
+        <input
+          className="label-field absolute bg-transparent p-0 outline-none"
+          style={{
+            left: (portrait ? 0 : cover) + PAD,
+            bottom: PAD * 0.6,
+            width: 70,
+            fontFamily: data.artistFont,
+            fontSize: data.yearSize * S,
+            color: data.textColor,
+            opacity: data.artistOpacity,
+          }}
+          value={data.year}
+          placeholder="Year"
+          onChange={(e) => update({ year: e.target.value })}
+        />
+      )}
 
       {/* Border tracing the chamfered outline (clipped to half-width = uniform edge) */}
       <svg

@@ -7,8 +7,8 @@ export default function SpinePreview({ data, size }: { data: LabelData; size: Si
   const H = size.height * S;
   const caption =
     data.showArtist && data.artist
-      ? `${data.album || 'Title'} - ${data.artist}`
-      : data.album || 'Title';
+      ? `${data.album || 'Album'} - ${data.artist}`
+      : data.album || 'Album';
   return (
     <div
       className="flex items-center justify-center overflow-hidden"

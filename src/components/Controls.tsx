@@ -14,7 +14,7 @@ export default function Controls({ onExport, exporting }: ControlsProps) {
       </header>
 
       <p className="text-xs text-muted-foreground">
-        Drop an album cover onto a label, then type the title, subtitle and tracks straight onto it.
+        Drop an album cover onto a label, then type the album, artist and tracks straight onto it.
         Click any text to change its font, size, colour and opacity.
       </p>
 

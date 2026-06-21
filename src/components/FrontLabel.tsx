@@ -24,6 +24,9 @@ const FrontLabel = forwardRef<SVGSVGElement, Props>(function FrontLabel(
     titleOpacity,
     artistOpacity,
     showArtist,
+    year,
+    showYear,
+    yearSize,
     letterSpacing,
     lineHeight,
     size,
@@ -39,7 +42,7 @@ const FrontLabel = forwardRef<SVGSVGElement, Props>(function FrontLabel(
   const textTop = (portrait ? cover : 0) + padding;
   const textMaxWidth = (portrait ? W : W - cover) - 2 * padding;
 
-  const titleLines = wrapText(album || 'Title', titleFont, titleSize, textMaxWidth, 700);
+  const titleLines = wrapText(album || 'Album', titleFont, titleSize, textMaxWidth, 700);
   const titleLH = titleSize * lineHeight;
   const firstBaseline = textTop + titleSize * 0.85;
   const lastTitleBaseline = firstBaseline + (titleLines.length - 1) * titleLH;
@@ -115,7 +118,20 @@ const FrontLabel = forwardRef<SVGSVGElement, Props>(function FrontLabel(
             fontSize={artistSize}
             letterSpacing={artistSize * letterSpacing}
           >
-            {artist || 'Subtitle'}
+            {artist || 'Artist'}
+          </text>
+        )}
+        {showYear && year && (
+          <text
+            x={textX}
+            y={H - padding}
+            fill={textColor}
+            fillOpacity={artistOpacity}
+            fontFamily={artistFont}
+            fontSize={yearSize}
+            letterSpacing={yearSize * letterSpacing}
+          >
+            {year}
           </text>
         )}
       </g>
