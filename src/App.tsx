@@ -11,6 +11,7 @@ import SizeSelect from '@/components/SizeSelect';
 import SizeSlider from '@/components/SizeSlider';
 import LabelControls, { type TypoField } from '@/components/LabelControls';
 import Controls from '@/components/Controls';
+import ConfirmModal from '@/components/ConfirmModal';
 import MdLogo from '@/components/MdLogo';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
@@ -72,6 +73,34 @@ const INITIAL: LabelData = {
   tracklist: '',
 };
 
+// "Automatic" artist/year derive their font + size from the album via a type scale.
+const TYPE_SCALE = 1.25;
+
+function effFor(d: LabelData): LabelData {
+  return {
+    ...d,
+    artistFont: d.artistAuto ? d.titleFont : d.artistFont,
+    artistSize: d.artistAuto ? d.titleSize / TYPE_SCALE : d.artistSize,
+    yearFont: d.yearAuto ? d.titleFont : d.yearFont,
+    yearSize: d.yearAuto ? d.titleSize / (TYPE_SCALE * TYPE_SCALE) : d.yearSize,
+  };
+}
+
+/** Tracklist + jewel-case spine data: mirror the front when synced (tracks use
+ * the artist font), otherwise the tracklist's own colours/spacing. */
+function tlEffFor(d: LabelData): LabelData {
+  const e = effFor(d);
+  return d.tlSync
+    ? { ...e, trackFont: e.artistFont }
+    : {
+        ...e,
+        bgColor: d.tlBgColor,
+        textColor: d.tlTextColor,
+        letterSpacing: d.tlLetterSpacing,
+        lineHeight: d.tlLineHeight,
+      };
+}
+
 function slug(s: string): string {
   return s
     .trim()
@@ -129,7 +158,17 @@ function CoverControl({
 }
 
 export default function App() {
-  const [data, setData] = useState<LabelData>(() => loadDiscs(INITIAL)[0]);
+  const [discs, setDiscs] = useState<LabelData[]>(() => loadDiscs(INITIAL));
+  const [activeIndex, setActiveIndex] = useState(0);
+  const active = Math.min(activeIndex, discs.length - 1);
+  const data = discs[active] ?? INITIAL;
+  const setData = (updater: LabelData | ((d: LabelData) => LabelData)) =>
+    setDiscs((ds) =>
+      ds.map((d, i) =>
+        i === active ? (typeof updater === 'function' ? updater(d) : updater) : d,
+      ),
+    );
+
   const [palette, setPalette] = useState<string[]>([]);
   const [coverOptions, setCoverOptions] = useState<string[]>([]);
   const [coverIndex, setCoverIndex] = useState(0);
@@ -149,11 +188,10 @@ export default function App() {
   const [fontsLoading, setFontsLoading] = useState(true);
   const [tracklistLoading, setTracklistLoading] = useState(false);
   const [exporting, setExporting] = useState(false);
+  const [deleteIndex, setDeleteIndex] = useState<number | null>(null);
 
-  const frontRef = useRef<SVGSVGElement>(null);
-  const spineRef = useRef<SVGSVGElement>(null);
-  const caseSpineRef = useRef<SVGSVGElement>(null);
-  const tracklistRef = useRef<SVGSVGElement>(null);
+  // Per-disc hidden SVG twins for export, keyed `${index}-${kind}`.
+  const twinRefs = useRef<Record<string, SVGSVGElement | null>>({});
 
   useEffect(() => {
     let cancelled = false;
@@ -172,19 +210,53 @@ export default function App() {
     setData((d) => ({ ...d, ...patch }));
   }
 
-  // Persist to local storage (as an array, ready for multiple discs).
+  // Persist all discs to local storage.
   useEffect(() => {
-    saveDiscs([data]);
-  }, [data]);
+    saveDiscs(discs);
+  }, [discs]);
 
-  // Reset the current disc to a blank state.
-  function clearDisc() {
+  const coverSig = (d: LabelData) =>
+    [d.coverDataUrl, d.doubleAlbum ? d.coverDataUrl2 : null].filter(Boolean).join('|');
+
+  // Reset the cover-fetch UI when the active disc changes; seed autoColoredFor
+  // with the target disc's cover so its saved colours aren't re-derived.
+  function resetCoverUi(d: LabelData | null) {
     setCoverOptions([]);
     setCoverIndex(0);
     setCoverOptions2([]);
     setCoverIndex2(0);
     lastCoverKey.current = '';
     lastCoverKey2.current = '';
+    autoColoredFor.current = d ? coverSig(d) : '';
+  }
+
+  function selectDisc(i: number) {
+    resetCoverUi(discs[i] ?? null);
+    setActiveIndex(i);
+  }
+
+  function addDisc() {
+    resetCoverUi(null);
+    setDiscs((ds) => [...ds, INITIAL]);
+    setActiveIndex(discs.length);
+  }
+
+  function deleteDisc(i: number) {
+    setDeleteIndex(null);
+    const remaining = discs.filter((_, idx) => idx !== i);
+    const next = remaining.length ? remaining : [INITIAL];
+    let na = activeIndex;
+    if (i < activeIndex) na -= 1;
+    else if (i === activeIndex) na = Math.min(activeIndex, next.length - 1);
+    na = Math.max(0, Math.min(na, next.length - 1));
+    resetCoverUi(next[na] ?? null);
+    setDiscs(next);
+    setActiveIndex(na);
+  }
+
+  // Reset the current disc to a blank state.
+  function clearDisc() {
+    resetCoverUi(null);
     setData(INITIAL);
   }
 
@@ -360,44 +432,34 @@ export default function App() {
   async function onExport() {
     setExporting(true);
     try {
-      const base = [data.artist, data.album].map(slug).filter(Boolean).join('-') || 'minidisc';
       const labels: ZipLabel[] = [];
-      if (frontRef.current)
-        labels.push({
-          svg: frontRef.current,
-          widthMm: frontSize.width,
-          heightMm: frontSize.height,
-          name: 'front.png',
-        });
-      if (spineRef.current)
-        labels.push({
-          svg: spineRef.current,
-          widthMm: spineSize.width,
-          heightMm: spineSize.height,
-          name: 'spine.png',
-        });
-      // The jewel-case spine (its own size) for the case that holds the tracklist.
-      if (data.showTracklist && caseSpineRef.current)
-        labels.push({
-          svg: caseSpineRef.current,
-          widthMm: caseSpineSize.width,
-          heightMm: caseSpineSize.height,
-          name: 'spine-jewel-case.png',
-        });
-      if (data.showTracklist && tracklistRef.current)
-        labels.push({
-          svg: tracklistRef.current,
-          widthMm: tracklistSize.width,
-          heightMm: tracklistSize.height,
-          name: 'tracklist.png',
-        });
-      const fonts = [
-        data.titleFont,
-        data.artistAuto ? data.titleFont : data.artistFont,
-        data.trackFont,
-        data.yearAuto ? data.titleFont : data.yearFont,
-      ];
-      await downloadLabelsZip(labels, fonts, `${base}-minidisc-labels.zip`);
+      const fonts = new Set<string>();
+      const multi = discs.length > 1;
+      discs.forEach((disc, i) => {
+        const base = [disc.artist, disc.album].map(slug).filter(Boolean).join('-') || 'minidisc';
+        const prefix = multi ? `${String(i + 1).padStart(2, '0')}-${base}/` : '';
+        const get = (kind: string) => twinRefs.current[`${i}-${kind}`];
+        const front = get('front');
+        const spine = get('spine');
+        const caseSpine = get('case-spine');
+        const tracklist = get('tracklist');
+        if (front)
+          labels.push({ svg: front, widthMm: frontSize.width, heightMm: frontSize.height, name: `${prefix}front.png` });
+        if (spine)
+          labels.push({ svg: spine, widthMm: spineSize.width, heightMm: spineSize.height, name: `${prefix}spine.png` });
+        if (disc.showTracklist && caseSpine)
+          labels.push({ svg: caseSpine, widthMm: caseSpineSize.width, heightMm: caseSpineSize.height, name: `${prefix}spine-jewel-case.png` });
+        if (disc.showTracklist && tracklist)
+          labels.push({ svg: tracklist, widthMm: tracklistSize.width, heightMm: tracklistSize.height, name: `${prefix}tracklist.png` });
+        fonts.add(disc.titleFont);
+        fonts.add(disc.artistAuto ? disc.titleFont : disc.artistFont);
+        fonts.add(disc.trackFont);
+        fonts.add(disc.yearAuto ? disc.titleFont : disc.yearFont);
+      });
+      const zipBase = multi
+        ? 'minidisc'
+        : [data.artist, data.album].map(slug).filter(Boolean).join('-') || 'minidisc';
+      await downloadLabelsZip(labels, [...fonts], `${zipBase}-minidisc-labels.zip`);
     } catch (err) {
       console.error('Export failed:', err);
     } finally {
@@ -476,32 +538,20 @@ export default function App() {
     },
   ];
 
-  // Effective rendering data: in "automatic" mode the artist/year derive their
-  // font + size from the album via a type scale.
-  const TYPE_SCALE = 1.25;
-  const eff: LabelData = {
-    ...data,
-    artistFont: data.artistAuto ? data.titleFont : data.artistFont,
-    artistSize: data.artistAuto ? data.titleSize / TYPE_SCALE : data.artistSize,
-    yearFont: data.yearAuto ? data.titleFont : data.yearFont,
-    yearSize: data.yearAuto ? data.titleSize / (TYPE_SCALE * TYPE_SCALE) : data.yearSize,
-  };
-
-  // Tracklist + jewel-case spine colours/spacing: mirror the front when synced
-  // (tracks follow the artist font), otherwise use the tracklist's own.
-  const tlEff: LabelData = data.tlSync
-    ? { ...eff, trackFont: eff.artistFont }
-    : {
-        ...eff,
-        bgColor: data.tlBgColor,
-        textColor: data.tlTextColor,
-        letterSpacing: data.tlLetterSpacing,
-        lineHeight: data.tlLineHeight,
-      };
+  const eff = effFor(data);
+  const tlEff = tlEffFor(data);
 
   return (
     <div className="flex h-svh overflow-hidden">
-      <Controls onExport={onExport} exporting={exporting} />
+      <Controls
+        discs={discs}
+        activeIndex={active}
+        onSelect={selectDisc}
+        onAdd={addDisc}
+        onRequestDelete={setDeleteIndex}
+        onExport={onExport}
+        exporting={exporting}
+      />
 
       <main className="flex flex-1 flex-wrap content-start items-start gap-36 overflow-auto bg-background p-12 pt-5">
         <section className="flex flex-col gap-2">
@@ -727,13 +777,35 @@ export default function App() {
 
       <MdLogo className="fixed right-5 bottom-5 z-10" />
 
-      {/* Hidden SVG twins — the precise, vector source used for PNG export. */}
+      {/* Hidden SVG twins for every disc — the precise vector source for export. */}
       <div aria-hidden className="pointer-events-none fixed top-0 -left-[99999px] opacity-0">
-        <FrontLabel ref={frontRef} {...eff} size={frontSize} />
-        <SpineLabel ref={spineRef} {...eff} size={spineSize} />
-        <SpineLabel ref={caseSpineRef} {...tlEff} size={caseSpineSize} />
-        <TracklistSheet ref={tracklistRef} {...tlEff} size={tracklistSize} />
+        {discs.map((disc, i) => {
+          const e = effFor(disc);
+          const te = tlEffFor(disc);
+          return (
+            <div key={i}>
+              <FrontLabel ref={(el) => void (twinRefs.current[`${i}-front`] = el)} {...e} size={frontSize} />
+              <SpineLabel ref={(el) => void (twinRefs.current[`${i}-spine`] = el)} {...e} size={spineSize} />
+              <SpineLabel ref={(el) => void (twinRefs.current[`${i}-case-spine`] = el)} {...te} size={caseSpineSize} />
+              <TracklistSheet ref={(el) => void (twinRefs.current[`${i}-tracklist`] = el)} {...te} size={tracklistSize} />
+            </div>
+          );
+        })}
       </div>
+
+      <ConfirmModal
+        open={deleteIndex !== null}
+        title="Delete this label?"
+        message={
+          deleteIndex !== null
+            ? `“${discs[deleteIndex]?.album || 'Untitled'}${
+                discs[deleteIndex]?.artist ? ` — ${discs[deleteIndex]?.artist}` : ''
+              }” will be removed.`
+            : ''
+        }
+        onConfirm={() => deleteIndex !== null && deleteDisc(deleteIndex)}
+        onCancel={() => setDeleteIndex(null)}
+      />
     </div>
   );
 }
