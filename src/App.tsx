@@ -9,6 +9,7 @@ import TracklistPreview from '@/components/TracklistPreview';
 import SizeSelect from '@/components/SizeSelect';
 import LabelControls, { type TypoField } from '@/components/LabelControls';
 import Controls from '@/components/Controls';
+import MdLogo from '@/components/MdLogo';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { fetchFontList, loadFontForPreview } from '@/lib/fonts';
@@ -185,12 +186,7 @@ export default function App() {
 
   return (
     <div className="flex h-svh overflow-hidden">
-      <Controls
-        showTracklist={showTracklist}
-        onToggleTracklist={setShowTracklist}
-        onExport={onExport}
-        exporting={exporting}
-      />
+      <Controls onExport={onExport} exporting={exporting} />
 
       <main className="flex flex-1 flex-wrap content-start items-start gap-12 overflow-auto bg-background p-12">
         <section className="flex flex-col gap-2">
@@ -198,13 +194,19 @@ export default function App() {
           <FrontPreview data={data} size={frontSize} update={update} />
           <div className="flex w-full items-center justify-between">
             <Label htmlFor="show-subtitle" className="text-xs">
-              Show subtitle
+              Subtitle
             </Label>
             <Switch
               id="show-subtitle"
               checked={data.showArtist}
               onCheckedChange={(v) => update({ showArtist: v })}
             />
+          </div>
+          <div className="flex w-full items-center justify-between">
+            <Label htmlFor="show-tracklist" className="text-xs">
+              Tracklist
+            </Label>
+            <Switch id="show-tracklist" checked={showTracklist} onCheckedChange={setShowTracklist} />
           </div>
           <LabelControls
             fields={frontFields}
@@ -241,6 +243,8 @@ export default function App() {
           </section>
         )}
       </main>
+
+      <MdLogo className="fixed right-5 bottom-5 z-10" />
 
       {/* Hidden SVG twins — the precise, vector source used for PNG export. */}
       <div aria-hidden className="pointer-events-none fixed top-0 -left-[99999px] opacity-0">
