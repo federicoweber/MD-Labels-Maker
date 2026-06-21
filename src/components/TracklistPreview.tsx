@@ -137,7 +137,7 @@ function TrackEditor({
           [...e.currentTarget.querySelectorAll('li')].map((li) => li.textContent ?? '').join('\n'),
         )
       }
-      className="track-ol label-field flex-1 overflow-hidden outline-none"
+      className="track-ol label-field min-h-0 flex-1 overflow-hidden outline-none"
       style={{ columns: 2, columnFill: 'auto', listStyleType: 'decimal', listStylePosition: 'inside', margin: 0, padding: 0, ...style }}
     />
   );

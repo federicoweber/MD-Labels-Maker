@@ -30,7 +30,7 @@ export const SPINE_PRESETS: SizePreset[] = [
 
 /** Optional tracklist sheet for the MD jewel case. */
 export const TRACKLIST = {
-  padding: 4,
+  padding: 2.5,
   titleSize: 4,
   artistSize: 2.8,
   trackSize: 2.4,
