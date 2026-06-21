@@ -12,7 +12,9 @@ import SizeSlider from '@/components/SizeSlider';
 import LabelControls, { type TypoField } from '@/components/LabelControls';
 import Controls from '@/components/Controls';
 import ConfirmModal from '@/components/ConfirmModal';
+import PrintView from '@/components/PrintView';
 import MdLogo from '@/components/MdLogo';
+import { effFor, tlEffFor } from '@/lib/derive';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { Button } from '@/components/ui/button';
@@ -72,34 +74,6 @@ const INITIAL: LabelData = {
   showTracklist: false,
   tracklist: '',
 };
-
-// "Automatic" artist/year derive their font + size from the album via a type scale.
-const TYPE_SCALE = 1.25;
-
-function effFor(d: LabelData): LabelData {
-  return {
-    ...d,
-    artistFont: d.artistAuto ? d.titleFont : d.artistFont,
-    artistSize: d.artistAuto ? d.titleSize / TYPE_SCALE : d.artistSize,
-    yearFont: d.yearAuto ? d.titleFont : d.yearFont,
-    yearSize: d.yearAuto ? d.titleSize / (TYPE_SCALE * TYPE_SCALE) : d.yearSize,
-  };
-}
-
-/** Tracklist + jewel-case spine data: mirror the front when synced (tracks use
- * the artist font), otherwise the tracklist's own colours/spacing. */
-function tlEffFor(d: LabelData): LabelData {
-  const e = effFor(d);
-  return d.tlSync
-    ? { ...e, trackFont: e.artistFont }
-    : {
-        ...e,
-        bgColor: d.tlBgColor,
-        textColor: d.tlTextColor,
-        letterSpacing: d.tlLetterSpacing,
-        lineHeight: d.tlLineHeight,
-      };
-}
 
 function slug(s: string): string {
   return s
@@ -189,6 +163,7 @@ export default function App() {
   const [tracklistLoading, setTracklistLoading] = useState(false);
   const [exporting, setExporting] = useState(false);
   const [deleteIndex, setDeleteIndex] = useState<number | null>(null);
+  const [printOpen, setPrintOpen] = useState(false);
 
   // Per-disc hidden SVG twins for export, keyed `${index}-${kind}`.
   const twinRefs = useRef<Record<string, SVGSVGElement | null>>({});
@@ -550,6 +525,7 @@ export default function App() {
         onAdd={addDisc}
         onRequestDelete={setDeleteIndex}
         onExport={onExport}
+        onPrint={() => setPrintOpen(true)}
         exporting={exporting}
       />
 
@@ -806,6 +782,17 @@ export default function App() {
         onConfirm={() => deleteIndex !== null && deleteDisc(deleteIndex)}
         onCancel={() => setDeleteIndex(null)}
       />
+
+      {printOpen && (
+        <PrintView
+          discs={discs}
+          frontSize={frontSize}
+          spineSize={spineSize}
+          caseSpineSize={caseSpineSize}
+          tracklistSize={tracklistSize}
+          onClose={() => setPrintOpen(false)}
+        />
+      )}
     </div>
   );
 }

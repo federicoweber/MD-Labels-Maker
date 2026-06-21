@@ -1,4 +1,4 @@
-import { Download, Plus, X } from 'lucide-react';
+import { Download, Plus, Printer, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import type { LabelData } from '@/lib/types';
 
@@ -9,6 +9,7 @@ interface ControlsProps {
   onAdd: () => void;
   onRequestDelete: (i: number) => void;
   onExport: () => void;
+  onPrint: () => void;
   exporting: boolean;
 }
 
@@ -22,6 +23,7 @@ export default function Controls({
   onAdd,
   onRequestDelete,
   onExport,
+  onPrint,
   exporting,
 }: ControlsProps) {
   return (
@@ -66,9 +68,14 @@ export default function Controls({
         ))}
       </div>
 
-      <Button onClick={onExport} disabled={exporting}>
-        <Download /> {exporting ? 'Exporting…' : 'Download labels (.zip)'}
-      </Button>
+      <div className="flex flex-col gap-2">
+        <Button onClick={onExport} disabled={exporting}>
+          <Download /> {exporting ? 'Exporting…' : 'Download labels (.zip)'}
+        </Button>
+        <Button variant="outline" onClick={onPrint}>
+          <Printer /> Print…
+        </Button>
+      </div>
     </aside>
   );
 }
