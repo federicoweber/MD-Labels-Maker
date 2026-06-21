@@ -21,6 +21,8 @@ const FrontLabel = forwardRef<SVGSVGElement, Props>(function FrontLabel(
     artistFont,
     titleSize,
     artistSize,
+    titleOpacity,
+    artistOpacity,
     showArtist,
     letterSpacing,
     lineHeight,
@@ -91,6 +93,7 @@ const FrontLabel = forwardRef<SVGSVGElement, Props>(function FrontLabel(
 
         <text
           fill={textColor}
+          fillOpacity={titleOpacity}
           fontFamily={titleFont}
           fontSize={titleSize}
           fontWeight={700}
@@ -107,6 +110,7 @@ const FrontLabel = forwardRef<SVGSVGElement, Props>(function FrontLabel(
             x={textX}
             y={artistBaseline}
             fill={textColor}
+            fillOpacity={artistOpacity}
             fontFamily={artistFont}
             fontSize={artistSize}
             letterSpacing={artistSize * letterSpacing}

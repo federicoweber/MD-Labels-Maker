@@ -7,7 +7,7 @@ import FrontPreview from '@/components/FrontPreview';
 import SpinePreview from '@/components/SpinePreview';
 import TracklistPreview from '@/components/TracklistPreview';
 import SizeSelect from '@/components/SizeSelect';
-import LabelControls from '@/components/LabelControls';
+import LabelControls, { type TypoField } from '@/components/LabelControls';
 import Controls from '@/components/Controls';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
@@ -37,6 +37,9 @@ const INITIAL: LabelData = {
   artistSize: FRONT.artistSize,
   showArtist: true,
   trackSize: TRACKLIST.trackSize,
+  titleOpacity: 1,
+  artistOpacity: 1,
+  trackOpacity: 1,
   letterSpacing: 0,
   lineHeight: 1.2,
   tracklist: '',
@@ -59,7 +62,6 @@ export default function App() {
   const [families, setFamilies] = useState<string[]>([]);
   const [fontsLoading, setFontsLoading] = useState(true);
   const [showTracklist, setShowTracklist] = useState(false);
-  const [focusedField, setFocusedField] = useState<'title' | 'artist' | 'track' | null>(null);
   const [exporting, setExporting] = useState(false);
 
   const frontRef = useRef<SVGSVGElement>(null);
@@ -148,6 +150,39 @@ export default function App() {
     }
   }
 
+  const frontFields: TypoField[] = [
+    {
+      key: 'title',
+      title: 'Title',
+      font: { value: data.titleFont, onChange: (f) => onFontSelect('title', f) },
+      size: { id: 'title-size', value: data.titleSize, min: 2, max: 10, onChange: (v) => update({ titleSize: v }) },
+      opacity: { id: 'title-opacity', value: data.titleOpacity, onChange: (v) => update({ titleOpacity: v }) },
+    },
+  ];
+  if (data.showArtist) {
+    frontFields.push({
+      key: 'subtitle',
+      title: 'Subtitle',
+      linkSwitch: {
+        checked: data.linkFonts,
+        onChange: (v) => update(v ? { linkFonts: true, artistFont: data.titleFont } : { linkFonts: false }),
+      },
+      font: data.linkFonts ? undefined : { value: data.artistFont, onChange: (f) => onFontSelect('artist', f) },
+      size: { id: 'subtitle-size', value: data.artistSize, min: 1.5, max: 7, onChange: (v) => update({ artistSize: v }) },
+      opacity: { id: 'subtitle-opacity', value: data.artistOpacity, onChange: (v) => update({ artistOpacity: v }) },
+    });
+  }
+
+  const trackFields: TypoField[] = [
+    {
+      key: 'track',
+      title: 'Track',
+      font: { value: data.trackFont, onChange: (f) => onFontSelect('track', f) },
+      size: { id: 'track-size', value: data.trackSize, min: 1.5, max: 5, onChange: (v) => update({ trackSize: v }) },
+      opacity: { id: 'track-opacity', value: data.trackOpacity, onChange: (v) => update({ trackOpacity: v }) },
+    },
+  ];
+
   return (
     <div className="flex h-svh overflow-hidden">
       <Controls
@@ -160,7 +195,7 @@ export default function App() {
       <main className="flex flex-1 flex-wrap content-start items-start gap-12 overflow-auto bg-background p-12">
         <section className="flex flex-col gap-2">
           <SizeSelect label="Front" value={frontSize} presets={FRONT_PRESETS} onChange={setFrontSize} />
-          <FrontPreview data={data} size={frontSize} update={update} onFocusField={setFocusedField} />
+          <FrontPreview data={data} size={frontSize} update={update} />
           <div className="flex w-full items-center justify-between">
             <Label htmlFor="show-subtitle" className="text-xs">
               Show subtitle
@@ -171,25 +206,14 @@ export default function App() {
               onCheckedChange={(v) => update({ showArtist: v })}
             />
           </div>
-          {(focusedField === 'title' || focusedField === 'artist') && (
-            <LabelControls
-              sizeId={`${focusedField}-size`}
-              sizeLabel={focusedField === 'artist' ? 'Subtitle size' : 'Title size'}
-              sizeValue={focusedField === 'artist' ? data.artistSize : data.titleSize}
-              sizeMin={focusedField === 'artist' ? 1.5 : 2}
-              sizeMax={focusedField === 'artist' ? 7 : 10}
-              onSize={(v) => update(focusedField === 'artist' ? { artistSize: v } : { titleSize: v })}
-              fontValue={focusedField === 'artist' ? data.artistFont : data.titleFont}
-              onFontChange={(f) => onFontSelect(focusedField === 'artist' ? 'artist' : 'title', f)}
-              showFont={!(focusedField === 'artist' && data.linkFonts)}
-              showLinkFonts={data.showArtist}
-              families={families}
-              fontsLoading={fontsLoading}
-              data={data}
-              update={update}
-              palette={palette}
-            />
-          )}
+          <LabelControls
+            fields={frontFields}
+            families={families}
+            fontsLoading={fontsLoading}
+            data={data}
+            update={update}
+            palette={palette}
+          />
         </section>
 
         <section className="flex flex-col gap-2">
@@ -205,29 +229,15 @@ export default function App() {
               presets={TRACKLIST_PRESETS}
               onChange={setTracklistSize}
             />
-            <TracklistPreview
+            <TracklistPreview data={data} size={tracklistSize} update={update} />
+            <LabelControls
+              fields={trackFields}
+              families={families}
+              fontsLoading={fontsLoading}
               data={data}
-              size={tracklistSize}
               update={update}
-              onFocusField={() => setFocusedField('track')}
+              palette={palette}
             />
-            {focusedField === 'track' && (
-              <LabelControls
-                sizeId="track-size"
-                sizeLabel="Track size"
-                sizeValue={data.trackSize}
-                sizeMin={1.5}
-                sizeMax={5}
-                onSize={(v) => update({ trackSize: v })}
-                fontValue={data.trackFont}
-                onFontChange={(f) => onFontSelect('track', f)}
-                families={families}
-                fontsLoading={fontsLoading}
-                data={data}
-                update={update}
-                palette={palette}
-              />
-            )}
           </section>
         )}
       </main>

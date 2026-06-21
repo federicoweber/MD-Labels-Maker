@@ -22,6 +22,9 @@ const TracklistSheet = forwardRef<SVGSVGElement, Props>(function TracklistSheet(
     trackFont,
     showArtist,
     trackSize,
+    titleOpacity,
+    artistOpacity,
+    trackOpacity,
     letterSpacing,
     lineHeight,
     size,
@@ -60,6 +63,7 @@ const TracklistSheet = forwardRef<SVGSVGElement, Props>(function TracklistSheet(
         fontFamily={titleFont}
         fontSize={titleSize}
         fontWeight={700}
+        fillOpacity={titleOpacity}
         letterSpacing={titleSize * letterSpacing}
       >
         {album || 'Title'}
@@ -71,6 +75,7 @@ const TracklistSheet = forwardRef<SVGSVGElement, Props>(function TracklistSheet(
           fill={textColor}
           fontFamily={artistFont}
           fontSize={artistSize}
+          fillOpacity={artistOpacity}
           letterSpacing={artistSize * letterSpacing}
         >
           {artist || 'Subtitle'}
@@ -99,6 +104,7 @@ const TracklistSheet = forwardRef<SVGSVGElement, Props>(function TracklistSheet(
             fill={textColor}
             fontFamily={trackFont}
             fontSize={trackSize}
+            fillOpacity={trackOpacity}
             letterSpacing={trackSize * letterSpacing}
           >
             {i + 1}. {track}

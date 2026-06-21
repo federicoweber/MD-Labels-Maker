@@ -21,6 +21,10 @@ export interface LabelData {
   showArtist: boolean;
   /** Track font size in mm (tracklist sheet). */
   trackSize: number;
+  /** Per-role text opacity (0–1). */
+  titleOpacity: number;
+  artistOpacity: number;
+  trackOpacity: number;
   /** Label text tracking (letter-spacing) in em. */
   letterSpacing: number;
   /** Label text line-height multiplier. */

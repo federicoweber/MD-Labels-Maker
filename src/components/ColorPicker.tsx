@@ -28,7 +28,9 @@ export default function ColorPicker({ value, onChange, colors, emptyHint }: Colo
             key={hex}
             type="button"
             onClick={() => onChange(hex)}
-            className="notch-tr flex h-6 items-center px-2 text-[9px] transition-transform hover:translate-x-0.5"
+            className={`notch-tr flex h-6 items-center px-2 text-[9px] transition-[width] duration-150 ${
+              selected ? 'w-full' : 'w-[86%] hover:w-[95%]'
+            }`}
             style={{ background: hex, color: bestTextColor(hex) }}
           >
             <span className="mr-1 w-2.5">{selected ? '▶' : ''}</span>

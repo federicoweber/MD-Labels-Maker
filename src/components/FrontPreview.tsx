@@ -7,7 +7,6 @@ interface Props {
   data: LabelData;
   size: SizePreset;
   update: (patch: Partial<LabelData>) => void;
-  onFocusField: (field: 'title' | 'artist') => void;
 }
 
 function readImageFile(file: File): Promise<string> {
@@ -23,7 +22,7 @@ function readImageFile(file: File): Promise<string> {
  * Editable front-label preview: drop/click the cover on it, and type a
  * multiline title + optional artist in place. The hidden SVG twin exports.
  */
-export default function FrontPreview({ data, size, update, onFocusField }: Props) {
+export default function FrontPreview({ data, size, update }: Props) {
   const fileInput = useRef<HTMLInputElement>(null);
   const [dragOver, setDragOver] = useState(false);
   const [pageDragging, setPageDragging] = useState(false);
@@ -151,12 +150,12 @@ export default function FrontPreview({ data, size, update, onFocusField }: Props
           value={data.album}
           placeholder="Title"
           onChange={(v) => update({ album: v })}
-          onFocus={() => onFocusField('title')}
           style={{
             fontFamily: data.titleFont,
             fontSize: data.titleSize * S,
             fontWeight: 700,
             color: data.textColor,
+            opacity: data.titleOpacity,
             lineHeight: data.lineHeight,
             letterSpacing: `${data.letterSpacing}em`,
           }}
@@ -168,13 +167,13 @@ export default function FrontPreview({ data, size, update, onFocusField }: Props
               fontFamily: data.artistFont,
               fontSize: data.artistSize * S,
               color: data.textColor,
+              opacity: data.artistOpacity,
               lineHeight: 1.1,
               letterSpacing: `${data.letterSpacing}em`,
             }}
             value={data.artist}
             placeholder="Subtitle"
             onChange={(e) => update({ artist: e.target.value })}
-            onFocus={() => onFocusField('artist')}
           />
         )}
       </div>
