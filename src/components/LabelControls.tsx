@@ -1,6 +1,7 @@
 import type { LabelData } from '@/lib/types';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Label } from '@/components/ui/label';
+import { Switch } from '@/components/ui/switch';
 import SizeSlider from './SizeSlider';
 import ColorPicker from './ColorPicker';
 import FontPicker from './FontPicker';
@@ -17,6 +18,7 @@ interface Props {
   families: string[];
   fontsLoading: boolean;
   showFont?: boolean;
+  showLinkFonts?: boolean;
   data: LabelData;
   update: (patch: Partial<LabelData>) => void;
   palette: string[];
@@ -37,6 +39,7 @@ export default function LabelControls({
   families,
   fontsLoading,
   showFont = true,
+  showLinkFonts = false,
   data,
   update,
   palette,
@@ -53,7 +56,7 @@ export default function LabelControls({
             Text
           </TabsTrigger>
           <TabsTrigger value="type" className="flex-1">
-            Type
+            Typography
           </TabsTrigger>
         </TabsList>
 
@@ -82,6 +85,18 @@ export default function LabelControls({
                 families={families}
                 onChange={onFontChange}
                 loading={fontsLoading}
+              />
+            </div>
+          )}
+          {showLinkFonts && (
+            <div className="flex items-center justify-between">
+              <Label htmlFor="link-fonts">Same title/subtitle font</Label>
+              <Switch
+                id="link-fonts"
+                checked={data.linkFonts}
+                onCheckedChange={(v) =>
+                  update(v ? { linkFonts: true, artistFont: data.titleFont } : { linkFonts: false })
+                }
               />
             </div>
           )}

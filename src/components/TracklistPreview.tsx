@@ -38,7 +38,7 @@ export default function TracklistPreview({ data, size, update, onFocusField }: P
           letterSpacing: `${data.letterSpacing}em`,
         }}
       >
-        {data.album || 'Album'}
+        {data.album || 'Title'}
       </div>
       {data.showArtist && (
         <div
@@ -49,7 +49,7 @@ export default function TracklistPreview({ data, size, update, onFocusField }: P
             letterSpacing: `${data.letterSpacing}em`,
           }}
         >
-          {data.artist || 'Artist'}
+          {data.artist || 'Subtitle'}
         </div>
       )}
       <div className="my-1 w-full" style={{ height: 1, background: data.textColor, opacity: 0.6 }} />

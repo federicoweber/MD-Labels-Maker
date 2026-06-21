@@ -62,7 +62,7 @@ const TracklistSheet = forwardRef<SVGSVGElement, Props>(function TracklistSheet(
         fontWeight={700}
         letterSpacing={titleSize * letterSpacing}
       >
-        {album || 'Album'}
+        {album || 'Title'}
       </text>
       {showArtist && (
         <text
@@ -73,7 +73,7 @@ const TracklistSheet = forwardRef<SVGSVGElement, Props>(function TracklistSheet(
           fontSize={artistSize}
           letterSpacing={artistSize * letterSpacing}
         >
-          {artist || 'Artist'}
+          {artist || 'Subtitle'}
         </text>
       )}
 

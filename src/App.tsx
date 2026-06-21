@@ -9,6 +9,8 @@ import TracklistPreview from '@/components/TracklistPreview';
 import SizeSelect from '@/components/SizeSelect';
 import LabelControls from '@/components/LabelControls';
 import Controls from '@/components/Controls';
+import { Label } from '@/components/ui/label';
+import { Switch } from '@/components/ui/switch';
 import { fetchFontList, loadFontForPreview } from '@/lib/fonts';
 import { downloadLabelsZip, type ZipLabel } from '@/lib/exportPng';
 import { extractPalette, bestTextColor } from '@/lib/colors';
@@ -149,8 +151,6 @@ export default function App() {
   return (
     <div className="flex h-svh overflow-hidden">
       <Controls
-        data={data}
-        update={update}
         showTracklist={showTracklist}
         onToggleTracklist={setShowTracklist}
         onExport={onExport}
@@ -161,10 +161,20 @@ export default function App() {
         <section className="flex flex-col gap-2">
           <SizeSelect label="Front" value={frontSize} presets={FRONT_PRESETS} onChange={setFrontSize} />
           <FrontPreview data={data} size={frontSize} update={update} onFocusField={setFocusedField} />
+          <div className="flex w-full items-center justify-between">
+            <Label htmlFor="show-subtitle" className="text-xs">
+              Show subtitle
+            </Label>
+            <Switch
+              id="show-subtitle"
+              checked={data.showArtist}
+              onCheckedChange={(v) => update({ showArtist: v })}
+            />
+          </div>
           {(focusedField === 'title' || focusedField === 'artist') && (
             <LabelControls
               sizeId={`${focusedField}-size`}
-              sizeLabel={focusedField === 'artist' ? 'Artist size' : 'Title size'}
+              sizeLabel={focusedField === 'artist' ? 'Subtitle size' : 'Title size'}
               sizeValue={focusedField === 'artist' ? data.artistSize : data.titleSize}
               sizeMin={focusedField === 'artist' ? 1.5 : 2}
               sizeMax={focusedField === 'artist' ? 7 : 10}
@@ -172,6 +182,7 @@ export default function App() {
               fontValue={focusedField === 'artist' ? data.artistFont : data.titleFont}
               onFontChange={(f) => onFontSelect(focusedField === 'artist' ? 'artist' : 'title', f)}
               showFont={!(focusedField === 'artist' && data.linkFonts)}
+              showLinkFonts={data.showArtist}
               families={families}
               fontsLoading={fontsLoading}
               data={data}

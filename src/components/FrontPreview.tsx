@@ -149,7 +149,7 @@ export default function FrontPreview({ data, size, update, onFocusField }: Props
       >
         <AutoTextarea
           value={data.album}
-          placeholder="Album"
+          placeholder="Title"
           onChange={(v) => update({ album: v })}
           onFocus={() => onFocusField('title')}
           style={{
@@ -172,7 +172,7 @@ export default function FrontPreview({ data, size, update, onFocusField }: Props
               letterSpacing: `${data.letterSpacing}em`,
             }}
             value={data.artist}
-            placeholder="Artist"
+            placeholder="Subtitle"
             onChange={(e) => update({ artist: e.target.value })}
             onFocus={() => onFocusField('artist')}
           />
