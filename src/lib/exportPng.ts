@@ -5,7 +5,7 @@ import { buildEmbeddedFontCss } from './fonts';
 const SVGNS = 'http://www.w3.org/2000/svg';
 
 interface RenderOptions {
-  fontFamily: string;
+  fonts: string[];
   widthMm: number;
   heightMm: number;
 }
@@ -19,7 +19,7 @@ interface RenderOptions {
  */
 export async function renderSvgToPngBlob(
   svg: SVGSVGElement,
-  { fontFamily, widthMm, heightMm }: RenderOptions,
+  { fonts, widthMm, heightMm }: RenderOptions,
 ): Promise<Blob> {
   const widthPx = Math.round(mmToPx(widthMm));
   const heightPx = Math.round(mmToPx(heightMm));
@@ -29,8 +29,9 @@ export async function renderSvgToPngBlob(
   clone.setAttribute('width', String(widthPx));
   clone.setAttribute('height', String(heightPx));
 
-  // Inline the font so it renders inside the detached SVG.
-  const fontCss = await buildEmbeddedFontCss(fontFamily);
+  // Inline every font used so they render inside the detached SVG.
+  const uniqueFonts = [...new Set(fonts)];
+  const fontCss = (await Promise.all(uniqueFonts.map(buildEmbeddedFontCss))).join('\n');
   const styleEl = document.createElementNS(SVGNS, 'style');
   styleEl.textContent = fontCss;
   clone.insertBefore(styleEl, clone.firstChild);
@@ -65,13 +66,13 @@ export interface ZipLabel {
 /** Render every label to a PNG and download them together as a single zip. */
 export async function downloadLabelsZip(
   labels: ZipLabel[],
-  fontFamily: string,
+  fonts: string[],
   zipName: string,
 ): Promise<void> {
   const zip = new JSZip();
   for (const label of labels) {
     const blob = await renderSvgToPngBlob(label.svg, {
-      fontFamily,
+      fonts,
       widthMm: label.widthMm,
       heightMm: label.heightMm,
     });

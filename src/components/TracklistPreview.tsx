@@ -31,7 +31,7 @@ export default function TracklistPreview({ data, size, update, onFocusField }: P
     >
       <div
         style={{
-          fontFamily: data.fontFamily,
+          fontFamily: data.titleFont,
           fontSize: TRACKLIST.titleSize * S,
           fontWeight: 700,
           lineHeight: 1.05,
@@ -43,7 +43,7 @@ export default function TracklistPreview({ data, size, update, onFocusField }: P
       {data.showArtist && (
         <div
           style={{
-            fontFamily: data.fontFamily,
+            fontFamily: data.artistFont,
             fontSize: TRACKLIST.artistSize * S,
             lineHeight: 1.2,
             letterSpacing: `${data.letterSpacing}em`,
@@ -56,7 +56,7 @@ export default function TracklistPreview({ data, size, update, onFocusField }: P
       <textarea
         className="label-field w-full flex-1 resize-none bg-transparent p-0 outline-none"
         style={{
-          fontFamily: data.fontFamily,
+          fontFamily: data.trackFont,
           fontSize: data.trackSize * S,
           color: data.textColor,
           lineHeight: data.lineHeight,

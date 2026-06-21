@@ -36,7 +36,8 @@ export default function SizeSlider({
         step={step}
         value={value}
         onChange={(e) => onChange(+e.target.value)}
-        className="w-full accent-foreground"
+        className="ui-range"
+        style={{ ['--range-pct' as string]: `${((value - min) / (max - min)) * 100}%` }}
       />
     </div>
   );

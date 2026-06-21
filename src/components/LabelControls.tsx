@@ -1,7 +1,9 @@
 import type { LabelData } from '@/lib/types';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Label } from '@/components/ui/label';
 import SizeSlider from './SizeSlider';
 import ColorPicker from './ColorPicker';
+import FontPicker from './FontPicker';
 
 interface Props {
   sizeId: string;
@@ -10,6 +12,11 @@ interface Props {
   sizeMin: number;
   sizeMax: number;
   onSize: (v: number) => void;
+  fontValue: string;
+  onFontChange: (family: string) => void;
+  families: string[];
+  fontsLoading: boolean;
+  showFont?: boolean;
   data: LabelData;
   update: (patch: Partial<LabelData>) => void;
   palette: string[];
@@ -25,6 +32,11 @@ export default function LabelControls({
   sizeMin,
   sizeMax,
   onSize,
+  fontValue,
+  onFontChange,
+  families,
+  fontsLoading,
+  showFont = true,
   data,
   update,
   palette,
@@ -62,6 +74,17 @@ export default function LabelControls({
         </TabsContent>
 
         <TabsContent value="type" className="space-y-3 pt-3">
+          {showFont && (
+            <div className="grid gap-1.5">
+              <Label>Font</Label>
+              <FontPicker
+                value={fontValue}
+                families={families}
+                onChange={onFontChange}
+                loading={fontsLoading}
+              />
+            </div>
+          )}
           <SizeSlider
             id={sizeId}
             label={sizeLabel}

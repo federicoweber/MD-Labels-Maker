@@ -17,7 +17,8 @@ const FrontLabel = forwardRef<SVGSVGElement, Props>(function FrontLabel(
     artist,
     textColor,
     bgColor,
-    fontFamily,
+    titleFont,
+    artistFont,
     titleSize,
     artistSize,
     showArtist,
@@ -36,7 +37,7 @@ const FrontLabel = forwardRef<SVGSVGElement, Props>(function FrontLabel(
   const textTop = (portrait ? cover : 0) + padding;
   const textMaxWidth = (portrait ? W : W - cover) - 2 * padding;
 
-  const titleLines = wrapText(album || 'Album', fontFamily, titleSize, textMaxWidth, 700);
+  const titleLines = wrapText(album || 'Album', titleFont, titleSize, textMaxWidth, 700);
   const titleLH = titleSize * lineHeight;
   const firstBaseline = textTop + titleSize * 0.85;
   const lastTitleBaseline = firstBaseline + (titleLines.length - 1) * titleLH;
@@ -90,7 +91,7 @@ const FrontLabel = forwardRef<SVGSVGElement, Props>(function FrontLabel(
 
         <text
           fill={textColor}
-          fontFamily={fontFamily}
+          fontFamily={titleFont}
           fontSize={titleSize}
           fontWeight={700}
           letterSpacing={titleSize * letterSpacing}
@@ -106,7 +107,7 @@ const FrontLabel = forwardRef<SVGSVGElement, Props>(function FrontLabel(
             x={textX}
             y={artistBaseline}
             fill={textColor}
-            fontFamily={fontFamily}
+            fontFamily={artistFont}
             fontSize={artistSize}
             letterSpacing={artistSize * letterSpacing}
           >

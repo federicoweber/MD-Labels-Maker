@@ -17,7 +17,7 @@ export default function SpinePreview({ data, size }: { data: LabelData; size: Si
       <span
         className="truncate"
         style={{
-          fontFamily: data.fontFamily,
+          fontFamily: data.titleFont,
           fontSize: size.height * 0.66 * S,
           fontWeight: 700,
           color: data.textColor,

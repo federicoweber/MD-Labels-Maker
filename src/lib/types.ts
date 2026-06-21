@@ -7,7 +7,12 @@ export interface LabelData {
   textColor: string;
   /** Background / accent colour (hex), sampled from the cover or chosen. */
   bgColor: string;
-  fontFamily: string;
+  /** Fonts per text role. */
+  titleFont: string;
+  artistFont: string;
+  trackFont: string;
+  /** When true, the artist uses the same font as the title. */
+  linkFonts: boolean;
   /** Title font size in mm (front label). */
   titleSize: number;
   /** Artist font size in mm (front label). */

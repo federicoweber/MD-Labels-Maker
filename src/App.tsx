@@ -27,7 +27,10 @@ const INITIAL: LabelData = {
   artist: '',
   textColor: '#ece8e0',
   bgColor: '#6e6a63',
-  fontFamily: DEFAULT_FONT,
+  titleFont: DEFAULT_FONT,
+  artistFont: DEFAULT_FONT,
+  trackFont: DEFAULT_FONT,
+  linkFonts: true,
   titleSize: FRONT.titleSize,
   artistSize: FRONT.artistSize,
   showArtist: true,
@@ -53,8 +56,6 @@ export default function App() {
   const [tracklistSize, setTracklistSize] = useState(TRACKLIST_PRESETS[0]);
   const [families, setFamilies] = useState<string[]>([]);
   const [fontsLoading, setFontsLoading] = useState(true);
-  const [usingFallback, setUsingFallback] = useState(false);
-  const [fontError, setFontError] = useState<string | null>(null);
   const [showTracklist, setShowTracklist] = useState(false);
   const [focusedField, setFocusedField] = useState<'title' | 'artist' | 'track' | null>(null);
   const [exporting, setExporting] = useState(false);
@@ -68,7 +69,6 @@ export default function App() {
     fetchFontList().then((res) => {
       if (cancelled) return;
       setFamilies(res.families);
-      setUsingFallback(res.usingFallback);
       setFontsLoading(false);
     });
     loadFontForPreview(DEFAULT_FONT).catch(() => {});
@@ -97,13 +97,14 @@ export default function App() {
     }
   }
 
-  async function onFontSelect(family: string) {
-    update({ fontFamily: family });
-    setFontError(null);
+  async function onFontSelect(field: 'title' | 'artist' | 'track', family: string) {
+    if (field === 'track') update({ trackFont: family });
+    else if (data.linkFonts) update({ titleFont: family, artistFont: family });
+    else update(field === 'title' ? { titleFont: family } : { artistFont: family });
     try {
       await loadFontForPreview(family);
-    } catch {
-      setFontError(`Couldn't load "${family}". Check your connection.`);
+    } catch (err) {
+      console.warn(`Couldn't load font "${family}":`, err);
     }
   }
 
@@ -133,10 +134,13 @@ export default function App() {
           heightMm: tracklistSize.height,
           name: 'tracklist.png',
         });
-      await downloadLabelsZip(labels, data.fontFamily, `${base}-minidisc-labels.zip`);
+      await downloadLabelsZip(
+        labels,
+        [data.titleFont, data.artistFont, data.trackFont],
+        `${base}-minidisc-labels.zip`,
+      );
     } catch (err) {
-      console.error(err);
-      setFontError('Export failed — see console for details.');
+      console.error('Export failed:', err);
     } finally {
       setExporting(false);
     }
@@ -147,11 +151,6 @@ export default function App() {
       <Controls
         data={data}
         update={update}
-        onFontSelect={onFontSelect}
-        families={families}
-        fontsLoading={fontsLoading}
-        usingFallback={usingFallback}
-        fontError={fontError}
         showTracklist={showTracklist}
         onToggleTracklist={setShowTracklist}
         onExport={onExport}
@@ -170,6 +169,11 @@ export default function App() {
               sizeMin={focusedField === 'artist' ? 1.5 : 2}
               sizeMax={focusedField === 'artist' ? 7 : 10}
               onSize={(v) => update(focusedField === 'artist' ? { artistSize: v } : { titleSize: v })}
+              fontValue={focusedField === 'artist' ? data.artistFont : data.titleFont}
+              onFontChange={(f) => onFontSelect(focusedField === 'artist' ? 'artist' : 'title', f)}
+              showFont={!(focusedField === 'artist' && data.linkFonts)}
+              families={families}
+              fontsLoading={fontsLoading}
               data={data}
               update={update}
               palette={palette}
@@ -204,6 +208,10 @@ export default function App() {
                 sizeMin={1.5}
                 sizeMax={5}
                 onSize={(v) => update({ trackSize: v })}
+                fontValue={data.trackFont}
+                onFontChange={(f) => onFontSelect('track', f)}
+                families={families}
+                fontsLoading={fontsLoading}
                 data={data}
                 update={update}
                 palette={palette}

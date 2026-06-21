@@ -153,7 +153,7 @@ export default function FrontPreview({ data, size, update, onFocusField }: Props
           onChange={(v) => update({ album: v })}
           onFocus={() => onFocusField('title')}
           style={{
-            fontFamily: data.fontFamily,
+            fontFamily: data.titleFont,
             fontSize: data.titleSize * S,
             fontWeight: 700,
             color: data.textColor,
@@ -165,7 +165,7 @@ export default function FrontPreview({ data, size, update, onFocusField }: Props
           <input
             className="label-field w-full bg-transparent p-0 outline-none"
             style={{
-              fontFamily: data.fontFamily,
+              fontFamily: data.artistFont,
               fontSize: data.artistSize * S,
               color: data.textColor,
               lineHeight: 1.1,

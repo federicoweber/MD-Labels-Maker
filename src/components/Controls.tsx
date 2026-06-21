@@ -3,17 +3,11 @@ import type { LabelData } from '@/lib/types';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
-import FontPicker from './FontPicker';
 import MdLogo from './MdLogo';
 
 interface ControlsProps {
   data: LabelData;
   update: (patch: Partial<LabelData>) => void;
-  onFontSelect: (family: string) => void;
-  families: string[];
-  fontsLoading: boolean;
-  usingFallback: boolean;
-  fontError: string | null;
   showTracklist: boolean;
   onToggleTracklist: (on: boolean) => void;
   onExport: () => void;
@@ -23,11 +17,6 @@ interface ControlsProps {
 export default function Controls({
   data,
   update,
-  onFontSelect,
-  families,
-  fontsLoading,
-  usingFallback,
-  fontError,
   showTracklist,
   onToggleTracklist,
   onExport,
@@ -41,24 +30,8 @@ export default function Controls({
 
       <p className="text-xs text-muted-foreground">
         Drop a cover and type the title, artist, and tracks directly on the labels. Click a text
-        field to size and colour it.
+        field to size, colour and font it.
       </p>
-
-      <div className="grid gap-2">
-        <Label>Font</Label>
-        <FontPicker
-          value={data.fontFamily}
-          families={families}
-          onChange={onFontSelect}
-          loading={fontsLoading}
-        />
-        {usingFallback && (
-          <p className="text-xs text-muted-foreground">
-            Curated list — add a Google Fonts API key for all fonts.
-          </p>
-        )}
-        {fontError && <p className="text-xs text-destructive">{fontError}</p>}
-      </div>
 
       <div className="flex items-center justify-between">
         <Label htmlFor="show-artist">Show artist</Label>
@@ -68,6 +41,19 @@ export default function Controls({
           onCheckedChange={(v) => update({ showArtist: v })}
         />
       </div>
+
+      {data.showArtist && (
+        <div className="flex items-center justify-between">
+          <Label htmlFor="link-fonts">Same title/artist font</Label>
+          <Switch
+            id="link-fonts"
+            checked={data.linkFonts}
+            onCheckedChange={(v) =>
+              update(v ? { linkFonts: true, artistFont: data.titleFont } : { linkFonts: false })
+            }
+          />
+        </div>
+      )}
 
       <div className="flex items-center justify-between">
         <Label htmlFor="tracklist-toggle">Tracklist sheet</Label>
