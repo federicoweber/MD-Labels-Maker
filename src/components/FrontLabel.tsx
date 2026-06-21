@@ -44,19 +44,19 @@ const FrontLabel = forwardRef<SVGSVGElement, Props>(function FrontLabel(props, r
   const { chamfer, padding } = FRONT;
   const OUTLINE = `M ${chamfer},0 H ${W} V ${H} H 0 V ${chamfer} Z`;
 
-  // One stacked album: cover scaled to fit, with album/artist overlaid on a
-  // solid (adjustable-opacity) band, bottom-anchored. Text optional.
+  // One stacked album: cover scaled to fit (never cropped), with album/artist
+  // overlaid over its bottom on a solid (adjustable-opacity) band. Text optional.
   const half = H / 2;
   const DOUBLE_TEXT_SCALE = 0.72;
   const albumBlock = (coverUrl: string | null, alb: string, art: string, top: number, key: string) => {
     const bottom = top + half;
-    const maxW = W - 2 * padding;
     const ts = titleSize * DOUBLE_TEXT_SCALE;
     const as = artistSize * DOUBLE_TEXT_SCALE;
+    const maxW = W - 2 * padding;
     const lines = wrapText(alb || 'Album', titleFont, ts, maxW, 700);
     const lh = ts * lineHeight;
-    const artistBase = bottom - padding;
-    const lastTitleBase = artistBase - as - 0.8;
+    const artistBase = bottom - padding * 0.7;
+    const lastTitleBase = artistBase - as - 0.6;
     const firstTitleBase = lastTitleBase - (lines.length - 1) * lh;
     const bandY = firstTitleBase - ts - padding * 0.4;
     return (

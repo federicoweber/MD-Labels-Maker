@@ -38,7 +38,7 @@ const INITIAL: LabelData = {
   artist2: '',
   tracklist2: '',
   doubleHideText: false,
-  textBgOpacity: 0.55,
+  textBgOpacity: 1,
   textColor: '#ece8e0',
   bgColor: '#6e6a63',
   titleFont: DEFAULT_FONT,
@@ -73,11 +73,61 @@ function slug(s: string): string {
     .toLowerCase();
 }
 
+/** A "Fetch cover" button with an optional ◀ n/m ▶ picker for the matches. */
+function CoverControl({
+  label,
+  loading,
+  onFetch,
+  options,
+  index,
+  onCycle,
+}: {
+  label: string;
+  loading: boolean;
+  onFetch: () => void;
+  options: string[];
+  index: number;
+  onCycle: (dir: number) => void;
+}) {
+  return (
+    <div className="flex items-center gap-3">
+      <Button variant="outline" className="w-fit" disabled={loading} onClick={onFetch}>
+        {loading ? 'Fetching…' : label}
+      </Button>
+      {options.length > 1 && (
+        <div className="flex items-center gap-1 text-xs text-muted-foreground">
+          <button
+            type="button"
+            aria-label="Previous cover"
+            onClick={() => onCycle(-1)}
+            className="grid size-6 place-items-center border border-border hover:bg-accent"
+          >
+            <ChevronLeft className="size-3.5" />
+          </button>
+          <span className="tabular-nums">
+            {index + 1}/{options.length}
+          </span>
+          <button
+            type="button"
+            aria-label="Next cover"
+            onClick={() => onCycle(1)}
+            className="grid size-6 place-items-center border border-border hover:bg-accent"
+          >
+            <ChevronRight className="size-3.5" />
+          </button>
+        </div>
+      )}
+    </div>
+  );
+}
+
 export default function App() {
   const [data, setData] = useState<LabelData>(INITIAL);
   const [palette, setPalette] = useState<string[]>([]);
   const [coverOptions, setCoverOptions] = useState<string[]>([]);
   const [coverIndex, setCoverIndex] = useState(0);
+  const [coverOptions2, setCoverOptions2] = useState<string[]>([]);
+  const [coverIndex2, setCoverIndex2] = useState(0);
   const [coverLoading, setCoverLoading] = useState(false);
   const [coverLoading2, setCoverLoading2] = useState(false);
   const [tracklistLoading2, setTracklistLoading2] = useState(false);
@@ -154,8 +204,17 @@ export default function App() {
   }
 
   function onCover2(dataUrl: string | null) {
+    setCoverOptions2([]);
+    setCoverIndex2(0);
     if (dataUrl) lastCoverKey2.current = `${data.artist2}|${data.album2}`.toLowerCase();
     update({ coverDataUrl2: dataUrl });
+  }
+
+  function cycleCover2(dir: number) {
+    if (coverOptions2.length < 2) return;
+    const next = (coverIndex2 + dir + coverOptions2.length) % coverOptions2.length;
+    setCoverIndex2(next);
+    update({ coverDataUrl2: coverOptions2[next] });
   }
 
   function cycleCover(dir: number) {
@@ -213,7 +272,11 @@ export default function App() {
         fetchTracklist(artist, album),
       ]);
       const patch: Partial<LabelData> = {};
-      if (covers.length) patch.coverDataUrl2 = covers[0];
+      if (covers.length) {
+        setCoverOptions2(covers);
+        setCoverIndex2(0);
+        patch.coverDataUrl2 = covers[0];
+      }
       if (tl.tracks.length && !data.tracklist2.trim()) patch.tracklist2 = tl.tracks.join('\n');
       if (Object.keys(patch).length) update(patch);
     } catch (err) {
@@ -396,41 +459,34 @@ export default function App() {
             onCover={onCover}
             onCover2={onCover2}
           />
-          <div className="flex items-center gap-3">
-            <Button
-              variant="outline"
-              className="w-fit"
-              disabled={coverLoading}
-              onClick={() => void loadCovers()}
-            >
-              {coverLoading ? 'Fetching…' : 'Fetch cover'}
-            </Button>
-            {coverOptions.length > 1 && (
-              <div className="flex items-center gap-1 text-xs text-muted-foreground">
-                <button
-                  type="button"
-                  aria-label="Previous cover"
-                  onClick={() => cycleCover(-1)}
-                  className="grid size-6 place-items-center border border-border hover:bg-accent"
-                >
-                  <ChevronLeft className="size-3.5" />
-                </button>
-                <span className="tabular-nums">
-                  {coverIndex + 1}/{coverOptions.length}
-                </span>
-                <button
-                  type="button"
-                  aria-label="Next cover"
-                  onClick={() => cycleCover(1)}
-                  className="grid size-6 place-items-center border border-border hover:bg-accent"
-                >
-                  <ChevronRight className="size-3.5" />
-                </button>
-              </div>
-            )}
-          </div>
-          {data.doubleAlbum && coverLoading2 && (
-            <span className="text-xs text-muted-foreground">Fetching second cover…</span>
+          {data.doubleAlbum ? (
+            <div className="flex flex-col gap-2">
+              <CoverControl
+                label="Fetch cover 1"
+                loading={coverLoading}
+                onFetch={() => void loadCovers()}
+                options={coverOptions}
+                index={coverIndex}
+                onCycle={cycleCover}
+              />
+              <CoverControl
+                label="Fetch cover 2"
+                loading={coverLoading2}
+                onFetch={() => void loadCovers2()}
+                options={coverOptions2}
+                index={coverIndex2}
+                onCycle={cycleCover2}
+              />
+            </div>
+          ) : (
+            <CoverControl
+              label="Fetch cover"
+              loading={coverLoading}
+              onFetch={() => void loadCovers()}
+              options={coverOptions}
+              index={coverIndex}
+              onCycle={cycleCover}
+            />
           )}
           <div className="flex w-full items-center justify-between">
             <Label htmlFor="double-album" className="text-xs">

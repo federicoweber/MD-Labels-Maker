@@ -282,7 +282,10 @@ function CoverSlot({
   );
 }
 
-/** Album + artist overlaid on a cover (double-album mode), with a legibility scrim. */
+/**
+ * Album + artist overlaid over the bottom of a cover (double-album mode) on a
+ * solid background band with adjustable opacity. Text sits smaller here.
+ */
 function OverlayText({
   data,
   album,
@@ -303,7 +306,7 @@ function OverlayText({
       className="absolute right-0 bottom-0 left-0 flex flex-col justify-end"
       style={{
         padding: pad,
-        gap: 0.3 * S,
+        gap: 0.2 * S,
         background: withAlpha(data.bgColor, data.textBgOpacity),
       }}
       onClick={(e) => e.stopPropagation()}
