@@ -19,6 +19,17 @@ function readImageFile(file: File): Promise<string> {
   });
 }
 
+/** Append an opacity (0–1) to a #rrggbb hex as an 8-digit hex. */
+function withAlpha(hex: string, opacity: number): string {
+  const a = Math.round(Math.max(0, Math.min(1, opacity)) * 255)
+    .toString(16)
+    .padStart(2, '0');
+  return `${hex}${a}`;
+}
+
+/** Album/artist sit smaller when overlaid on covers in double mode. */
+const DOUBLE_TEXT_SCALE = 0.72;
+
 /**
  * Editable front-label preview. In single mode the cover sits on top with a
  * text band below; in double-album mode two stacked covers each carry their own
@@ -69,31 +80,37 @@ export default function FrontPreview({ data, size, update, onCover, onCover2 }: 
             src={data.coverDataUrl}
             onCover={onCover}
             pageDragging={pageDragging}
+            contain
             style={{ position: 'absolute', top: 0, left: 0, width: W, height: H / 2 }}
           >
-            <OverlayText
-              data={data}
-              album={data.album}
-              artist={data.artist}
-              onAlbum={(v) => update({ album: v })}
-              onArtist={(v) => update({ artist: v })}
-              pad={PAD}
-            />
+            {!data.doubleHideText && (
+              <OverlayText
+                data={data}
+                album={data.album}
+                artist={data.artist}
+                onAlbum={(v) => update({ album: v })}
+                onArtist={(v) => update({ artist: v })}
+                pad={PAD}
+              />
+            )}
           </CoverSlot>
           <CoverSlot
             src={data.coverDataUrl2}
             onCover={onCover2}
             pageDragging={pageDragging}
+            contain
             style={{ position: 'absolute', top: H / 2, left: 0, width: W, height: H / 2 }}
           >
-            <OverlayText
-              data={data}
-              album={data.album2}
-              artist={data.artist2}
-              onAlbum={(v) => update({ album2: v })}
-              onArtist={(v) => update({ artist2: v })}
-              pad={PAD}
-            />
+            {!data.doubleHideText && (
+              <OverlayText
+                data={data}
+                album={data.album2}
+                artist={data.artist2}
+                onAlbum={(v) => update({ album2: v })}
+                onArtist={(v) => update({ artist2: v })}
+                pad={PAD}
+              />
+            )}
           </CoverSlot>
         </>
       ) : (
@@ -205,12 +222,14 @@ function CoverSlot({
   onCover,
   pageDragging,
   style,
+  contain,
   children,
 }: {
   src: string | null;
   onCover: (dataUrl: string | null) => void;
   pageDragging: boolean;
   style: React.CSSProperties;
+  contain?: boolean;
   children?: React.ReactNode;
 }) {
   const input = useRef<HTMLInputElement>(null);
@@ -229,7 +248,9 @@ function CoverSlot({
         pick(e.dataTransfer.files);
       }}
     >
-      {src && <img src={src} alt="" className="size-full object-cover" />}
+      {src && (
+        <img src={src} alt="" className={`size-full ${contain ? 'object-contain' : 'object-cover'}`} />
+      )}
       <div
         className={`absolute inset-0 flex items-center justify-center transition-opacity ${
           src && !pageDragging ? 'opacity-0 group-hover:opacity-100' : 'opacity-100'
@@ -282,8 +303,8 @@ function OverlayText({
       className="absolute right-0 bottom-0 left-0 flex flex-col justify-end"
       style={{
         padding: pad,
-        gap: 0.4 * S,
-        background: `linear-gradient(to top, ${data.bgColor} 0%, ${data.bgColor}d9 45%, ${data.bgColor}00 100%)`,
+        gap: 0.3 * S,
+        background: withAlpha(data.bgColor, data.textBgOpacity),
       }}
       onClick={(e) => e.stopPropagation()}
     >
@@ -293,7 +314,7 @@ function OverlayText({
         onChange={onAlbum}
         style={{
           fontFamily: data.titleFont,
-          fontSize: data.titleSize * S,
+          fontSize: data.titleSize * DOUBLE_TEXT_SCALE * S,
           fontWeight: 700,
           color: data.textColor,
           opacity: data.titleOpacity,
@@ -305,7 +326,7 @@ function OverlayText({
         className="label-field w-full bg-transparent p-0 outline-none"
         style={{
           fontFamily: data.artistFont,
-          fontSize: data.artistSize * S,
+          fontSize: data.artistSize * DOUBLE_TEXT_SCALE * S,
           color: data.textColor,
           opacity: data.artistOpacity,
           lineHeight: 1.1,

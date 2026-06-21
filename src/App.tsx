@@ -8,6 +8,7 @@ import FrontPreview from '@/components/FrontPreview';
 import SpinePreview from '@/components/SpinePreview';
 import TracklistPreview from '@/components/TracklistPreview';
 import SizeSelect from '@/components/SizeSelect';
+import SizeSlider from '@/components/SizeSlider';
 import LabelControls, { type TypoField } from '@/components/LabelControls';
 import Controls from '@/components/Controls';
 import MdLogo from '@/components/MdLogo';
@@ -36,6 +37,8 @@ const INITIAL: LabelData = {
   album2: '',
   artist2: '',
   tracklist2: '',
+  doubleHideText: false,
+  textBgOpacity: 0.55,
   textColor: '#ece8e0',
   bgColor: '#6e6a63',
   titleFont: DEFAULT_FONT,
@@ -439,6 +442,34 @@ export default function App() {
               onCheckedChange={(v) => update({ doubleAlbum: v })}
             />
           </div>
+          {data.doubleAlbum && (
+            <>
+              <div className="flex w-full items-center justify-between">
+                <Label htmlFor="hide-front-text" className="text-xs">
+                  Hide front text
+                </Label>
+                <Switch
+                  id="hide-front-text"
+                  checked={data.doubleHideText}
+                  onCheckedChange={(v) => update({ doubleHideText: v })}
+                />
+              </div>
+              {!data.doubleHideText && (
+                <div className="w-full">
+                  <SizeSlider
+                    id="text-bg-opacity"
+                    label="Text background"
+                    value={data.textBgOpacity}
+                    min={0}
+                    max={1}
+                    step={0.05}
+                    format={(v) => `${Math.round(v * 100)}%`}
+                    onChange={(v) => update({ textBgOpacity: v })}
+                  />
+                </div>
+              )}
+            </>
+          )}
           <div className="flex w-full items-center justify-between">
             <Label htmlFor="show-tracklist" className="text-xs">
               Tracklist

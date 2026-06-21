@@ -15,6 +15,8 @@ const FrontLabel = forwardRef<SVGSVGElement, Props>(function FrontLabel(props, r
     coverDataUrl,
     coverDataUrl2,
     doubleAlbum,
+    doubleHideText,
+    textBgOpacity,
     album,
     album2,
     artist,
@@ -42,49 +44,58 @@ const FrontLabel = forwardRef<SVGSVGElement, Props>(function FrontLabel(props, r
   const { chamfer, padding } = FRONT;
   const OUTLINE = `M ${chamfer},0 H ${W} V ${H} H 0 V ${chamfer} Z`;
 
-  // One stacked album (cover image + scrim + album/artist overlaid), bottom-anchored.
+  // One stacked album: cover scaled to fit, with album/artist overlaid on a
+  // solid (adjustable-opacity) band, bottom-anchored. Text optional.
   const half = H / 2;
+  const DOUBLE_TEXT_SCALE = 0.72;
   const albumBlock = (coverUrl: string | null, alb: string, art: string, top: number, key: string) => {
     const bottom = top + half;
     const maxW = W - 2 * padding;
-    const lines = wrapText(alb || 'Album', titleFont, titleSize, maxW, 700);
-    const lh = titleSize * lineHeight;
+    const ts = titleSize * DOUBLE_TEXT_SCALE;
+    const as = artistSize * DOUBLE_TEXT_SCALE;
+    const lines = wrapText(alb || 'Album', titleFont, ts, maxW, 700);
+    const lh = ts * lineHeight;
     const artistBase = bottom - padding;
-    const lastTitleBase = artistBase - artistSize - 1;
-    const scrimH = half * 0.6;
+    const lastTitleBase = artistBase - as - 0.8;
+    const firstTitleBase = lastTitleBase - (lines.length - 1) * lh;
+    const bandY = firstTitleBase - ts - padding * 0.4;
     return (
       <g key={key}>
         {coverUrl ? (
-          <image href={coverUrl} x={0} y={top} width={W} height={half} preserveAspectRatio="xMidYMid slice" />
+          <image href={coverUrl} x={0} y={top} width={W} height={half} preserveAspectRatio="xMidYMid meet" />
         ) : (
           <rect x={0} y={top} width={W} height={half} fill="#3f3d39" />
         )}
-        <rect x={0} y={bottom - scrimH} width={W} height={scrimH} fill="url(#front-scrim)" />
-        <text
-          fill={textColor}
-          fillOpacity={titleOpacity}
-          fontFamily={titleFont}
-          fontSize={titleSize}
-          fontWeight={700}
-          letterSpacing={titleSize * letterSpacing}
-        >
-          {lines.map((line, i) => (
-            <tspan key={i} x={padding} y={lastTitleBase - (lines.length - 1 - i) * lh}>
-              {line || ' '}
-            </tspan>
-          ))}
-        </text>
-        <text
-          x={padding}
-          y={artistBase}
-          fill={textColor}
-          fillOpacity={artistOpacity}
-          fontFamily={artistFont}
-          fontSize={artistSize}
-          letterSpacing={artistSize * letterSpacing}
-        >
-          {art || 'Artist'}
-        </text>
+        {!doubleHideText && (
+          <>
+            <rect x={0} y={bandY} width={W} height={bottom - bandY} fill={bgColor} fillOpacity={textBgOpacity} />
+            <text
+              fill={textColor}
+              fillOpacity={titleOpacity}
+              fontFamily={titleFont}
+              fontSize={ts}
+              fontWeight={700}
+              letterSpacing={ts * letterSpacing}
+            >
+              {lines.map((line, i) => (
+                <tspan key={i} x={padding} y={lastTitleBase - (lines.length - 1 - i) * lh}>
+                  {line || ' '}
+                </tspan>
+              ))}
+            </text>
+            <text
+              x={padding}
+              y={artistBase}
+              fill={textColor}
+              fillOpacity={artistOpacity}
+              fontFamily={artistFont}
+              fontSize={as}
+              letterSpacing={as * letterSpacing}
+            >
+              {art || 'Artist'}
+            </text>
+          </>
+        )}
       </g>
     );
   };
@@ -112,11 +123,6 @@ const FrontLabel = forwardRef<SVGSVGElement, Props>(function FrontLabel(props, r
         <clipPath id="front-clip">
           <path d={OUTLINE} />
         </clipPath>
-        <linearGradient id="front-scrim" x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0" stopColor={bgColor} stopOpacity="0" />
-          <stop offset="0.55" stopColor={bgColor} stopOpacity="0.85" />
-          <stop offset="1" stopColor={bgColor} stopOpacity="1" />
-        </linearGradient>
       </defs>
 
       <g clipPath="url(#front-clip)">

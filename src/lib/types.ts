@@ -9,6 +9,10 @@ export interface LabelData {
   album2: string;
   artist2: string;
   tracklist2: string;
+  /** Hide the album/artist overlaid on the front covers (identify via the spine). */
+  doubleHideText: boolean;
+  /** Opacity (0–1) of the background behind overlaid front text. */
+  textBgOpacity: number;
   /** Grayscale text colour (hex), auto-optimised for contrast. */
   textColor: string;
   /** Background / accent colour (hex), sampled from the cover or chosen. */
