@@ -31,6 +31,11 @@ const INITIAL: LabelData = {
   coverDataUrl: null,
   album: '',
   artist: '',
+  doubleAlbum: false,
+  coverDataUrl2: null,
+  album2: '',
+  artist2: '',
+  tracklist2: '',
   textColor: '#ece8e0',
   bgColor: '#6e6a63',
   titleFont: DEFAULT_FONT,
@@ -71,7 +76,10 @@ export default function App() {
   const [coverOptions, setCoverOptions] = useState<string[]>([]);
   const [coverIndex, setCoverIndex] = useState(0);
   const [coverLoading, setCoverLoading] = useState(false);
+  const [coverLoading2, setCoverLoading2] = useState(false);
+  const [tracklistLoading2, setTracklistLoading2] = useState(false);
   const lastCoverKey = useRef('');
+  const lastCoverKey2 = useRef('');
   const [frontSize, setFrontSize] = useState(FRONT_PRESETS[0]);
   const [spineSize, setSpineSize] = useState(SPINE_PRESETS[0]);
   const [tracklistSize, setTracklistSize] = useState(TRACKLIST_PRESETS[0]);
@@ -100,30 +108,51 @@ export default function App() {
 
   function update(patch: Partial<LabelData>) {
     setData((d) => ({ ...d, ...patch }));
-    if ('coverDataUrl' in patch) onCoverChange(patch.coverDataUrl ?? null);
   }
 
-  async function onCoverChange(dataUrl: string | null) {
-    if (!dataUrl) {
+  // Recompute the palette + auto bg/text whenever a cover changes (sampling both
+  // covers in double-album mode).
+  useEffect(() => {
+    let cancelled = false;
+    const urls = [data.coverDataUrl, data.doubleAlbum ? data.coverDataUrl2 : null].filter(
+      Boolean,
+    ) as string[];
+    if (!urls.length) {
       setPalette([]);
       return;
     }
-    try {
-      const colors = await extractPalette(dataUrl, 5);
-      setPalette(colors);
-      const bg = colors[0];
-      if (bg) setData((d) => ({ ...d, bgColor: bg, textColor: bestTextColor(bg) }));
-    } catch (err) {
-      console.warn('Palette extraction failed:', err);
-    }
-  }
+    (async () => {
+      try {
+        const palettes = await Promise.all(urls.map((u) => extractPalette(u, 5)));
+        if (cancelled) return;
+        // Interleave both covers' swatches so each contributes to the picker.
+        const merged: string[] = [];
+        const maxLen = Math.max(...palettes.map((p) => p.length));
+        for (let i = 0; i < maxLen; i++)
+          for (const p of palettes) if (p[i] && !merged.includes(p[i])) merged.push(p[i]);
+        setPalette(merged);
+        const bg = palettes[0][0];
+        if (bg) setData((d) => ({ ...d, bgColor: bg, textColor: bestTextColor(bg) }));
+      } catch (err) {
+        console.warn('Palette extraction failed:', err);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [data.coverDataUrl, data.coverDataUrl2, data.doubleAlbum]);
 
-  // Manual cover (drop / browse / remove): drops any auto-fetched options.
+  // Manual cover (drop / browse): drops any auto-fetched options.
   function onCover(dataUrl: string | null) {
     setCoverOptions([]);
     setCoverIndex(0);
     if (dataUrl) lastCoverKey.current = `${data.artist}|${data.album}`.toLowerCase();
     update({ coverDataUrl: dataUrl });
+  }
+
+  function onCover2(dataUrl: string | null) {
+    if (dataUrl) lastCoverKey2.current = `${data.artist2}|${data.album2}`.toLowerCase();
+    update({ coverDataUrl2: dataUrl });
   }
 
   function cycleCover(dir: number) {
@@ -167,6 +196,54 @@ export default function App() {
     return () => window.clearTimeout(handle);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [data.artist, data.album, data.coverDataUrl]);
+
+  // Second album: fetch its cover (and tracklist) from album2 + artist2.
+  async function loadCovers2() {
+    const artist = data.artist2.trim();
+    const album = data.album2.trim();
+    if (!artist || !album) return;
+    lastCoverKey2.current = `${artist}|${album}`.toLowerCase();
+    setCoverLoading2(true);
+    try {
+      const [{ covers }, tl] = await Promise.all([
+        fetchCovers(artist, album),
+        fetchTracklist(artist, album),
+      ]);
+      const patch: Partial<LabelData> = {};
+      if (covers.length) patch.coverDataUrl2 = covers[0];
+      if (tl.tracks.length && !data.tracklist2.trim()) patch.tracklist2 = tl.tracks.join('\n');
+      if (Object.keys(patch).length) update(patch);
+    } catch (err) {
+      console.warn('Album 2 fetch failed:', err);
+    } finally {
+      setCoverLoading2(false);
+    }
+  }
+
+  async function autoFillTracklist2() {
+    if (!data.album2.trim() || !data.artist2.trim()) return;
+    setTracklistLoading2(true);
+    try {
+      const { tracks } = await fetchTracklist(data.artist2, data.album2);
+      if (tracks.length) update({ tracklist2: tracks.join('\n') });
+    } catch (err) {
+      console.warn('Tracklist 2 fetch failed:', err);
+    } finally {
+      setTracklistLoading2(false);
+    }
+  }
+
+  useEffect(() => {
+    if (!data.doubleAlbum || data.coverDataUrl2) return;
+    const artist = data.artist2.trim();
+    const album = data.album2.trim();
+    if (!artist || !album) return;
+    const key = `${artist}|${album}`.toLowerCase();
+    if (key === lastCoverKey2.current) return;
+    const handle = window.setTimeout(() => void loadCovers2(), 800);
+    return () => window.clearTimeout(handle);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [data.album2, data.artist2, data.coverDataUrl2, data.doubleAlbum]);
 
   async function onFontSelect(field: 'title' | 'artist' | 'track' | 'year', family: string) {
     const key = (
@@ -309,7 +386,13 @@ export default function App() {
       <main className="flex flex-1 flex-wrap content-start items-start gap-36 overflow-auto bg-background p-12 pt-5">
         <section className="flex flex-col gap-2">
           <SizeSelect label="Front" value={frontSize} presets={FRONT_PRESETS} onChange={setFrontSize} />
-          <FrontPreview data={eff} size={frontSize} update={update} onCover={onCover} />
+          <FrontPreview
+            data={eff}
+            size={frontSize}
+            update={update}
+            onCover={onCover}
+            onCover2={onCover2}
+          />
           <div className="flex items-center gap-3">
             <Button
               variant="outline"
@@ -342,6 +425,19 @@ export default function App() {
                 </button>
               </div>
             )}
+          </div>
+          {data.doubleAlbum && coverLoading2 && (
+            <span className="text-xs text-muted-foreground">Fetching second cover…</span>
+          )}
+          <div className="flex w-full items-center justify-between">
+            <Label htmlFor="double-album" className="text-xs">
+              Double album
+            </Label>
+            <Switch
+              id="double-album"
+              checked={data.doubleAlbum}
+              onCheckedChange={(v) => update({ doubleAlbum: v })}
+            />
           </div>
           <div className="flex w-full items-center justify-between">
             <Label htmlFor="show-tracklist" className="text-xs">
@@ -382,14 +478,30 @@ export default function App() {
               />
               <TracklistPreview data={eff} size={tracklistSize} update={update} />
               <div className="flex flex-col gap-2">
-                <Button
-                  variant="outline"
-                  className="w-fit"
-                  disabled={tracklistLoading}
-                  onClick={() => void autoFillTracklist()}
-                >
-                  {tracklistLoading ? 'Fetching…' : 'Auto-fill from MusicBrainz'}
-                </Button>
+                <div className="flex flex-wrap gap-2">
+                  <Button
+                    variant="outline"
+                    className="w-fit"
+                    disabled={tracklistLoading}
+                    onClick={() => void autoFillTracklist()}
+                  >
+                    {tracklistLoading
+                      ? 'Fetching…'
+                      : data.doubleAlbum
+                        ? 'Auto-fill album 1'
+                        : 'Auto-fill from MusicBrainz'}
+                  </Button>
+                  {data.doubleAlbum && (
+                    <Button
+                      variant="outline"
+                      className="w-fit"
+                      disabled={tracklistLoading2}
+                      onClick={() => void autoFillTracklist2()}
+                    >
+                      {tracklistLoading2 ? 'Fetching…' : 'Auto-fill album 2'}
+                    </Button>
+                  )}
+                </div>
                 <div className="flex items-center justify-between">
                   <Label htmlFor="tl-album" className="text-xs">
                     Album

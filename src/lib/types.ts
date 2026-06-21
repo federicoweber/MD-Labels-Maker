@@ -3,6 +3,12 @@ export interface LabelData {
   coverDataUrl: string | null;
   album: string;
   artist: string;
+  /** Double-album mode: a second album shares the front, spine and tracklist. */
+  doubleAlbum: boolean;
+  coverDataUrl2: string | null;
+  album2: string;
+  artist2: string;
+  tracklist2: string;
   /** Grayscale text colour (hex), auto-optimised for contrast. */
   textColor: string;
   /** Background / accent colour (hex), sampled from the cover or chosen. */
