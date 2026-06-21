@@ -1,4 +1,4 @@
-import { useLayoutEffect, useRef, useState } from 'react';
+import { useLayoutEffect, useRef } from 'react';
 import type { LabelData } from '@/lib/types';
 import { TRACKLIST, PREVIEW_PX_PER_MM as S, type SizePreset } from '@/lib/dimensions';
 
@@ -89,7 +89,14 @@ function TracklistColumn({
   const artistY = titleY + TRACKLIST.artistSize + 1;
   const ruleY = (data.tlShowArtist ? artistY : titleY) + 2.5;
   const thumb = (ruleY - TRACKLIST.padding) * S;
-  const hasHeader = data.tlShowAlbum || data.tlShowArtist || (data.showTracklistCover && !!cover);
+  const hasThumb = data.showTracklistCover && !!cover;
+  const hasTextHeader = data.tlShowAlbum || data.tlShowArtist;
+  const hasHeader = hasTextHeader || hasThumb;
+
+  // Force two columns past a track count that depends on the header height.
+  const trackCount = tracklist.split('\n').filter((t) => t.trim()).length;
+  const maxOneCol = hasThumb ? 11 : hasTextHeader ? 12 : 15;
+  const useCols = cols >= 2 && trackCount > maxOneCol ? 2 : 1;
 
   return (
     <div className="flex min-w-0 flex-1 flex-col" style={{ padding: PAD }}>
@@ -141,7 +148,7 @@ function TracklistColumn({
       <TrackEditor
         value={tracklist}
         onChange={onChange}
-        maxCols={cols}
+        cols={useCols}
         style={{
           fontFamily: data.trackFont,
           fontSize: data.trackSize * S,
@@ -156,24 +163,19 @@ function TracklistColumn({
   );
 }
 
-/**
- * ContentEditable numbered track list. Flexible columns: uses a single
- * full-width column when the list fits, only splitting into `maxCols` when it
- * would overflow (so short lists don't needlessly wrap long titles).
- */
+/** ContentEditable numbered track list (one or two columns). */
 function TrackEditor({
   value,
   onChange,
-  maxCols,
+  cols,
   style,
 }: {
   value: string;
   onChange: (v: string) => void;
-  maxCols: number;
+  cols: number;
   style: React.CSSProperties;
 }) {
   const ref = useRef<HTMLOListElement>(null);
-  const [cols, setCols] = useState(maxCols);
 
   useLayoutEffect(() => {
     const el = ref.current;
@@ -188,22 +190,6 @@ function TrackEditor({
         : '';
     }
   }, [value]);
-
-  // Decide column count by measuring how tall the list is as a single full-width
-  // column. Runs every render (cheap; setState bails when unchanged).
-  useLayoutEffect(() => {
-    const el = ref.current;
-    if (!el) return;
-    if (maxCols <= 1) {
-      if (cols !== 1) setCols(1);
-      return;
-    }
-    el.style.columnCount = '1';
-    const fitsOne = el.scrollHeight <= el.clientHeight + 1;
-    el.style.columnCount = String(cols);
-    const next = fitsOne ? 1 : maxCols;
-    if (next !== cols) setCols(next);
-  });
 
   return (
     <ol

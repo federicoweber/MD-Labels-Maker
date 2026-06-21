@@ -27,7 +27,7 @@ import {
   SPINE_PRESETS,
   TRACKLIST_PRESETS,
 } from '@/lib/dimensions';
-const DEFAULT_FONT = 'Roboto Mono';
+const DEFAULT_FONT = 'Inconsolata';
 
 const INITIAL: LabelData = {
   coverDataUrl: null,
@@ -487,10 +487,10 @@ export default function App() {
     yearSize: data.yearAuto ? data.titleSize / (TYPE_SCALE * TYPE_SCALE) : data.yearSize,
   };
 
-  // Tracklist + jewel-case spine colours/spacing: mirror the front when synced,
-  // otherwise use the tracklist's own.
+  // Tracklist + jewel-case spine colours/spacing: mirror the front when synced
+  // (tracks follow the artist font), otherwise use the tracklist's own.
   const tlEff: LabelData = data.tlSync
-    ? eff
+    ? { ...eff, trackFont: eff.artistFont }
     : {
         ...eff,
         bgColor: data.tlBgColor,
