@@ -26,7 +26,7 @@ const PAPERS: Record<string, [number, number]> = {
   A3: [297, 420],
 };
 const MARGIN = 10; // mm
-const GAP = 5; // mm — room to cut between labels
+const GAP = 0; // labels sit flush; one cut serves both neighbours
 
 interface Item {
   key: string;
@@ -151,14 +151,20 @@ export default function PrintView({
             className="print-page bg-white"
             style={{ width: `${pw}mm`, height: `${ph}mm`, padding: `${MARGIN}mm` }}
           >
-            <div className="flex flex-col items-start" style={{ gap: `${GAP}mm` }}>
+            <div className="flex flex-col items-start">
               {pg.map((row, ri) => (
-                <div key={ri} className="flex items-start" style={{ gap: `${GAP}mm` }}>
-                  {row.items.map((it) => (
+                <div key={ri} className="flex items-start" style={{ marginTop: ri ? '-1px' : 0 }}>
+                  {row.items.map((it, ci) => (
                     <div
                       key={it.key}
                       className="print-cell"
-                      style={{ width: `${it.w}mm`, height: `${it.h}mm`, border: '1px solid #cfcfcf' }}
+                      style={{
+                        width: `${it.w}mm`,
+                        height: `${it.h}mm`,
+                        boxSizing: 'content-box',
+                        border: '1px solid #cfcfcf',
+                        marginLeft: ci ? '-1px' : 0,
+                      }}
                     >
                       {it.node}
                     </div>
