@@ -35,29 +35,52 @@ interface Item {
   node: ReactNode;
 }
 
-/** Greedy shelf-pack items (in order) into pages of the given content box. */
-function packPages(items: Item[], contentW: number, contentH: number): Item[][] {
-  const pages: Item[][] = [];
-  let page: Item[] = [];
-  let x = 0;
-  let y = 0;
-  let rowH = 0;
+interface Row {
+  items: Item[];
+  h: number;
+}
+
+/**
+ * Lay labels into rows where every label in a row has the same height, so each
+ * row can be cut with a single straight horizontal cut. Tallest rows first.
+ */
+function buildRows(items: Item[], contentW: number): Row[] {
+  const groups = new Map<number, Item[]>();
   for (const it of items) {
-    if (x > 0 && x + it.w > contentW + 0.01) {
-      x = 0;
-      y += rowH + GAP;
-      rowH = 0;
+    const key = Math.round(it.h * 10) / 10;
+    (groups.get(key) ?? groups.set(key, []).get(key)!).push(it);
+  }
+  const rows: Row[] = [];
+  for (const h of [...groups.keys()].sort((a, b) => b - a)) {
+    let row: Item[] = [];
+    let w = 0;
+    for (const it of groups.get(h)!) {
+      if (row.length && w + it.w > contentW + 0.01) {
+        rows.push({ items: row, h });
+        row = [];
+        w = 0;
+      }
+      row.push(it);
+      w += it.w + GAP;
     }
-    if (page.length && y + it.h > contentH + 0.01) {
+    if (row.length) rows.push({ items: row, h });
+  }
+  return rows;
+}
+
+/** Pack whole rows onto pages without splitting a row across a page. */
+function paginate(rows: Row[], contentH: number): Row[][] {
+  const pages: Row[][] = [];
+  let page: Row[] = [];
+  let y = 0;
+  for (const row of rows) {
+    if (page.length && y + row.h > contentH + 0.01) {
       pages.push(page);
       page = [];
-      x = 0;
       y = 0;
-      rowH = 0;
     }
-    page.push(it);
-    x += it.w + GAP;
-    rowH = Math.max(rowH, it.h);
+    page.push(row);
+    y += row.h + GAP;
   }
   if (page.length) pages.push(page);
   return pages;
@@ -85,9 +108,8 @@ export default function PrintView({
       items.push({ key: `${i}-tl`, w: tracklistSize.width, h: tracklistSize.height, node: <TracklistSheet {...te} size={tracklistSize} /> });
     }
   });
-  // Tallest first packs more tightly.
-  const sorted = [...items].sort((a, b) => b.h - a.h);
-  const pages = packPages(sorted, pw - 2 * MARGIN, ph - 2 * MARGIN);
+  const rows = buildRows(items, pw - 2 * MARGIN);
+  const pages = paginate(rows, ph - 2 * MARGIN);
 
   return createPortal(
     <div className="print-root fixed inset-0 z-50 overflow-auto bg-neutral-500">
@@ -129,14 +151,18 @@ export default function PrintView({
             className="print-page bg-white"
             style={{ width: `${pw}mm`, height: `${ph}mm`, padding: `${MARGIN}mm` }}
           >
-            <div className="flex flex-wrap content-start items-start" style={{ gap: `${GAP}mm` }}>
-              {pg.map((it) => (
-                <div
-                  key={it.key}
-                  className="print-cell"
-                  style={{ width: `${it.w}mm`, height: `${it.h}mm`, border: '1px solid #cfcfcf' }}
-                >
-                  {it.node}
+            <div className="flex flex-col items-start" style={{ gap: `${GAP}mm` }}>
+              {pg.map((row, ri) => (
+                <div key={ri} className="flex items-start" style={{ gap: `${GAP}mm` }}>
+                  {row.items.map((it) => (
+                    <div
+                      key={it.key}
+                      className="print-cell"
+                      style={{ width: `${it.w}mm`, height: `${it.h}mm`, border: '1px solid #cfcfcf' }}
+                    >
+                      {it.node}
+                    </div>
+                  ))}
                 </div>
               ))}
             </div>
