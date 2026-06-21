@@ -115,6 +115,36 @@
   clip-path: polygon(0 0, calc(100% - 0.5rem) 0, 100% 0.5rem, 100% 100%, 0 100%);
 }
 
+/* Outlined dog-ear: a border that follows the diagonal too. Two layered,
+   independently-clipped pseudo-elements (a border layer + a 1px-inset fill)
+   so the cut corner stays bordered. */
+.notch-tr-bordered {
+  position: relative;
+  isolation: isolate;
+  background: transparent;
+  border: 0;
+}
+.notch-tr-bordered::before,
+.notch-tr-bordered::after {
+  content: '';
+  position: absolute;
+  pointer-events: none;
+  clip-path: polygon(0 0, calc(100% - 0.5rem) 0, 100% 0.5rem, 100% 100%, 0 100%);
+}
+.notch-tr-bordered::before {
+  inset: 0;
+  z-index: -2;
+  background: color-mix(in srgb, var(--foreground) 40%, transparent);
+}
+.notch-tr-bordered::after {
+  inset: 1px;
+  z-index: -1;
+  background: var(--background);
+}
+.notch-tr-bordered:hover::after {
+  background: color-mix(in srgb, var(--foreground) 5%, var(--background));
+}
+
 /* WipEout slider: square white handle, white selected portion, neutral track.
    `--range-pct` is set inline per value. */
 .ui-range {

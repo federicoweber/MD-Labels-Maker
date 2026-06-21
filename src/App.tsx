@@ -17,6 +17,7 @@ import { Switch } from '@/components/ui/switch';
 import { Button } from '@/components/ui/button';
 import { fetchFontList, loadFontForPreview } from '@/lib/fonts';
 import { fetchTracklist, fetchCovers } from '@/lib/tracklist';
+import { loadDiscs, saveDiscs } from '@/lib/storage';
 import { downloadLabelsZip, type ZipLabel } from '@/lib/exportPng';
 import { extractPalette, bestTextColor } from '@/lib/colors';
 import {
@@ -62,6 +63,7 @@ const INITIAL: LabelData = {
   trackOpacity: 1,
   letterSpacing: 0,
   lineHeight: 1.2,
+  showTracklist: false,
   tracklist: '',
 };
 
@@ -122,7 +124,7 @@ function CoverControl({
 }
 
 export default function App() {
-  const [data, setData] = useState<LabelData>(INITIAL);
+  const [data, setData] = useState<LabelData>(() => loadDiscs(INITIAL)[0]);
   const [palette, setPalette] = useState<string[]>([]);
   const [coverOptions, setCoverOptions] = useState<string[]>([]);
   const [coverIndex, setCoverIndex] = useState(0);
@@ -138,7 +140,6 @@ export default function App() {
   const [tracklistSize, setTracklistSize] = useState(TRACKLIST_PRESETS[0]);
   const [families, setFamilies] = useState<string[]>([]);
   const [fontsLoading, setFontsLoading] = useState(true);
-  const [showTracklist, setShowTracklist] = useState(false);
   const [tracklistLoading, setTracklistLoading] = useState(false);
   const [exporting, setExporting] = useState(false);
 
@@ -161,6 +162,22 @@ export default function App() {
 
   function update(patch: Partial<LabelData>) {
     setData((d) => ({ ...d, ...patch }));
+  }
+
+  // Persist to local storage (as an array, ready for multiple discs).
+  useEffect(() => {
+    saveDiscs([data]);
+  }, [data]);
+
+  // Reset the current disc to a blank state.
+  function clearDisc() {
+    setCoverOptions([]);
+    setCoverIndex(0);
+    setCoverOptions2([]);
+    setCoverIndex2(0);
+    lastCoverKey.current = '';
+    lastCoverKey2.current = '';
+    setData(INITIAL);
   }
 
   // Recompute the palette + auto bg/text whenever a cover changes (sampling both
@@ -342,7 +359,15 @@ export default function App() {
           heightMm: spineSize.height,
           name: 'spine.png',
         });
-      if (showTracklist && tracklistRef.current)
+      // A second, identical spine for the jewel case that holds the tracklist.
+      if (data.showTracklist && spineRef.current)
+        labels.push({
+          svg: spineRef.current,
+          widthMm: spineSize.width,
+          heightMm: spineSize.height,
+          name: 'spine-2.png',
+        });
+      if (data.showTracklist && tracklistRef.current)
         labels.push({
           svg: tracklistRef.current,
           widthMm: tracklistSize.width,
@@ -459,6 +484,9 @@ export default function App() {
             onCover={onCover}
             onCover2={onCover2}
           />
+          <Button variant="outline" className="w-fit" onClick={clearDisc}>
+            Clear
+          </Button>
           {data.doubleAlbum ? (
             <div className="flex flex-col gap-2">
               <CoverControl
@@ -532,9 +560,9 @@ export default function App() {
             </Label>
             <Switch
               id="show-tracklist"
-              checked={showTracklist}
+              checked={data.showTracklist}
               onCheckedChange={(v) => {
-                setShowTracklist(v);
+                update({ showTracklist: v });
                 if (v && !data.tracklist.trim()) void autoFillTracklist();
               }}
             />
@@ -553,9 +581,15 @@ export default function App() {
           <section className="flex flex-col gap-2">
             <SizeSelect label="Spine" value={spineSize} presets={SPINE_PRESETS} onChange={setSpineSize} />
             <SpinePreview data={eff} size={spineSize} />
+            {data.showTracklist && (
+              <>
+                <span className="text-[11px] text-muted-foreground">Second spine (jewel case)</span>
+                <SpinePreview data={eff} size={spineSize} />
+              </>
+            )}
           </section>
 
-          {showTracklist && (
+          {data.showTracklist && (
             <section className="flex flex-col gap-2">
               <SizeSelect
                 label="Tracklist"

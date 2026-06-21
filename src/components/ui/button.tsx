@@ -11,8 +11,7 @@ const buttonVariants = cva(
       variant: {
         default: "notch-tr bg-[#b9b3a9] text-[#1a1813] hover:bg-[#c7c2b8]",
         destructive: "notch-tr bg-destructive text-destructive-foreground hover:opacity-90",
-        outline:
-          "notch-tr border border-foreground/40 bg-transparent hover:bg-foreground/5",
+        outline: "notch-tr-bordered text-foreground",
         secondary:
           "notch-tr bg-[#9b958a] text-[#1a1813] hover:bg-[#a8a297]",
         ghost:

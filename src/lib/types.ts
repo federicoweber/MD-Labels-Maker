@@ -41,6 +41,8 @@ export interface LabelData {
   letterSpacing: number;
   /** Label text line-height multiplier. */
   lineHeight: number;
+  /** Whether the optional jewel-case tracklist sheet is shown. */
+  showTracklist: boolean;
   /** Tracklist text, one track per line (for the optional jewel-case sheet). */
   tracklist: string;
   /** Show a miniature cover next to the tracklist header. */
