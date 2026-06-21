@@ -42,6 +42,11 @@ const INITIAL: LabelData = {
   textBgOpacity: 1,
   textColor: '#ece8e0',
   bgColor: '#6e6a63',
+  tlTextColor: '#ece8e0',
+  tlBgColor: '#6e6a63',
+  tlLetterSpacing: 0,
+  tlLineHeight: 1.2,
+  tlSync: true,
   titleFont: DEFAULT_FONT,
   artistFont: DEFAULT_FONT,
   trackFont: DEFAULT_FONT,
@@ -135,8 +140,10 @@ export default function App() {
   const [tracklistLoading2, setTracklistLoading2] = useState(false);
   const lastCoverKey = useRef('');
   const lastCoverKey2 = useRef('');
+  const autoColoredFor = useRef<string | null>(null);
   const [frontSize, setFrontSize] = useState(FRONT_PRESETS[0]);
   const [spineSize, setSpineSize] = useState(SPINE_PRESETS[0]);
+  const [caseSpineSize, setCaseSpineSize] = useState(SPINE_PRESETS[0]);
   const [tracklistSize, setTracklistSize] = useState(TRACKLIST_PRESETS[0]);
   const [families, setFamilies] = useState<string[]>([]);
   const [fontsLoading, setFontsLoading] = useState(true);
@@ -145,6 +152,7 @@ export default function App() {
 
   const frontRef = useRef<SVGSVGElement>(null);
   const spineRef = useRef<SVGSVGElement>(null);
+  const caseSpineRef = useRef<SVGSVGElement>(null);
   const tracklistRef = useRef<SVGSVGElement>(null);
 
   useEffect(() => {
@@ -187,6 +195,12 @@ export default function App() {
     const urls = [data.coverDataUrl, data.doubleAlbum ? data.coverDataUrl2 : null].filter(
       Boolean,
     ) as string[];
+    // Only auto-apply colours when the cover genuinely changes — never on the
+    // initial mount (which would clobber colours restored from local storage).
+    // Signature-based so React StrictMode's double-mount doesn't trip it.
+    const sig = urls.join('|');
+    const changed = autoColoredFor.current !== null && sig !== autoColoredFor.current;
+    autoColoredFor.current = sig;
     if (!urls.length) {
       setPalette([]);
       return;
@@ -202,7 +216,10 @@ export default function App() {
           for (const p of palettes) if (p[i] && !merged.includes(p[i])) merged.push(p[i]);
         setPalette(merged);
         const bg = palettes[0][0];
-        if (bg) setData((d) => ({ ...d, bgColor: bg, textColor: bestTextColor(bg) }));
+        if (bg && changed) {
+          const text = bestTextColor(bg);
+          setData((d) => ({ ...d, bgColor: bg, textColor: text, tlBgColor: bg, tlTextColor: text }));
+        }
       } catch (err) {
         console.warn('Palette extraction failed:', err);
       }
@@ -359,13 +376,13 @@ export default function App() {
           heightMm: spineSize.height,
           name: 'spine.png',
         });
-      // A second, identical spine for the jewel case that holds the tracklist.
-      if (data.showTracklist && spineRef.current)
+      // The jewel-case spine (its own size) for the case that holds the tracklist.
+      if (data.showTracklist && caseSpineRef.current)
         labels.push({
-          svg: spineRef.current,
-          widthMm: spineSize.width,
-          heightMm: spineSize.height,
-          name: 'spine-2.png',
+          svg: caseSpineRef.current,
+          widthMm: caseSpineSize.width,
+          heightMm: caseSpineSize.height,
+          name: 'spine-jewel-case.png',
         });
       if (data.showTracklist && tracklistRef.current)
         labels.push({
@@ -470,6 +487,18 @@ export default function App() {
     yearSize: data.yearAuto ? data.titleSize / (TYPE_SCALE * TYPE_SCALE) : data.yearSize,
   };
 
+  // Tracklist + jewel-case spine colours/spacing: mirror the front when synced,
+  // otherwise use the tracklist's own.
+  const tlEff: LabelData = data.tlSync
+    ? eff
+    : {
+        ...eff,
+        bgColor: data.tlBgColor,
+        textColor: data.tlTextColor,
+        letterSpacing: data.tlLetterSpacing,
+        lineHeight: data.tlLineHeight,
+      };
+
   return (
     <div className="flex h-svh overflow-hidden">
       <Controls onExport={onExport} exporting={exporting} />
@@ -571,9 +600,15 @@ export default function App() {
             fields={frontFields}
             families={families}
             fontsLoading={fontsLoading}
-            data={data}
-            update={update}
             palette={palette}
+            bgColor={data.bgColor}
+            onBgColor={(h) => update({ bgColor: h })}
+            textColor={data.textColor}
+            onTextColor={(h) => update({ textColor: h })}
+            letterSpacing={data.letterSpacing}
+            onLetterSpacing={(v) => update({ letterSpacing: v })}
+            lineHeight={data.lineHeight}
+            onLineHeight={(v) => update({ lineHeight: v })}
           />
         </section>
 
@@ -583,8 +618,13 @@ export default function App() {
             <SpinePreview data={eff} size={spineSize} />
             {data.showTracklist && (
               <>
-                <span className="text-[11px] text-muted-foreground">Second spine (jewel case)</span>
-                <SpinePreview data={eff} size={spineSize} />
+                <SizeSelect
+                  label="Jewel case spine"
+                  value={caseSpineSize}
+                  presets={SPINE_PRESETS}
+                  onChange={setCaseSpineSize}
+                />
+                <SpinePreview data={tlEff} size={caseSpineSize} />
               </>
             )}
           </section>
@@ -597,7 +637,7 @@ export default function App() {
                 presets={TRACKLIST_PRESETS}
                 onChange={setTracklistSize}
               />
-              <TracklistPreview data={eff} size={tracklistSize} update={update} />
+              <TracklistPreview data={tlEff} size={tracklistSize} update={update} />
               <div className="flex flex-col gap-2">
                 <div className="flex flex-wrap gap-2">
                   <Button
@@ -653,15 +693,33 @@ export default function App() {
                     onCheckedChange={(v) => update({ showTracklistCover: v })}
                   />
                 </div>
+                <div className="flex items-center justify-between">
+                  <Label htmlFor="tl-sync" className="text-xs">
+                    Sync with front
+                  </Label>
+                  <Switch
+                    id="tl-sync"
+                    checked={data.tlSync}
+                    onCheckedChange={(v) => update({ tlSync: v })}
+                  />
+                </div>
               </div>
-              <LabelControls
-                fields={trackFields}
-                families={families}
-                fontsLoading={fontsLoading}
-                data={data}
-                update={update}
-                palette={palette}
-              />
+              {!data.tlSync && (
+                <LabelControls
+                  fields={trackFields}
+                  families={families}
+                  fontsLoading={fontsLoading}
+                  palette={palette}
+                  bgColor={data.tlBgColor}
+                  onBgColor={(h) => update({ tlBgColor: h })}
+                  textColor={data.tlTextColor}
+                  onTextColor={(h) => update({ tlTextColor: h })}
+                  letterSpacing={data.tlLetterSpacing}
+                  onLetterSpacing={(v) => update({ tlLetterSpacing: v })}
+                  lineHeight={data.tlLineHeight}
+                  onLineHeight={(v) => update({ tlLineHeight: v })}
+                />
+              )}
             </section>
           )}
         </div>
@@ -673,7 +731,8 @@ export default function App() {
       <div aria-hidden className="pointer-events-none fixed top-0 -left-[99999px] opacity-0">
         <FrontLabel ref={frontRef} {...eff} size={frontSize} />
         <SpineLabel ref={spineRef} {...eff} size={spineSize} />
-        <TracklistSheet ref={tracklistRef} {...eff} size={tracklistSize} />
+        <SpineLabel ref={caseSpineRef} {...tlEff} size={caseSpineSize} />
+        <TracklistSheet ref={tracklistRef} {...tlEff} size={tracklistSize} />
       </div>
     </div>
   );

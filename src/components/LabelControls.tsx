@@ -1,4 +1,3 @@
-import type { LabelData } from '@/lib/types';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
@@ -22,9 +21,15 @@ interface Props {
   fields: TypoField[];
   families: string[];
   fontsLoading: boolean;
-  data: LabelData;
-  update: (patch: Partial<LabelData>) => void;
   palette: string[];
+  bgColor: string;
+  onBgColor: (hex: string) => void;
+  textColor: string;
+  onTextColor: (hex: string) => void;
+  letterSpacing: number;
+  onLetterSpacing: (v: number) => void;
+  lineHeight: number;
+  onLineHeight: (v: number) => void;
 }
 
 const GRAYS = ['#000000', '#3f3f3f', '#808080', '#bfbfbf', '#ffffff'];
@@ -34,7 +39,20 @@ const SectionTitle = ({ children }: { children: React.ReactNode }) => (
 );
 
 /** Contextual Background / Text / Typography controls shown under a label. */
-export default function LabelControls({ fields, families, fontsLoading, data, update, palette }: Props) {
+export default function LabelControls({
+  fields,
+  families,
+  fontsLoading,
+  palette,
+  bgColor,
+  onBgColor,
+  textColor,
+  onTextColor,
+  letterSpacing,
+  onLetterSpacing,
+  lineHeight,
+  onLineHeight,
+}: Props) {
   const swatches = [...GRAYS, ...palette];
   const opacityFields = fields.filter((f) => f.opacity);
   return (
@@ -53,11 +71,11 @@ export default function LabelControls({ fields, families, fontsLoading, data, up
         </TabsList>
 
         <TabsContent value="bg" className="pt-3">
-          <ColorPicker value={data.bgColor} onChange={(h) => update({ bgColor: h })} colors={swatches} />
+          <ColorPicker value={bgColor} onChange={onBgColor} colors={swatches} />
         </TabsContent>
 
         <TabsContent value="text" className="space-y-3 pt-3">
-          <ColorPicker value={data.textColor} onChange={(h) => update({ textColor: h })} colors={swatches} />
+          <ColorPicker value={textColor} onChange={onTextColor} colors={swatches} />
           {opacityFields.length > 0 && <Rule />}
           {opacityFields.map((f) => (
             <SizeSlider
@@ -129,22 +147,22 @@ export default function LabelControls({ fields, families, fontsLoading, data, up
           <SizeSlider
             id="tracking"
             label="Tracking"
-            value={data.letterSpacing}
+            value={letterSpacing}
             min={0}
             max={0.4}
             step={0.01}
             format={(v) => `${v.toFixed(2)}em`}
-            onChange={(v) => update({ letterSpacing: v })}
+            onChange={onLetterSpacing}
           />
           <SizeSlider
             id="linespace"
             label="Line space"
-            value={data.lineHeight}
+            value={lineHeight}
             min={1}
             max={2}
             step={0.05}
             format={(v) => v.toFixed(2)}
-            onChange={(v) => update({ lineHeight: v })}
+            onChange={onLineHeight}
           />
         </TabsContent>
       </Tabs>

@@ -13,10 +13,17 @@ export interface LabelData {
   doubleHideText: boolean;
   /** Opacity (0–1) of the background behind overlaid front text. */
   textBgOpacity: number;
-  /** Grayscale text colour (hex), auto-optimised for contrast. */
+  /** Front/spine text colour (hex), auto-optimised for contrast. */
   textColor: string;
-  /** Background / accent colour (hex), sampled from the cover or chosen. */
+  /** Front/spine background colour (hex), sampled from the cover or chosen. */
   bgColor: string;
+  /** Tracklist sheet colours + spacing (independent from the front/spine). */
+  tlTextColor: string;
+  tlBgColor: string;
+  tlLetterSpacing: number;
+  tlLineHeight: number;
+  /** Keep the tracklist's colours + typography in sync with the front. */
+  tlSync: boolean;
   /** Fonts per text role. */
   titleFont: string;
   artistFont: string;
