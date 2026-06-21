@@ -695,7 +695,7 @@ export default function App() {
                 </div>
                 <div className="flex items-center justify-between">
                   <Label htmlFor="tl-sync" className="text-xs">
-                    Sync with front
+                    Same as front
                   </Label>
                   <Switch
                     id="tl-sync"
