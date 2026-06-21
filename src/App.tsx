@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
+import { ChevronLeft, ChevronRight } from 'lucide-react';
 import type { LabelData } from '@/lib/types';
 import FrontLabel from '@/components/FrontLabel';
 import SpineLabel from '@/components/SpineLabel';
@@ -35,7 +36,9 @@ const INITIAL: LabelData = {
   titleFont: DEFAULT_FONT,
   artistFont: DEFAULT_FONT,
   trackFont: DEFAULT_FONT,
-  linkFonts: true,
+  yearFont: DEFAULT_FONT,
+  artistAuto: true,
+  yearAuto: true,
   year: '',
   showYear: false,
   yearSize: 2.2,
@@ -44,6 +47,8 @@ const INITIAL: LabelData = {
   showArtist: true,
   trackSize: TRACKLIST.trackSize,
   showTracklistCover: false,
+  tlShowAlbum: true,
+  tlShowArtist: true,
   titleOpacity: 1,
   artistOpacity: 1,
   trackOpacity: 1,
@@ -65,6 +70,7 @@ export default function App() {
   const [palette, setPalette] = useState<string[]>([]);
   const [coverOptions, setCoverOptions] = useState<string[]>([]);
   const [coverIndex, setCoverIndex] = useState(0);
+  const [coverLoading, setCoverLoading] = useState(false);
   const lastCoverKey = useRef('');
   const [frontSize, setFrontSize] = useState(FRONT_PRESETS[0]);
   const [spineSize, setSpineSize] = useState(SPINE_PRESETS[0]);
@@ -127,6 +133,28 @@ export default function App() {
     update({ coverDataUrl: coverOptions[next] });
   }
 
+  async function loadCovers() {
+    const artist = data.artist.trim();
+    const album = data.album.trim();
+    if (!artist || !album) return;
+    lastCoverKey.current = `${artist}|${album}`.toLowerCase();
+    setCoverLoading(true);
+    try {
+      const { covers, year } = await fetchCovers(artist, album);
+      if (covers.length) {
+        setCoverOptions(covers);
+        setCoverIndex(0);
+        update(year && !data.year ? { coverDataUrl: covers[0], year } : { coverDataUrl: covers[0] });
+      } else if (year && !data.year) {
+        update({ year });
+      }
+    } catch (err) {
+      console.warn('Cover fetch failed:', err);
+    } finally {
+      setCoverLoading(false);
+    }
+  }
+
   // Auto-fetch cover options once an album + artist are present (and no cover yet).
   useEffect(() => {
     if (data.coverDataUrl) return;
@@ -135,27 +163,16 @@ export default function App() {
     if (!artist || !album) return;
     const key = `${artist}|${album}`.toLowerCase();
     if (key === lastCoverKey.current) return;
-    const handle = window.setTimeout(async () => {
-      lastCoverKey.current = key;
-      try {
-        const covers = await fetchCovers(artist, album);
-        if (covers.length) {
-          setCoverOptions(covers);
-          setCoverIndex(0);
-          update({ coverDataUrl: covers[0] });
-        }
-      } catch (err) {
-        console.warn('Cover fetch failed:', err);
-      }
-    }, 800);
+    const handle = window.setTimeout(() => void loadCovers(), 800);
     return () => window.clearTimeout(handle);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [data.artist, data.album, data.coverDataUrl]);
 
-  async function onFontSelect(field: 'title' | 'artist' | 'track', family: string) {
-    if (field === 'track') update({ trackFont: family });
-    else if (data.linkFonts) update({ titleFont: family, artistFont: family });
-    else update(field === 'title' ? { titleFont: family } : { artistFont: family });
+  async function onFontSelect(field: 'title' | 'artist' | 'track' | 'year', family: string) {
+    const key = (
+      { title: 'titleFont', artist: 'artistFont', track: 'trackFont', year: 'yearFont' } as const
+    )[field];
+    update({ [key]: family });
     try {
       await loadFontForPreview(family);
     } catch (err) {
@@ -189,11 +206,13 @@ export default function App() {
           heightMm: tracklistSize.height,
           name: 'tracklist.png',
         });
-      await downloadLabelsZip(
-        labels,
-        [data.titleFont, data.artistFont, data.trackFont],
-        `${base}-minidisc-labels.zip`,
-      );
+      const fonts = [
+        data.titleFont,
+        data.artistAuto ? data.titleFont : data.artistFont,
+        data.trackFont,
+        data.yearAuto ? data.titleFont : data.yearFont,
+      ];
+      await downloadLabelsZip(labels, fonts, `${base}-minidisc-labels.zip`);
     } catch (err) {
       console.error('Export failed:', err);
     } finally {
@@ -225,27 +244,42 @@ export default function App() {
       size: { id: 'title-size', value: data.titleSize, min: 2, max: 10, onChange: (v) => update({ titleSize: v }) },
       opacity: { id: 'title-opacity', value: data.titleOpacity, onChange: (v) => update({ titleOpacity: v }) },
     },
-  ];
-  if (data.showArtist) {
-    frontFields.push({
+    {
       key: 'subtitle',
       title: 'Artist',
-      linkSwitch: {
-        checked: data.linkFonts,
-        onChange: (v) => update(v ? { linkFonts: true, artistFont: data.titleFont } : { linkFonts: false }),
-      },
-      font: data.linkFonts ? undefined : { value: data.artistFont, onChange: (f) => onFontSelect('artist', f) },
-      size: { id: 'subtitle-size', value: data.artistSize, min: 1.5, max: 7, onChange: (v) => update({ artistSize: v }) },
-      opacity: { id: 'subtitle-opacity', value: data.artistOpacity, onChange: (v) => update({ artistOpacity: v }) },
-    });
-  }
-  if (data.showYear) {
-    frontFields.push({
+      showSwitch: { checked: data.showArtist, onChange: (v) => update({ showArtist: v }) },
+      autoSwitch: data.showArtist
+        ? { checked: data.artistAuto, onChange: (v) => update({ artistAuto: v }) }
+        : undefined,
+      font:
+        data.showArtist && !data.artistAuto
+          ? { value: data.artistFont, onChange: (f) => onFontSelect('artist', f) }
+          : undefined,
+      size:
+        data.showArtist && !data.artistAuto
+          ? { id: 'subtitle-size', value: data.artistSize, min: 1.5, max: 7, onChange: (v) => update({ artistSize: v }) }
+          : undefined,
+      opacity: data.showArtist
+        ? { id: 'subtitle-opacity', value: data.artistOpacity, onChange: (v) => update({ artistOpacity: v }) }
+        : undefined,
+    },
+    {
       key: 'year',
       title: 'Year',
-      size: { id: 'year-size', value: data.yearSize, min: 1.2, max: 5, onChange: (v) => update({ yearSize: v }) },
-    });
-  }
+      showSwitch: { checked: data.showYear, onChange: (v) => update({ showYear: v }) },
+      autoSwitch: data.showYear
+        ? { checked: data.yearAuto, onChange: (v) => update({ yearAuto: v }) }
+        : undefined,
+      font:
+        data.showYear && !data.yearAuto
+          ? { value: data.yearFont, onChange: (f) => onFontSelect('year', f) }
+          : undefined,
+      size:
+        data.showYear && !data.yearAuto
+          ? { id: 'year-size', value: data.yearSize, min: 1.2, max: 5, onChange: (v) => update({ yearSize: v }) }
+          : undefined,
+    },
+  ];
 
   const trackFields: TypoField[] = [
     {
@@ -257,41 +291,57 @@ export default function App() {
     },
   ];
 
+  // Effective rendering data: in "automatic" mode the artist/year derive their
+  // font + size from the album via a type scale.
+  const TYPE_SCALE = 1.25;
+  const eff: LabelData = {
+    ...data,
+    artistFont: data.artistAuto ? data.titleFont : data.artistFont,
+    artistSize: data.artistAuto ? data.titleSize / TYPE_SCALE : data.artistSize,
+    yearFont: data.yearAuto ? data.titleFont : data.yearFont,
+    yearSize: data.yearAuto ? data.titleSize / (TYPE_SCALE * TYPE_SCALE) : data.yearSize,
+  };
+
   return (
     <div className="flex h-svh overflow-hidden">
       <Controls onExport={onExport} exporting={exporting} />
 
-      <main className="flex flex-1 flex-wrap content-start items-start gap-36 overflow-auto bg-background p-12">
+      <main className="flex flex-1 flex-wrap content-start items-start gap-36 overflow-auto bg-background p-12 pt-5">
         <section className="flex flex-col gap-2">
           <SizeSelect label="Front" value={frontSize} presets={FRONT_PRESETS} onChange={setFrontSize} />
-          <FrontPreview
-            data={data}
-            size={frontSize}
-            update={update}
-            onCover={onCover}
-            coverCount={coverOptions.length}
-            coverIndex={coverIndex}
-            onCycleCover={cycleCover}
-          />
-          <div className="flex w-full items-center justify-between">
-            <Label htmlFor="show-subtitle" className="text-xs">
-              Artist
-            </Label>
-            <Switch
-              id="show-subtitle"
-              checked={data.showArtist}
-              onCheckedChange={(v) => update({ showArtist: v })}
-            />
-          </div>
-          <div className="flex w-full items-center justify-between">
-            <Label htmlFor="show-year" className="text-xs">
-              Year
-            </Label>
-            <Switch
-              id="show-year"
-              checked={data.showYear}
-              onCheckedChange={(v) => update({ showYear: v })}
-            />
+          <FrontPreview data={eff} size={frontSize} update={update} onCover={onCover} />
+          <div className="flex items-center gap-3">
+            <Button
+              variant="outline"
+              className="w-fit"
+              disabled={coverLoading}
+              onClick={() => void loadCovers()}
+            >
+              {coverLoading ? 'Fetching…' : 'Fetch cover'}
+            </Button>
+            {coverOptions.length > 1 && (
+              <div className="flex items-center gap-1 text-xs text-muted-foreground">
+                <button
+                  type="button"
+                  aria-label="Previous cover"
+                  onClick={() => cycleCover(-1)}
+                  className="grid size-6 place-items-center border border-border hover:bg-accent"
+                >
+                  <ChevronLeft className="size-3.5" />
+                </button>
+                <span className="tabular-nums">
+                  {coverIndex + 1}/{coverOptions.length}
+                </span>
+                <button
+                  type="button"
+                  aria-label="Next cover"
+                  onClick={() => cycleCover(1)}
+                  className="grid size-6 place-items-center border border-border hover:bg-accent"
+                >
+                  <ChevronRight className="size-3.5" />
+                </button>
+              </div>
+            )}
           </div>
           <div className="flex w-full items-center justify-between">
             <Label htmlFor="show-tracklist" className="text-xs">
@@ -319,7 +369,7 @@ export default function App() {
         <div className="flex flex-col gap-12">
           <section className="flex flex-col gap-2">
             <SizeSelect label="Spine" value={spineSize} presets={SPINE_PRESETS} onChange={setSpineSize} />
-            <SpinePreview data={data} size={spineSize} />
+            <SpinePreview data={eff} size={spineSize} />
           </section>
 
           {showTracklist && (
@@ -330,8 +380,8 @@ export default function App() {
                 presets={TRACKLIST_PRESETS}
                 onChange={setTracklistSize}
               />
-              <TracklistPreview data={data} size={tracklistSize} update={update} />
-              <div className="flex items-center gap-3">
+              <TracklistPreview data={eff} size={tracklistSize} update={update} />
+              <div className="flex flex-col gap-2">
                 <Button
                   variant="outline"
                   className="w-fit"
@@ -340,15 +390,35 @@ export default function App() {
                 >
                   {tracklistLoading ? 'Fetching…' : 'Auto-fill from MusicBrainz'}
                 </Button>
-                <div className="flex items-center gap-2">
+                <div className="flex items-center justify-between">
+                  <Label htmlFor="tl-album" className="text-xs">
+                    Album
+                  </Label>
+                  <Switch
+                    id="tl-album"
+                    checked={data.tlShowAlbum}
+                    onCheckedChange={(v) => update({ tlShowAlbum: v })}
+                  />
+                </div>
+                <div className="flex items-center justify-between">
+                  <Label htmlFor="tl-artist" className="text-xs">
+                    Artist
+                  </Label>
+                  <Switch
+                    id="tl-artist"
+                    checked={data.tlShowArtist}
+                    onCheckedChange={(v) => update({ tlShowArtist: v })}
+                  />
+                </div>
+                <div className="flex items-center justify-between">
+                  <Label htmlFor="tracklist-cover" className="text-xs">
+                    Cover thumbnail
+                  </Label>
                   <Switch
                     id="tracklist-cover"
                     checked={data.showTracklistCover}
                     onCheckedChange={(v) => update({ showTracklistCover: v })}
                   />
-                  <Label htmlFor="tracklist-cover" className="text-xs">
-                    Cover thumbnail
-                  </Label>
                 </div>
               </div>
               <LabelControls
@@ -368,9 +438,9 @@ export default function App() {
 
       {/* Hidden SVG twins — the precise, vector source used for PNG export. */}
       <div aria-hidden className="pointer-events-none fixed top-0 -left-[99999px] opacity-0">
-        <FrontLabel ref={frontRef} {...data} size={frontSize} />
-        <SpineLabel ref={spineRef} {...data} size={spineSize} />
-        <TracklistSheet ref={tracklistRef} {...data} size={tracklistSize} />
+        <FrontLabel ref={frontRef} {...eff} size={frontSize} />
+        <SpineLabel ref={spineRef} {...eff} size={spineSize} />
+        <TracklistSheet ref={tracklistRef} {...eff} size={tracklistSize} />
       </div>
     </div>
   );

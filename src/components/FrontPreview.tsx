@@ -1,5 +1,5 @@
 import { useEffect, useLayoutEffect, useRef, useState } from 'react';
-import { ChevronLeft, ChevronRight, X } from 'lucide-react';
+import { X } from 'lucide-react';
 import type { LabelData } from '@/lib/types';
 import { FRONT, PREVIEW_PX_PER_MM as S, frontCoverSize, type SizePreset } from '@/lib/dimensions';
 
@@ -8,9 +8,6 @@ interface Props {
   size: SizePreset;
   update: (patch: Partial<LabelData>) => void;
   onCover: (dataUrl: string | null) => void;
-  coverCount: number;
-  coverIndex: number;
-  onCycleCover: (dir: number) => void;
 }
 
 function readImageFile(file: File): Promise<string> {
@@ -26,15 +23,7 @@ function readImageFile(file: File): Promise<string> {
  * Editable front-label preview: drop/click the cover on it, and type a
  * multiline title + optional artist in place. The hidden SVG twin exports.
  */
-export default function FrontPreview({
-  data,
-  size,
-  update,
-  onCover,
-  coverCount,
-  coverIndex,
-  onCycleCover,
-}: Props) {
+export default function FrontPreview({ data, size, update, onCover }: Props) {
   const fileInput = useRef<HTMLInputElement>(null);
   const [dragOver, setDragOver] = useState(false);
   const [pageDragging, setPageDragging] = useState(false);
@@ -132,35 +121,6 @@ export default function FrontPreview({
               {pageDragging ? 'DROP' : 'COVER'}
             </span>
           </div>
-        )}
-        {data.coverDataUrl && coverCount > 1 && (
-          <>
-            <button
-              type="button"
-              aria-label="Previous cover"
-              onClick={(e) => {
-                e.stopPropagation();
-                onCycleCover(-1);
-              }}
-              className="absolute top-1/2 left-1 grid size-5 -translate-y-1/2 place-items-center bg-black/55 text-white"
-            >
-              <ChevronLeft size={14} />
-            </button>
-            <button
-              type="button"
-              aria-label="Next cover"
-              onClick={(e) => {
-                e.stopPropagation();
-                onCycleCover(1);
-              }}
-              className="absolute top-1/2 right-1 grid size-5 -translate-y-1/2 place-items-center bg-black/55 text-white"
-            >
-              <ChevronRight size={14} />
-            </button>
-            <span className="absolute right-1 bottom-1 bg-black/55 px-1 text-[9px] text-white">
-              {coverIndex + 1}/{coverCount}
-            </span>
-          </>
         )}
       </div>
 

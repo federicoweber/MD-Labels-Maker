@@ -14,8 +14,9 @@ export default function Controls({ onExport, exporting }: ControlsProps) {
       </header>
 
       <p className="text-xs text-muted-foreground">
-        Drop an album cover onto a label, then type the album, artist and tracks straight onto it.
-        Click any text to change its font, size, colour and opacity.
+        Type the album and artist on the label — the cover, year and tracklist are fetched
+        automatically. Use “Fetch cover” and the ◀ ▶ arrows to choose among the matches, or drop
+        your own image. Click any text to restyle it.
       </p>
 
       <Button onClick={onExport} disabled={exporting}>

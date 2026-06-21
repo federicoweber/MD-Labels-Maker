@@ -1,7 +1,12 @@
 // Fetch an album's tracklist from MusicBrainz (free, CORS-enabled, no key).
 
 interface MbReleaseSearch {
-  releases?: { id: string; score?: number }[];
+  releases?: { id: string; score?: number; date?: string }[];
+}
+
+export interface CoverResult {
+  covers: string[];
+  year: string;
 }
 
 function blobToDataUrl(blob: Blob): Promise<string> {
@@ -18,18 +23,20 @@ function blobToDataUrl(blob: Blob): Promise<string> {
  * returned as data URLs (so they can be embedded in the SVG export). Looks
  * across the top matching releases; deduped.
  */
-export async function fetchCovers(artist: string, album: string, max = 6): Promise<string[]> {
-  if (!artist.trim() || !album.trim()) return [];
+export async function fetchCovers(artist: string, album: string, max = 6): Promise<CoverResult> {
+  if (!artist.trim() || !album.trim()) return { covers: [], year: '' };
   const query = `release:"${album}" AND artist:"${artist}"`;
   const searchUrl = `https://musicbrainz.org/ws/2/release/?query=${encodeURIComponent(
     query,
   )}&fmt=json&limit=10`;
   const res = await fetch(searchUrl, { headers: { Accept: 'application/json' } });
-  if (!res.ok) return [];
+  if (!res.ok) return { covers: [], year: '' };
   const search = (await res.json()) as MbReleaseSearch;
+  const releases = search.releases ?? [];
+  const year = releases.find((r) => r.date)?.date?.slice(0, 4) ?? '';
 
   const covers: string[] = [];
-  for (const release of search.releases ?? []) {
+  for (const release of releases) {
     if (covers.length >= max) break;
     try {
       const imgRes = await fetch(`https://coverartarchive.org/release/${release.id}/front-500`);
@@ -40,21 +47,11 @@ export async function fetchCovers(artist: string, album: string, max = 6): Promi
       /* try the next release */
     }
   }
-  return covers;
+  return { covers, year };
 }
 interface MbRelease {
   date?: string;
-  media?: { tracks?: { title: string; length?: number }[] }[];
-}
-
-/** Format milliseconds as (HH:MM:SS). */
-function formatDuration(ms: number): string {
-  const total = Math.round(ms / 1000);
-  const h = Math.floor(total / 3600);
-  const m = Math.floor((total % 3600) / 60);
-  const s = total % 60;
-  const pad = (n: number) => String(n).padStart(2, '0');
-  return `(${pad(h)}:${pad(m)}:${pad(s)})`;
+  media?: { tracks?: { title: string }[] }[];
 }
 
 export interface TracklistResult {
@@ -89,7 +86,7 @@ export async function fetchTracklist(artist: string, album: string): Promise<Tra
     for (const track of medium.tracks ?? []) {
       const title = track.title?.trim();
       if (!title || title.toLowerCase() === '[untitled]') continue;
-      tracks.push(track.length ? `${title} ${formatDuration(track.length)}` : title);
+      tracks.push(title);
     }
   }
   return { tracks, year: data.date?.slice(0, 4) ?? '' };

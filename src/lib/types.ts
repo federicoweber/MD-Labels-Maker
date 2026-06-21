@@ -11,8 +11,10 @@ export interface LabelData {
   titleFont: string;
   artistFont: string;
   trackFont: string;
-  /** When true, the artist uses the same font as the title. */
-  linkFonts: boolean;
+  yearFont: string;
+  /** Automatic = derive font + size from the album (title) via a type scale. */
+  artistAuto: boolean;
+  yearAuto: boolean;
   /** Title font size in mm (front label). */
   titleSize: number;
   /** Artist font size in mm (front label). */
@@ -33,6 +35,9 @@ export interface LabelData {
   tracklist: string;
   /** Show a miniature cover next to the tracklist header. */
   showTracklistCover: boolean;
+  /** Show album / artist in the tracklist header. */
+  tlShowAlbum: boolean;
+  tlShowArtist: boolean;
   /** Album year, shown bottom-left of the front label when enabled. */
   year: string;
   showYear: boolean;

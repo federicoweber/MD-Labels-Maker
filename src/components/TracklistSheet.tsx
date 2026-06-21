@@ -21,7 +21,8 @@ const TracklistSheet = forwardRef<SVGSVGElement, Props>(function TracklistSheet(
     titleFont,
     artistFont,
     trackFont,
-    showArtist,
+    tlShowAlbum,
+    tlShowArtist,
     showTracklistCover,
     trackSize,
     titleOpacity,
@@ -37,8 +38,10 @@ const TracklistSheet = forwardRef<SVGSVGElement, Props>(function TracklistSheet(
   const trackGap = trackSize * lineHeight;
   const titleY = padding + titleSize * 0.9;
   const artistY = titleY + artistSize + 1;
-  const ruleY = (showArtist ? artistY : titleY) + 2.5;
-  const tracksTop = ruleY + 4;
+  const hasHeader = tlShowAlbum || tlShowArtist || (showTracklistCover && !!coverDataUrl);
+  const headerBottom = tlShowArtist ? artistY : tlShowAlbum ? titleY : padding;
+  const ruleY = hasHeader ? headerBottom + 2.5 : padding;
+  const tracksTop = hasHeader ? ruleY + 4 : padding + trackSize * 0.9;
   const colX = [padding, W / 2 + 1];
   const maxRows = Math.max(1, Math.floor((H - tracksTop - padding) / trackGap));
 
@@ -69,19 +72,21 @@ const TracklistSheet = forwardRef<SVGSVGElement, Props>(function TracklistSheet(
         />
       )}
 
-      <text
-        x={padding}
-        y={titleY}
-        fill={textColor}
-        fontFamily={titleFont}
-        fontSize={titleSize}
-        fontWeight={700}
-        fillOpacity={titleOpacity}
-        letterSpacing={titleSize * letterSpacing}
-      >
-        {album || 'Album'}
-      </text>
-      {showArtist && (
+      {tlShowAlbum && (
+        <text
+          x={padding}
+          y={titleY}
+          fill={textColor}
+          fontFamily={titleFont}
+          fontSize={titleSize}
+          fontWeight={700}
+          fillOpacity={titleOpacity}
+          letterSpacing={titleSize * letterSpacing}
+        >
+          {album || 'Album'}
+        </text>
+      )}
+      {tlShowArtist && (
         <text
           x={padding}
           y={artistY}
@@ -95,15 +100,17 @@ const TracklistSheet = forwardRef<SVGSVGElement, Props>(function TracklistSheet(
         </text>
       )}
 
-      <line
-        x1={padding}
-        y1={ruleY}
-        x2={W - padding}
-        y2={ruleY}
-        stroke={textColor}
-        strokeWidth={0.3}
-        opacity={0.6}
-      />
+      {hasHeader && (
+        <line
+          x1={padding}
+          y1={ruleY}
+          x2={W - padding}
+          y2={ruleY}
+          stroke={textColor}
+          strokeWidth={0.3}
+          opacity={0.6}
+        />
+      )}
 
       {tracks.map((track, i) => {
         const col = Math.floor(i / maxRows);

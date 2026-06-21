@@ -19,7 +19,7 @@ function TabsList({
   return (
     <TabsPrimitive.List
       data-slot="tabs-list"
-      className={cn("inline-flex items-stretch gap-1 bg-transparent", className)}
+      className={cn("inline-flex items-stretch gap-2 bg-transparent", className)}
       {...props}
     />
   )
