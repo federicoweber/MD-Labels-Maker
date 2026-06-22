@@ -1,4 +1,4 @@
-import { forwardRef } from 'react';
+import { forwardRef, useId } from 'react';
 import type { LabelData } from '@/lib/types';
 import { FRONT, PREVIEW_PX_PER_MM, frontCoverSize, type SizePreset } from '@/lib/dimensions';
 import { wrapText } from '@/lib/text';
@@ -45,6 +45,9 @@ const FrontLabel = forwardRef<SVGSVGElement, Props>(function FrontLabel(props, r
   const portrait = H >= W;
   const { chamfer, padding } = FRONT;
   const OUTLINE = `M ${chamfer},0 H ${W} V ${H} H 0 V ${chamfer} Z`;
+  // Unique per instance — duplicate clipPath ids across the many SVGs on a
+  // print sheet make url(#…) resolve ambiguously and drop the chamfer in print.
+  const clipId = `front-clip-${useId().replace(/:/g, '')}`;
 
   // One stacked album: cover scaled to fit (never cropped), with album/artist
   // overlaid over its bottom on a solid (adjustable-opacity) band. Text optional.
@@ -122,12 +125,12 @@ const FrontLabel = forwardRef<SVGSVGElement, Props>(function FrontLabel(props, r
       style={{ display: 'block' }}
     >
       <defs>
-        <clipPath id="front-clip">
+        <clipPath id={clipId}>
           <path d={OUTLINE} />
         </clipPath>
       </defs>
 
-      <g clipPath="url(#front-clip)">
+      <g clipPath={`url(#${clipId})`}>
         <rect x={0} y={0} width={W} height={H} fill={bgColor} />
 
         {doubleAlbum ? (
