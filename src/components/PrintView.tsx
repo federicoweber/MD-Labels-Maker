@@ -144,7 +144,7 @@ export default function PrintView({
         </div>
       </div>
 
-      <div className="flex flex-col items-center gap-6 p-6">
+      <div className="print-pages flex flex-col items-center gap-6 p-6">
         {pages.map((pg, pi) => (
           <div
             key={pi}

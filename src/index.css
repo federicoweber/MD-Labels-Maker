@@ -123,7 +123,20 @@
   .print-no {
     display: none !important;
   }
+  /* The on-screen scroll container must not paint scrollbars or its grey
+     backdrop on the printed sheet. */
+  .print-root {
+    position: static !important;
+    overflow: visible !important;
+    background: none !important;
+  }
+  .print-pages {
+    display: block !important;
+    gap: 0 !important;
+    padding: 0 !important;
+  }
   .print-page {
+    overflow: hidden;
     break-after: page;
   }
   .print-page:last-child {
