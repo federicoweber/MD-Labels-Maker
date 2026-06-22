@@ -25,7 +25,7 @@ const PAPERS: Record<string, [number, number]> = {
   Legal: [215.9, 355.6],
   A3: [297, 420],
 };
-const MARGIN = 5; // mm — small printable margin only
+const MARGIN = 7; // mm — small printable margin only
 const GAP = 0; // labels sit flush; one cut serves both neighbours
 
 interface Item {
