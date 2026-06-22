@@ -9,11 +9,26 @@ const caption = (album: string, artist: string, showArtist: boolean) =>
 
 /** MiniDisc spine label — a thin strip with a centred caption (two in 2× mode). */
 const SpineLabel = forwardRef<SVGSVGElement, Props>(function SpineLabel(
-  { album, album2, artist, artist2, doubleAlbum, textColor, bgColor, titleFont, showArtist, letterSpacing, size },
+  {
+    album,
+    album2,
+    artist,
+    artist2,
+    doubleAlbum,
+    discNumber,
+    discTotal,
+    textColor,
+    bgColor,
+    titleFont,
+    showArtist,
+    letterSpacing,
+    size,
+  },
   ref,
 ) {
   const { width: W, height: H } = size;
   const fontSize = H * 0.66 * (doubleAlbum ? 0.85 : 1);
+  const discSuffix = discTotal > 1 ? ` (${discNumber}/${discTotal})` : '';
   return (
     <svg
       ref={ref}
@@ -67,6 +82,7 @@ const SpineLabel = forwardRef<SVGSVGElement, Props>(function SpineLabel(
           dominantBaseline="central"
         >
           {caption(album, artist, showArtist)}
+          {discSuffix}
         </text>
       )}
     </svg>

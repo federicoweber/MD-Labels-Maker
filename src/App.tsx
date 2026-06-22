@@ -14,12 +14,12 @@ import Controls from '@/components/Controls';
 import ConfirmModal from '@/components/ConfirmModal';
 import PrintView from '@/components/PrintView';
 import MdLogo from '@/components/MdLogo';
-import { effFor, tlEffFor } from '@/lib/derive';
+import { effFor, tlEffFor, expandDiscs } from '@/lib/derive';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { Button } from '@/components/ui/button';
 import { fetchFontList, loadFontForPreview } from '@/lib/fonts';
-import { fetchTracklist, fetchCovers } from '@/lib/tracklist';
+import { fetchTracklist, fetchCovers, fetchDiscs } from '@/lib/tracklist';
 import { loadDiscs, saveDiscs } from '@/lib/storage';
 import { downloadLabelsZip, type ZipLabel } from '@/lib/exportPng';
 import { extractPalette, bestTextColor } from '@/lib/colors';
@@ -36,6 +36,10 @@ const INITIAL: LabelData = {
   coverDataUrl: null,
   album: '',
   artist: '',
+  multiDisc: false,
+  discNumber: 1,
+  discTotal: 1,
+  discTracklists: [],
   doubleAlbum: false,
   coverDataUrl2: null,
   album2: '',
@@ -151,6 +155,7 @@ export default function App() {
   const [coverLoading, setCoverLoading] = useState(false);
   const [coverLoading2, setCoverLoading2] = useState(false);
   const [tracklistLoading2, setTracklistLoading2] = useState(false);
+  const [multiDiscLoading, setMultiDiscLoading] = useState(false);
   const lastCoverKey = useRef('');
   const lastCoverKey2 = useRef('');
   const autoColoredFor = useRef<string | null>(null);
@@ -409,10 +414,11 @@ export default function App() {
     try {
       const labels: ZipLabel[] = [];
       const fonts = new Set<string>();
-      const multi = discs.length > 1;
-      discs.forEach((disc, i) => {
+      const multi = outputs.length > 1;
+      outputs.forEach((disc, i) => {
         const base = [disc.artist, disc.album].map(slug).filter(Boolean).join('-') || 'minidisc';
-        const prefix = multi ? `${String(i + 1).padStart(2, '0')}-${base}/` : '';
+        const discTag = disc.discTotal > 1 ? `-disc${disc.discNumber}` : '';
+        const prefix = multi ? `${String(i + 1).padStart(2, '0')}-${base}${discTag}/` : '';
         const get = (kind: string) => twinRefs.current[`${i}-${kind}`];
         const front = get('front');
         const spine = get('spine');
@@ -456,6 +462,50 @@ export default function App() {
     } finally {
       setTracklistLoading(false);
     }
+  }
+
+  // Multi-disc: one sidebar entry holds N per-disc tracklists; the N label sets
+  // are only materialised for print/export. Fetch fills the per-disc tracklists.
+  async function loadMultiDisc() {
+    if (!data.album.trim() || !data.artist.trim()) return;
+    setMultiDiscLoading(true);
+    try {
+      const { discs: split, year } = await fetchDiscs(data.artist, data.album);
+      const total = Math.max(2, split.length || 2);
+      const discTracklists = Array.from({ length: total }, (_, i) =>
+        split[i] ? split[i].join('\n') : i === 0 ? data.tracklist : '',
+      );
+      update({
+        multiDisc: true,
+        discTotal: total,
+        discNumber: 1,
+        discTracklists,
+        showTracklist: true,
+        ...(year && !data.year ? { year } : {}),
+      });
+    } catch (err) {
+      console.warn('Multi-disc fetch failed:', err);
+    } finally {
+      setMultiDiscLoading(false);
+    }
+  }
+
+  // Manually set the disc count (resizes per-disc tracklists, preserving them).
+  function setDiscCount(n: number) {
+    const total = Math.max(1, Math.min(20, Math.floor(n) || 1));
+    setData((d) => {
+      const lists = d.discTracklists.slice(0, total);
+      while (lists.length < total) lists.push('');
+      return { ...d, multiDisc: total > 1, discTotal: total, discTracklists: lists };
+    });
+  }
+
+  function setDiscTracklist(i: number, value: string) {
+    setData((d) => {
+      const lists = d.discTracklists.slice();
+      lists[i] = value;
+      return { ...d, discTracklists: lists };
+    });
   }
 
   const frontFields: TypoField[] = [
@@ -515,6 +565,8 @@ export default function App() {
 
   const eff = effFor(data);
   const tlEff = tlEffFor(data);
+  // Materialised per-disc label data (multi-disc entries become N) for export + twins.
+  const outputs = expandDiscs(discs);
 
   return (
     <div className="flex h-svh overflow-hidden">
@@ -570,6 +622,37 @@ export default function App() {
               index={coverIndex}
               onCycle={cycleCover}
             />
+          )}
+          <div className="flex w-full items-center justify-between">
+            <Label htmlFor="multi-disc" className="text-xs">
+              Multi-disc album
+            </Label>
+            <Switch
+              id="multi-disc"
+              checked={data.multiDisc}
+              onCheckedChange={(v) => {
+                if (v) void loadMultiDisc();
+                else update({ multiDisc: false, discTotal: 1 });
+              }}
+            />
+          </div>
+          {data.multiDisc && (
+            <div className="flex w-full items-center justify-between">
+              <Label htmlFor="disc-count" className="text-xs">
+                Discs
+              </Label>
+              <input
+                id="disc-count"
+                type="text"
+                inputMode="numeric"
+                value={String(data.discTotal)}
+                onChange={(e) => setDiscCount(Number(e.target.value.replace(/\D/g, '')))}
+                className="w-10 border-b border-foreground/40 bg-transparent pb-0.5 text-right text-xs tabular-nums outline-none focus:border-foreground"
+              />
+            </div>
+          )}
+          {multiDiscLoading && (
+            <span className="text-xs text-muted-foreground">Fetching discs…</span>
           )}
           <div className="flex w-full items-center justify-between">
             <Label htmlFor="double-album" className="text-xs">
@@ -663,7 +746,22 @@ export default function App() {
                 presets={TRACKLIST_PRESETS}
                 onChange={setTracklistSize}
               />
-              <TracklistPreview data={tlEff} size={tracklistSize} update={update} />
+              {data.multiDisc ? (
+                <div className="flex flex-col gap-3">
+                  {Array.from({ length: data.discTotal }, (_, i) => (
+                    <TracklistPreview
+                      key={i}
+                      data={{ ...tlEff, discNumber: i + 1, tracklist: data.discTracklists[i] ?? '' }}
+                      size={tracklistSize}
+                      update={(patch) =>
+                        'tracklist' in patch ? setDiscTracklist(i, patch.tracklist ?? '') : update(patch)
+                      }
+                    />
+                  ))}
+                </div>
+              ) : (
+                <TracklistPreview data={tlEff} size={tracklistSize} update={update} />
+              )}
               <div className="flex flex-col gap-2">
                 <div className="flex flex-wrap gap-2">
                   <Button
@@ -755,7 +853,7 @@ export default function App() {
 
       {/* Hidden SVG twins for every disc — the precise vector source for export. */}
       <div aria-hidden className="pointer-events-none fixed top-0 -left-[99999px] opacity-0">
-        {discs.map((disc, i) => {
+        {outputs.map((disc, i) => {
           const e = effFor(disc);
           const te = tlEffFor(disc);
           return (

@@ -181,6 +181,22 @@ export default function FrontPreview({ data, size, update, onCover, onCover2 }: 
               onChange={(e) => update({ year: e.target.value })}
             />
           )}
+          {data.discTotal > 1 && (
+            <span
+              className="absolute"
+              style={{
+                right: PAD,
+                bottom: PAD * 0.6,
+                fontFamily: data.yearFont,
+                fontSize: data.yearSize * S,
+                color: data.textColor,
+                opacity: data.artistOpacity,
+                lineHeight: 1,
+              }}
+            >
+              {data.discNumber}/{data.discTotal}
+            </span>
+          )}
         </>
       )}
 

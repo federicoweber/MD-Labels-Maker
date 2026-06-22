@@ -9,6 +9,7 @@ export default function SpinePreview({ data, size }: { data: LabelData; size: Si
   const W = size.width * S;
   const H = size.height * S;
   const fontSize = size.height * 0.66 * (data.doubleAlbum ? 0.85 : 1) * S;
+  const discSuffix = data.discTotal > 1 ? ` (${data.discNumber}/${data.discTotal})` : '';
   const style = {
     fontFamily: data.titleFont,
     fontSize,
@@ -39,6 +40,7 @@ export default function SpinePreview({ data, size }: { data: LabelData; size: Si
         <div className="flex w-full items-center justify-center">
           <span className="truncate" style={style}>
             {caption(data.album, data.artist, data.showArtist)}
+            {discSuffix}
           </span>
         </div>
       )}

@@ -91,7 +91,7 @@ function TracklistColumn({
   const thumb = (ruleY - TRACKLIST.padding) * S;
   const hasThumb = data.showTracklistCover && !!cover;
   const hasTextHeader = data.tlShowAlbum || data.tlShowArtist;
-  const hasHeader = hasTextHeader || hasThumb;
+  const hasHeader = hasTextHeader || hasThumb || data.discTotal > 1;
 
   // Force two columns past a track count that depends on the header height.
   const trackCount = tracklist.split('\n').filter((t) => t.trim()).length;
@@ -131,14 +131,30 @@ function TracklistColumn({
               </div>
             )}
           </div>
-          {data.showTracklistCover && cover && (
-            <img
-              src={cover}
-              alt=""
-              className="shrink-0 object-cover"
-              style={{ width: thumb, height: thumb }}
-            />
-          )}
+          <div className="flex shrink-0 items-start gap-2">
+            {data.discTotal > 1 && (
+              <div
+                style={{
+                  fontFamily: data.titleFont,
+                  fontSize: TRACKLIST.artistSize * S,
+                  fontWeight: 700,
+                  opacity: data.artistOpacity,
+                  lineHeight: 1,
+                  letterSpacing: `${data.letterSpacing}em`,
+                }}
+              >
+                {data.discNumber}/{data.discTotal}
+              </div>
+            )}
+            {data.showTracklistCover && cover && (
+              <img
+                src={cover}
+                alt=""
+                className="object-cover"
+                style={{ width: thumb, height: thumb }}
+              />
+            )}
+          </div>
         </div>
       )}
       {hasHeader && (

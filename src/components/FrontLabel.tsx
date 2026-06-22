@@ -34,6 +34,8 @@ const FrontLabel = forwardRef<SVGSVGElement, Props>(function FrontLabel(props, r
     year,
     showYear,
     yearSize,
+    discNumber,
+    discTotal,
     letterSpacing,
     lineHeight,
     size,
@@ -199,6 +201,20 @@ const FrontLabel = forwardRef<SVGSVGElement, Props>(function FrontLabel(props, r
                 letterSpacing={yearSize * letterSpacing}
               >
                 {year}
+              </text>
+            )}
+            {discTotal > 1 && (
+              <text
+                x={W - padding}
+                y={H - padding}
+                fill={textColor}
+                fillOpacity={artistOpacity}
+                fontFamily={yearFont}
+                fontSize={yearSize}
+                textAnchor="end"
+                letterSpacing={yearSize * letterSpacing}
+              >
+                {discNumber}/{discTotal}
               </text>
             )}
           </>

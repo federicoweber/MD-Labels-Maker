@@ -3,6 +3,13 @@ export interface LabelData {
   coverDataUrl: string | null;
   album: string;
   artist: string;
+  /** Multi-disc album: prints one label set per disc with an "n/n" stamp. */
+  multiDisc: boolean;
+  /** Which disc this is (render-time; 1 on the stored entry). */
+  discNumber: number;
+  discTotal: number;
+  /** One tracklist per disc (multi-disc albums). */
+  discTracklists: string[];
   /** Double-album mode: a second album shares the front, spine and tracklist. */
   doubleAlbum: boolean;
   coverDataUrl2: string | null;

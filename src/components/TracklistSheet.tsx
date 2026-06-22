@@ -35,6 +35,8 @@ const TracklistSheet = forwardRef<SVGSVGElement, Props>(function TracklistSheet(
     trackOpacity,
     letterSpacing,
     lineHeight,
+    discNumber,
+    discTotal,
     size,
   } = props;
   const { width: W, height: H } = size;
@@ -54,8 +56,9 @@ const TracklistSheet = forwardRef<SVGSVGElement, Props>(function TracklistSheet(
     const right = x0 + colW - padding;
     const titleY = padding + titleSize * 0.9;
     const artistY = titleY + artistSize + 1;
-    const hasHeader = tlShowAlbum || tlShowArtist || (showTracklistCover && !!cover);
-    const headerBottom = tlShowArtist ? artistY : tlShowAlbum ? titleY : padding;
+    const hasHeader =
+      tlShowAlbum || tlShowArtist || (showTracklistCover && !!cover) || discTotal > 1;
+    const headerBottom = tlShowArtist ? artistY : tlShowAlbum ? titleY : padding + artistSize;
     const ruleY = hasHeader ? headerBottom + 2.5 : padding;
     const tracksTop = hasHeader ? ruleY + 4 : padding + trackSize * 0.9;
     const maxRows = Math.max(1, Math.floor((H - tracksTop - padding) / trackGap));
@@ -78,6 +81,21 @@ const TracklistSheet = forwardRef<SVGSVGElement, Props>(function TracklistSheet(
             height={thumbSize}
             preserveAspectRatio="xMidYMid slice"
           />
+        )}
+        {discTotal > 1 && (
+          <text
+            x={right}
+            y={padding + artistSize * 0.9}
+            fill={textColor}
+            fontFamily={titleFont}
+            fontSize={artistSize}
+            fontWeight={700}
+            fillOpacity={artistOpacity}
+            textAnchor="end"
+            letterSpacing={artistSize * letterSpacing}
+          >
+            {discNumber}/{discTotal}
+          </text>
         )}
         {tlShowAlbum && (
           <text

@@ -3,7 +3,7 @@ import { createPortal } from 'react-dom';
 import { Printer, X } from 'lucide-react';
 import type { LabelData } from '@/lib/types';
 import type { SizePreset } from '@/lib/dimensions';
-import { effFor, tlEffFor } from '@/lib/derive';
+import { effFor, tlEffFor, expandDiscs } from '@/lib/derive';
 import { Button } from '@/components/ui/button';
 import FrontLabel from './FrontLabel';
 import SpineLabel from './SpineLabel';
@@ -98,7 +98,7 @@ export default function PrintView({
   const [pw, ph] = PAPERS[paper];
 
   const items: Item[] = [];
-  discs.forEach((disc, i) => {
+  expandDiscs(discs).forEach((disc, i) => {
     const e = effFor(disc);
     const te = tlEffFor(disc);
     items.push({ key: `${i}-front`, w: frontSize.width, h: frontSize.height, node: <FrontLabel {...e} size={frontSize} /> });

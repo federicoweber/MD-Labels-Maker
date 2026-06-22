@@ -1,7 +1,13 @@
 // Fetch an album's tracklist from MusicBrainz (free, CORS-enabled, no key).
 
 interface MbReleaseSearch {
-  releases?: { id: string; score?: number; date?: string }[];
+  releases?: {
+    id: string;
+    score?: number;
+    date?: string;
+    'track-count'?: number;
+    media?: { format?: string; 'track-count'?: number }[];
+  }[];
 }
 
 export interface CoverResult {
@@ -90,4 +96,47 @@ export async function fetchTracklist(artist: string, album: string): Promise<Tra
     }
   }
   return { tracks, year: data.date?.slice(0, 4) ?? '' };
+}
+
+export interface DiscsResult {
+  /** One track-title array per physical disc (medium). */
+  discs: string[][];
+  year: string;
+}
+
+/** Look up an album's per-disc tracklists (for multi-disc albums). */
+export async function fetchDiscs(artist: string, album: string): Promise<DiscsResult> {
+  if (!artist.trim() || !album.trim()) return { discs: [], year: '' };
+
+  const query = `release:"${album}" AND artist:"${artist}"`;
+  const searchUrl = `https://musicbrainz.org/ws/2/release/?query=${encodeURIComponent(
+    query,
+  )}&fmt=json&limit=15`;
+  const searchRes = await fetch(searchUrl, { headers: { Accept: 'application/json' } });
+  if (!searchRes.ok) throw new Error(`MusicBrainz search ${searchRes.status}`);
+  const search = (await searchRes.json()) as MbReleaseSearch;
+  const releases = search.releases ?? [];
+  // Prefer a CD release (so vinyl "one medium per side" doesn't inflate the disc
+  // count), then the one with the most tracks (the complete album).
+  const isCd = (r: (typeof releases)[number]) =>
+    !!r.media?.length && r.media.every((m) => /cd/i.test(m.format ?? ''));
+  const release = [...releases].sort((a, b) => {
+    const cd = (isCd(b) ? 1 : 0) - (isCd(a) ? 1 : 0);
+    return cd || (b['track-count'] ?? 0) - (a['track-count'] ?? 0);
+  })[0];
+  if (!release) return { discs: [], year: '' };
+
+  const lookupUrl = `https://musicbrainz.org/ws/2/release/${release.id}?inc=recordings&fmt=json`;
+  const lookupRes = await fetch(lookupUrl, { headers: { Accept: 'application/json' } });
+  if (!lookupRes.ok) throw new Error(`MusicBrainz lookup ${lookupRes.status}`);
+  const data = (await lookupRes.json()) as MbRelease;
+
+  const discs = (data.media ?? [])
+    .map((medium) =>
+      (medium.tracks ?? [])
+        .map((t) => t.title?.trim() ?? '')
+        .filter((t) => t && t.toLowerCase() !== '[untitled]'),
+    )
+    .filter((d) => d.length > 0);
+  return { discs, year: data.date?.slice(0, 4) ?? '' };
 }
