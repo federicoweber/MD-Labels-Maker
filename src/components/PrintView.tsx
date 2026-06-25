@@ -32,6 +32,9 @@ interface Item {
   w: number;
   h: number;
   node: ReactNode;
+  /** Opaque label — give the cell a black backing so sub-pixel edges never
+   * show the page white. (Front stays transparent for its chamfer corner.) */
+  dark?: boolean;
 }
 
 interface Row {
@@ -113,11 +116,11 @@ export default function PrintView({
     items.push({ key: `${i}-front`, w: frontSize.width, h: frontSize.height, node: <FrontLabel {...e} size={frontSize} /> });
     if (disc.showSpine) {
       for (let c = 0; c < disc.spineCount; c++) {
-        items.push({ key: `${i}-spine-${c}`, w: spineSize.width, h: spineSize.height, node: <SpineLabel {...e} size={spineSize} /> });
+        items.push({ key: `${i}-spine-${c}`, w: spineSize.width, h: spineSize.height, dark: true, node: <SpineLabel {...e} size={spineSize} /> });
       }
     }
     if (disc.showTracklist) {
-      items.push({ key: `${i}-tl`, w: tracklistSize.width, h: tracklistSize.height, node: <TracklistSheet {...te} size={tracklistSize} /> });
+      items.push({ key: `${i}-tl`, w: tracklistSize.width, h: tracklistSize.height, dark: true, node: <TracklistSheet {...te} size={tracklistSize} /> });
     }
   });
   const rows = buildRows(items, pw - 2 * MARGIN);
@@ -177,7 +180,11 @@ export default function PrintView({
                           <td
                             key={it.key}
                             className="print-cell"
-                            style={{ width: `${it.w}mm`, height: `${it.h}mm` }}
+                            style={{
+                              width: `${it.w}mm`,
+                              height: `${it.h}mm`,
+                              background: it.dark ? '#000' : undefined,
+                            }}
                           >
                             {it.node}
                           </td>
