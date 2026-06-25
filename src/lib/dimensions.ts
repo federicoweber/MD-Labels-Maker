@@ -8,7 +8,7 @@ export interface SizePreset {
 
 /** Front / top (face) label style constants; size comes from a preset. */
 export const FRONT = {
-  chamfer: 3, // diagonal cut at the top-left corner (leg length / base)
+  chamfer: 2, // diagonal cut at the top-left corner (leg length / base)
   padding: 2.5,
   titleSize: 4,
   artistSize: 2.8,
@@ -24,6 +24,7 @@ export const FRONT_PRESETS: SizePreset[] = [
 export const SPINE = { padding: 1.5 } as const;
 
 export const SPINE_PRESETS: SizePreset[] = [
+  { width: 60, height: 3.5 },
   { width: 60, height: 3 },
   { width: 54, height: 3.5 },
 ];

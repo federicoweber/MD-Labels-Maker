@@ -102,7 +102,11 @@ export default function PrintView({
     const e = effFor(disc);
     const te = tlEffFor(disc);
     items.push({ key: `${i}-front`, w: frontSize.width, h: frontSize.height, node: <FrontLabel {...e} size={frontSize} /> });
-    items.push({ key: `${i}-spine`, w: spineSize.width, h: spineSize.height, node: <SpineLabel {...e} size={spineSize} /> });
+    if (disc.showSpine) {
+      for (let c = 0; c < disc.spineCount; c++) {
+        items.push({ key: `${i}-spine-${c}`, w: spineSize.width, h: spineSize.height, node: <SpineLabel {...e} size={spineSize} /> });
+      }
+    }
     if (disc.showTracklist) {
       items.push({ key: `${i}-case`, w: caseSpineSize.width, h: caseSpineSize.height, node: <SpineLabel {...te} size={caseSpineSize} /> });
       items.push({ key: `${i}-tl`, w: tracklistSize.width, h: tracklistSize.height, node: <TracklistSheet {...te} size={tracklistSize} /> });

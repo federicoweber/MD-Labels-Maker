@@ -75,6 +75,8 @@ const INITIAL: LabelData = {
   trackOpacity: 1,
   letterSpacing: 0,
   lineHeight: 1.2,
+  showSpine: true,
+  spineCount: 1,
   showTracklist: false,
   tracklist: '',
 };
@@ -426,8 +428,14 @@ export default function App() {
         const tracklist = get('tracklist');
         if (front)
           labels.push({ svg: front, widthMm: frontSize.width, heightMm: frontSize.height, name: `${prefix}front.png` });
-        if (spine)
-          labels.push({ svg: spine, widthMm: spineSize.width, heightMm: spineSize.height, name: `${prefix}spine.png` });
+        if (disc.showSpine && spine)
+          for (let c = 0; c < disc.spineCount; c++)
+            labels.push({
+              svg: spine,
+              widthMm: spineSize.width,
+              heightMm: spineSize.height,
+              name: `${prefix}spine${disc.spineCount > 1 ? `-${c + 1}` : ''}.png`,
+            });
         if (disc.showTracklist && caseSpine)
           labels.push({ svg: caseSpine, widthMm: caseSpineSize.width, heightMm: caseSpineSize.height, name: `${prefix}spine-jewel-case.png` });
         if (disc.showTracklist && tracklist)
@@ -498,6 +506,10 @@ export default function App() {
       while (lists.length < total) lists.push('');
       return { ...d, multiDisc: total > 1, discTotal: total, discTracklists: lists };
     });
+  }
+
+  function setSpineCount(n: number) {
+    update({ spineCount: Math.max(1, Math.min(20, Math.floor(n) || 1)) });
   }
 
   function setDiscTracklist(i: number, value: string) {
@@ -693,6 +705,31 @@ export default function App() {
             </>
           )}
           <div className="flex w-full items-center justify-between">
+            <Label htmlFor="show-spine" className="text-xs">
+              Spine
+            </Label>
+            <Switch
+              id="show-spine"
+              checked={data.showSpine}
+              onCheckedChange={(v) => update({ showSpine: v })}
+            />
+          </div>
+          {data.showSpine && (
+            <div className="flex w-full items-center justify-between">
+              <Label htmlFor="spine-count" className="text-xs">
+                Spine copies
+              </Label>
+              <input
+                id="spine-count"
+                type="text"
+                inputMode="numeric"
+                value={String(data.spineCount)}
+                onChange={(e) => setSpineCount(Number(e.target.value.replace(/\D/g, '')))}
+                className="w-10 border-b border-foreground/40 bg-transparent pb-0.5 text-right text-xs tabular-nums outline-none focus:border-foreground"
+              />
+            </div>
+          )}
+          <div className="flex w-full items-center justify-between">
             <Label htmlFor="show-tracklist" className="text-xs">
               Tracklist
             </Label>
@@ -722,21 +759,27 @@ export default function App() {
         </section>
 
         <div className="flex flex-col gap-12">
-          <section className="flex flex-col gap-2">
-            <SizeSelect label="Spine" value={spineSize} presets={SPINE_PRESETS} onChange={setSpineSize} />
-            <SpinePreview data={eff} size={spineSize} />
-            {data.showTracklist && (
-              <>
-                <SizeSelect
-                  label="Jewel case spine"
-                  value={caseSpineSize}
-                  presets={SPINE_PRESETS}
-                  onChange={setCaseSpineSize}
-                />
-                <SpinePreview data={tlEff} size={caseSpineSize} />
-              </>
-            )}
-          </section>
+          {(data.showSpine || data.showTracklist) && (
+            <section className="flex flex-col gap-2">
+              {data.showSpine && (
+                <>
+                  <SizeSelect label="Spine" value={spineSize} presets={SPINE_PRESETS} onChange={setSpineSize} />
+                  <SpinePreview data={eff} size={spineSize} />
+                </>
+              )}
+              {data.showTracklist && (
+                <>
+                  <SizeSelect
+                    label="Jewel case spine"
+                    value={caseSpineSize}
+                    presets={SPINE_PRESETS}
+                    onChange={setCaseSpineSize}
+                  />
+                  <SpinePreview data={tlEff} size={caseSpineSize} />
+                </>
+              )}
+            </section>
+          )}
 
           {data.showTracklist && (
             <section className="flex flex-col gap-2">

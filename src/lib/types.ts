@@ -55,6 +55,9 @@ export interface LabelData {
   letterSpacing: number;
   /** Label text line-height multiplier. */
   lineHeight: number;
+  /** Whether the spine label is included, and how many copies to print. */
+  showSpine: boolean;
+  spineCount: number;
   /** Whether the optional jewel-case tracklist sheet is shown. */
   showTracklist: boolean;
   /** Tracklist text, one track per line (for the optional jewel-case sheet). */
