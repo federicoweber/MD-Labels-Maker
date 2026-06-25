@@ -157,22 +157,30 @@ export default function PrintView({
           >
             <div className="flex flex-col items-start">
               {pg.map((row, ri) => (
-                <div key={ri} className="flex items-start" style={{ marginTop: ri ? '-1px' : 0 }}>
-                  {row.items.map((it, ci) => (
-                    <div
-                      key={it.key}
-                      className="print-cell"
-                      style={{
-                        width: `${it.w}mm`,
-                        height: `${it.h}mm`,
-                        boxSizing: 'content-box',
-                        border: '1px solid #000',
-                        marginLeft: ci ? '-1px' : 0,
-                      }}
-                    >
-                      {it.node}
-                    </div>
-                  ))}
+                <div key={ri} className="flex items-start">
+                  {row.items.map((it, ci) => {
+                    const line = '1px solid #000';
+                    return (
+                      <div
+                        key={it.key}
+                        className="print-cell"
+                        style={{
+                          width: `${it.w}mm`,
+                          height: `${it.h}mm`,
+                          boxSizing: 'content-box',
+                          // Single shared 1px lines without overlap: every cell
+                          // draws its top + left; the grid's right/bottom edges
+                          // are closed by the last cell in a row / last row.
+                          borderTop: line,
+                          borderLeft: line,
+                          borderRight: ci === row.items.length - 1 ? line : undefined,
+                          borderBottom: ri === pg.length - 1 ? line : undefined,
+                        }}
+                      >
+                        {it.node}
+                      </div>
+                    );
+                  })}
                 </div>
               ))}
             </div>
