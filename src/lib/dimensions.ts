@@ -8,7 +8,7 @@ export interface SizePreset {
 
 /** Front / top (face) label style constants; size comes from a preset. */
 export const FRONT = {
-  chamfer: 3.5, // diagonal cut at the top-left corner (leg length)
+  chamfer: 3, // diagonal cut at the top-left corner (leg length / base)
   padding: 2.5,
   titleSize: 4,
   artistSize: 2.8,
