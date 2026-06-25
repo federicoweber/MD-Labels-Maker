@@ -157,6 +157,7 @@ const TracklistSheet = forwardRef<SVGSVGElement, Props>(function TracklistSheet(
       viewBox={`0 0 ${W} ${H}`}
       width={W * PREVIEW_PX_PER_MM}
       height={H * PREVIEW_PX_PER_MM}
+      preserveAspectRatio="none"
       style={{ display: 'block' }}
     >
       <rect x={0} y={0} width={W} height={H} fill={bgColor} />

@@ -122,6 +122,7 @@ const FrontLabel = forwardRef<SVGSVGElement, Props>(function FrontLabel(props, r
       viewBox={`0 0 ${W} ${H}`}
       width={W * PREVIEW_PX_PER_MM}
       height={H * PREVIEW_PX_PER_MM}
+      preserveAspectRatio="none"
       style={{ display: 'block' }}
     >
       <defs>
