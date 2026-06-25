@@ -110,7 +110,16 @@
   box-shadow: none;
 }
 
-/* Print layout: each .print-cell holds a label SVG at true mm size. */
+/* Print layout: a table per height-group; collapsed black cut lines; each
+   .print-cell (td) holds a label SVG at true mm size. */
+.print-table {
+  border-collapse: collapse;
+}
+.print-cell {
+  padding: 0;
+  line-height: 0;
+  border: 1px solid #000;
+}
 .print-cell > svg {
   display: block;
   width: 100%;

@@ -163,7 +163,6 @@ export default function App() {
   const autoColoredFor = useRef<string | null>(null);
   const [frontSize, setFrontSize] = useState(FRONT_PRESETS[0]);
   const [spineSize, setSpineSize] = useState(SPINE_PRESETS[0]);
-  const [caseSpineSize, setCaseSpineSize] = useState(SPINE_PRESETS[0]);
   const [tracklistSize, setTracklistSize] = useState(TRACKLIST_PRESETS[0]);
   const [families, setFamilies] = useState<string[]>([]);
   const [fontsLoading, setFontsLoading] = useState(true);
@@ -424,7 +423,6 @@ export default function App() {
         const get = (kind: string) => twinRefs.current[`${i}-${kind}`];
         const front = get('front');
         const spine = get('spine');
-        const caseSpine = get('case-spine');
         const tracklist = get('tracklist');
         if (front)
           labels.push({ svg: front, widthMm: frontSize.width, heightMm: frontSize.height, name: `${prefix}front.png` });
@@ -436,8 +434,6 @@ export default function App() {
               heightMm: spineSize.height,
               name: `${prefix}spine${disc.spineCount > 1 ? `-${c + 1}` : ''}.png`,
             });
-        if (disc.showTracklist && caseSpine)
-          labels.push({ svg: caseSpine, widthMm: caseSpineSize.width, heightMm: caseSpineSize.height, name: `${prefix}spine-jewel-case.png` });
         if (disc.showTracklist && tracklist)
           labels.push({ svg: tracklist, widthMm: tracklistSize.width, heightMm: tracklistSize.height, name: `${prefix}tracklist.png` });
         fonts.add(disc.titleFont);
@@ -737,7 +733,8 @@ export default function App() {
               id="show-tracklist"
               checked={data.showTracklist}
               onCheckedChange={(v) => {
-                update({ showTracklist: v });
+                // The jewel case needs its own spine — print two copies.
+                update(v ? { showTracklist: true, spineCount: Math.max(2, data.spineCount) } : { showTracklist: false });
                 if (v && !data.tracklist.trim()) void autoFillTracklist();
               }}
             />
@@ -759,25 +756,10 @@ export default function App() {
         </section>
 
         <div className="flex flex-col gap-12">
-          {(data.showSpine || data.showTracklist) && (
+          {data.showSpine && (
             <section className="flex flex-col gap-2">
-              {data.showSpine && (
-                <>
-                  <SizeSelect label="Spine" value={spineSize} presets={SPINE_PRESETS} onChange={setSpineSize} />
-                  <SpinePreview data={eff} size={spineSize} />
-                </>
-              )}
-              {data.showTracklist && (
-                <>
-                  <SizeSelect
-                    label="Jewel case spine"
-                    value={caseSpineSize}
-                    presets={SPINE_PRESETS}
-                    onChange={setCaseSpineSize}
-                  />
-                  <SpinePreview data={tlEff} size={caseSpineSize} />
-                </>
-              )}
+              <SizeSelect label="Spine" value={spineSize} presets={SPINE_PRESETS} onChange={setSpineSize} />
+              <SpinePreview data={eff} size={spineSize} />
             </section>
           )}
 
@@ -903,7 +885,6 @@ export default function App() {
             <div key={i}>
               <FrontLabel ref={(el) => void (twinRefs.current[`${i}-front`] = el)} {...e} size={frontSize} />
               <SpineLabel ref={(el) => void (twinRefs.current[`${i}-spine`] = el)} {...e} size={spineSize} />
-              <SpineLabel ref={(el) => void (twinRefs.current[`${i}-case-spine`] = el)} {...te} size={caseSpineSize} />
               <TracklistSheet ref={(el) => void (twinRefs.current[`${i}-tracklist`] = el)} {...te} size={tracklistSize} />
             </div>
           );
@@ -929,7 +910,6 @@ export default function App() {
           discs={discs}
           frontSize={frontSize}
           spineSize={spineSize}
-          caseSpineSize={caseSpineSize}
           tracklistSize={tracklistSize}
           onClose={() => setPrintOpen(false)}
         />

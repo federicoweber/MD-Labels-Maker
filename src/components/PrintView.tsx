@@ -13,7 +13,6 @@ interface Props {
   discs: LabelData[];
   frontSize: SizePreset;
   spineSize: SizePreset;
-  caseSpineSize: SizePreset;
   tracklistSize: SizePreset;
   onClose: () => void;
 }
@@ -68,6 +67,17 @@ function buildRows(items: Item[], contentW: number): Row[] {
   return rows;
 }
 
+/** Group consecutive same-height rows (uniform columns) into table blocks. */
+function groupBlocks(rows: Row[]): Row[][] {
+  const blocks: Row[][] = [];
+  for (const row of rows) {
+    const last = blocks[blocks.length - 1];
+    if (last && last[0].h === row.h) last.push(row);
+    else blocks.push([row]);
+  }
+  return blocks;
+}
+
 /** Pack whole rows onto pages without splitting a row across a page. */
 function paginate(rows: Row[], contentH: number): Row[][] {
   const pages: Row[][] = [];
@@ -90,7 +100,6 @@ export default function PrintView({
   discs,
   frontSize,
   spineSize,
-  caseSpineSize,
   tracklistSize,
   onClose,
 }: Props) {
@@ -108,7 +117,6 @@ export default function PrintView({
       }
     }
     if (disc.showTracklist) {
-      items.push({ key: `${i}-case`, w: caseSpineSize.width, h: caseSpineSize.height, node: <SpineLabel {...te} size={caseSpineSize} /> });
       items.push({ key: `${i}-tl`, w: tracklistSize.width, h: tracklistSize.height, node: <TracklistSheet {...te} size={tracklistSize} /> });
     }
   });
@@ -156,32 +164,24 @@ export default function PrintView({
             style={{ width: `${pw}mm`, height: `${ph}mm`, padding: `${MARGIN}mm` }}
           >
             <div className="flex flex-col items-start">
-              {pg.map((row, ri) => (
-                <div key={ri} className="flex items-start">
-                  {row.items.map((it, ci) => {
-                    const line = '1px solid #000';
-                    return (
-                      <div
-                        key={it.key}
-                        className="print-cell"
-                        style={{
-                          width: `${it.w}mm`,
-                          height: `${it.h}mm`,
-                          boxSizing: 'content-box',
-                          // Single shared 1px lines without overlap: every cell
-                          // draws its top + left; the grid's right/bottom edges
-                          // are closed by the last cell in a row / last row.
-                          borderTop: line,
-                          borderLeft: line,
-                          borderRight: ci === row.items.length - 1 ? line : undefined,
-                          borderBottom: ri === pg.length - 1 ? line : undefined,
-                        }}
-                      >
-                        {it.node}
-                      </div>
-                    );
-                  })}
-                </div>
+              {groupBlocks(pg).map((block, bi) => (
+                <table key={bi} className="print-table">
+                  <tbody>
+                    {block.map((row, ri) => (
+                      <tr key={ri}>
+                        {row.items.map((it) => (
+                          <td
+                            key={it.key}
+                            className="print-cell"
+                            style={{ width: `${it.w}mm`, height: `${it.h}mm` }}
+                          >
+                            {it.node}
+                          </td>
+                        ))}
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
               ))}
             </div>
           </div>
