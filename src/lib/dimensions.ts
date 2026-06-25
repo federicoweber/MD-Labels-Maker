@@ -16,8 +16,8 @@ export const FRONT = {
 
 /** Common MiniDisc face-label sizes (fits the 37×54mm case window). */
 export const FRONT_PRESETS: SizePreset[] = [
-  { width: 34, height: 52 },
   { width: 36.5, height: 53.5 },
+  { width: 34, height: 52 },
   { width: 35, height: 50 },
 ];
 
