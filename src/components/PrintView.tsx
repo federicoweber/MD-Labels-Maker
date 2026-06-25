@@ -166,7 +166,7 @@ export default function PrintView({
                         width: `${it.w}mm`,
                         height: `${it.h}mm`,
                         boxSizing: 'content-box',
-                        border: '1px solid #cfcfcf',
+                        border: '1px solid #000',
                         marginLeft: ci ? '-1px' : 0,
                       }}
                     >
