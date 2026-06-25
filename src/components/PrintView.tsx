@@ -165,7 +165,11 @@ export default function PrintView({
           >
             <div className="flex flex-col items-start">
               {groupBlocks(pg).map((block, bi) => (
-                <table key={bi} className="print-table">
+                <table
+                  key={bi}
+                  className="print-table"
+                  style={{ marginTop: bi ? '-1px' : undefined }}
+                >
                   <tbody>
                     {block.map((row, ri) => (
                       <tr key={ri}>
