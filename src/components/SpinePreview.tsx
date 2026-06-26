@@ -1,9 +1,6 @@
 import type { LabelData } from '@/lib/types';
 import { PREVIEW_PX_PER_MM as S, type SizePreset } from '@/lib/dimensions';
 
-const caption = (album: string, artist: string, showArtist: boolean) =>
-  showArtist && artist ? `${album || 'Album'} - ${artist}` : album || 'Album';
-
 const spineCaption = (album: string, artist: string, showAlbum: boolean, showArtist: boolean) =>
   [showAlbum && (album || 'Album'), showArtist && (artist || 'Artist')].filter(Boolean).join(' - ');
 
@@ -29,13 +26,13 @@ export default function SpinePreview({ data, size }: { data: LabelData; size: Si
         <>
           <div className="flex min-w-0 flex-1 items-center justify-center">
             <span className="truncate px-1" style={style}>
-              {caption(data.album, data.artist, true)}
+              {spineCaption(data.album, data.artist, data.spineShowAlbum, data.spineShowArtist)}
             </span>
           </div>
           <div className="h-full w-px" style={{ background: data.textColor, opacity: 0.5 }} />
           <div className="flex min-w-0 flex-1 items-center justify-center">
             <span className="truncate px-1" style={style}>
-              {caption(data.album2, data.artist2, true)}
+              {spineCaption(data.album2, data.artist2, data.spineShowAlbum, data.spineShowArtist)}
             </span>
           </div>
         </>

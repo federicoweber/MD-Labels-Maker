@@ -569,18 +569,12 @@ export default function App() {
     {
       key: 'tl-title',
       title: 'Album',
-      showSwitch: { checked: data.tlShowAlbum, onChange: (v) => update({ tlShowAlbum: v }) },
-      size: data.tlShowAlbum
-        ? { id: 'tl-title-size', value: data.tlTitleSize, min: 2, max: 8, onChange: (v) => update({ tlTitleSize: v }) }
-        : undefined,
+      size: { id: 'tl-title-size', value: data.tlTitleSize, min: 2, max: 8, onChange: (v) => update({ tlTitleSize: v }) },
     },
     {
       key: 'tl-artist',
       title: 'Artist',
-      showSwitch: { checked: data.tlShowArtist, onChange: (v) => update({ tlShowArtist: v }) },
-      size: data.tlShowArtist
-        ? { id: 'tl-artist-size', value: data.tlArtistSize, min: 1.5, max: 6, onChange: (v) => update({ tlArtistSize: v }) }
-        : undefined,
+      size: { id: 'tl-artist-size', value: data.tlArtistSize, min: 1.5, max: 6, onChange: (v) => update({ tlArtistSize: v }) },
     },
     {
       key: 'track',

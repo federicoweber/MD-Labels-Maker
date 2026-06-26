@@ -4,9 +4,6 @@ import { PREVIEW_PX_PER_MM, type SizePreset } from '@/lib/dimensions';
 
 type Props = LabelData & { size: SizePreset };
 
-const caption = (album: string, artist: string, showArtist: boolean) =>
-  showArtist && artist ? `${album || 'Album'} - ${artist}` : album || 'Album';
-
 const spineCaption = (album: string, artist: string, showAlbum: boolean, showArtist: boolean) =>
   [showAlbum && (album || 'Album'), showArtist && (artist || 'Artist')].filter(Boolean).join(' - ');
 
@@ -57,7 +54,7 @@ const SpineLabel = forwardRef<SVGSVGElement, Props>(function SpineLabel(
             textAnchor="middle"
             dominantBaseline="central"
           >
-            {caption(album, artist, true)}
+            {spineCaption(album, artist, spineShowAlbum, spineShowArtist)}
           </text>
           <line x1={W / 2} y1={0} x2={W / 2} y2={H} stroke={textColor} strokeWidth={0.2} opacity={0.5} />
           <text
@@ -71,7 +68,7 @@ const SpineLabel = forwardRef<SVGSVGElement, Props>(function SpineLabel(
             textAnchor="middle"
             dominantBaseline="central"
           >
-            {caption(album2, artist2, true)}
+            {spineCaption(album2, artist2, spineShowAlbum, spineShowArtist)}
           </text>
         </>
       ) : (

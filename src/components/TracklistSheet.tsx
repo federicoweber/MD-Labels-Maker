@@ -1,6 +1,7 @@
 import { forwardRef } from 'react';
 import type { LabelData } from '@/lib/types';
 import { TRACKLIST, PREVIEW_PX_PER_MM, type SizePreset } from '@/lib/dimensions';
+import { wrapText } from '@/lib/text';
 
 type Props = LabelData & { size: SizePreset };
 
@@ -51,26 +52,46 @@ const TracklistSheet = forwardRef<SVGSVGElement, Props>(function TracklistSheet(
     art: string,
     cover: string | null,
     tracksStr: string,
-    innerCols: number,
+    maxCols: number,
     key: string,
   ) => {
     const left = x0 + padding;
     const right = x0 + colW - padding;
     const titleY = padding + titleSize * 0.9;
     const artistY = titleY + artistSize + 1;
-    const hasHeader =
-      tlShowAlbum || tlShowArtist || (showTracklistCover && !!cover) || discTotal > 1;
+    const hasThumb = showTracklistCover && !!cover;
+    const hasTextHeader = tlShowAlbum || tlShowArtist;
+    const hasHeader = hasTextHeader || hasThumb || discTotal > 1;
     const headerBottom = tlShowArtist ? artistY : tlShowAlbum ? titleY : padding + artistSize;
     const ruleY = hasHeader ? headerBottom + 2.5 : padding;
     const tracksTop = hasHeader ? ruleY + 4 : padding + trackSize * 0.9;
-    const maxRows = Math.max(1, Math.floor((H - tracksTop - padding) / trackGap));
-    const innerW = (right - left) / innerCols;
-    const colX = Array.from({ length: innerCols }, (_, i) => left + i * innerW);
+    const maxLines = Math.max(1, Math.floor((H - tracksTop - padding) / trackGap));
     const thumbSize = ruleY - padding;
     const tracks = tracksStr
       .split('\n')
       .map((t) => t.trim())
       .filter(Boolean);
+
+    // Match the preview: stay one column until the list is long enough.
+    const maxOneCol = hasThumb ? 11 : hasTextHeader ? 12 : 15;
+    const innerCols = maxCols >= 2 && tracks.length > maxOneCol ? 2 : 1;
+    const innerW = (right - left) / innerCols;
+    const colX = Array.from({ length: innerCols }, (_, i) => left + i * innerW);
+    const colTextW = innerCols > 1 ? innerW - 2 : innerW;
+
+    // Wrap each track to its column width and flow tracks down columns by line.
+    const placed: { x: number; y: number; lines: string[] }[] = [];
+    let col = 0;
+    let lineInCol = 0;
+    for (let i = 0; i < tracks.length; i++) {
+      const lines = wrapText(`${i + 1}. ${tracks[i]}`, trackFont, trackSize, colTextW);
+      if (lineInCol > 0 && lineInCol + lines.length > maxLines && col < innerCols - 1) {
+        col++;
+        lineInCol = 0;
+      }
+      placed.push({ x: colX[col], y: tracksTop + lineInCol * trackGap, lines });
+      lineInCol += lines.length;
+    }
 
     return (
       <g key={key}>
@@ -129,25 +150,22 @@ const TracklistSheet = forwardRef<SVGSVGElement, Props>(function TracklistSheet(
         {hasHeader && (
           <line x1={left} y1={ruleY} x2={right} y2={ruleY} stroke={textColor} strokeWidth={0.3} opacity={0.6} />
         )}
-        {tracks.map((track, i) => {
-          const col = Math.floor(i / maxRows);
-          const row = i % maxRows;
-          if (col >= innerCols) return null;
-          return (
-            <text
-              key={i}
-              x={colX[col]}
-              y={tracksTop + row * trackGap}
-              fill={textColor}
-              fontFamily={trackFont}
-              fontSize={trackSize}
-              fillOpacity={trackOpacity}
-              letterSpacing={trackSize * letterSpacing}
-            >
-              {i + 1}. {track}
-            </text>
-          );
-        })}
+        {placed.map((p, i) => (
+          <text
+            key={i}
+            fill={textColor}
+            fontFamily={trackFont}
+            fontSize={trackSize}
+            fillOpacity={trackOpacity}
+            letterSpacing={trackSize * letterSpacing}
+          >
+            {p.lines.map((line, li) => (
+              <tspan key={li} x={p.x} y={p.y + li * trackGap}>
+                {line}
+              </tspan>
+            ))}
+          </text>
+        ))}
       </g>
     );
   };
