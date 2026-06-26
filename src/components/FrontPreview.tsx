@@ -66,7 +66,8 @@ export default function FrontPreview({ data, size, update, onCover, onCover2 }: 
   const cover = frontCoverSize(size) * S;
   const portrait = size.height >= size.width;
   const PAD = FRONT.padding * S;
-  const CH = FRONT.chamfer * S;
+  const chamfer = data.showChamfer ? FRONT.chamfer : 0;
+  const CH = chamfer * S;
   const CLIP = `polygon(${CH}px 0, 100% 0, 100% 100%, 0 100%, 0 ${CH}px)`;
 
   return (
@@ -209,7 +210,7 @@ export default function FrontPreview({ data, size, update, onCover, onCover2 }: 
         aria-hidden
       >
         <path
-          d={`M ${FRONT.chamfer},0 H ${size.width} V ${size.height} H 0 V ${FRONT.chamfer} Z`}
+          d={`M ${chamfer},0 H ${size.width} V ${size.height} H 0 V ${chamfer} Z`}
           fill="none"
           stroke="#000"
           strokeWidth={2}

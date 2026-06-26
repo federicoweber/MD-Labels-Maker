@@ -18,6 +18,8 @@ export interface LabelData {
   tracklist2: string;
   /** Hide the album/artist overlaid on the front covers (identify via the spine). */
   doubleHideText: boolean;
+  /** Cut (chamfer) the front label's top-left corner. */
+  showChamfer: boolean;
   /** Opacity (0–1) of the background behind overlaid front text. */
   textBgOpacity: number;
   /** Front/spine text colour (hex), auto-optimised for contrast. */

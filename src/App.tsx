@@ -46,6 +46,7 @@ const INITIAL: LabelData = {
   artist2: '',
   tracklist2: '',
   doubleHideText: false,
+  showChamfer: true,
   textBgOpacity: 1,
   textColor: '#ece8e0',
   bgColor: '#6e6a63',
@@ -722,6 +723,16 @@ export default function App() {
               id="double-album"
               checked={data.doubleAlbum}
               onCheckedChange={(v) => update({ doubleAlbum: v })}
+            />
+          </div>
+          <div className="flex w-full items-center justify-between">
+            <Label htmlFor="show-chamfer" className="text-xs">
+              Chamfered corner
+            </Label>
+            <Switch
+              id="show-chamfer"
+              checked={data.showChamfer}
+              onCheckedChange={(v) => update({ showChamfer: v })}
             />
           </div>
           {data.doubleAlbum && (

@@ -36,6 +36,7 @@ const FrontLabel = forwardRef<SVGSVGElement, Props>(function FrontLabel(props, r
     yearSize,
     discNumber,
     discTotal,
+    showChamfer,
     letterSpacing,
     lineHeight,
     size,
@@ -43,7 +44,8 @@ const FrontLabel = forwardRef<SVGSVGElement, Props>(function FrontLabel(props, r
   const { width: W, height: H } = size;
   const cover = frontCoverSize(size);
   const portrait = H >= W;
-  const { chamfer, padding } = FRONT;
+  const { padding } = FRONT;
+  const chamfer = showChamfer ? FRONT.chamfer : 0;
   const OUTLINE = `M ${chamfer},0 H ${W} V ${H} H 0 V ${chamfer} Z`;
   // Unique per instance — duplicate clipPath ids across the many SVGs on a
   // print sheet make url(#…) resolve ambiguously and drop the chamfer in print.
