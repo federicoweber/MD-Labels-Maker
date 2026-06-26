@@ -57,20 +57,32 @@ const TracklistSheet = forwardRef<SVGSVGElement, Props>(function TracklistSheet(
   ) => {
     const left = x0 + padding;
     const right = x0 + colW - padding;
-    const titleY = padding + titleSize * 0.9;
-    const artistY = titleY + artistSize + 1;
     const hasThumb = showTracklistCover && !!cover;
     const hasTextHeader = tlShowAlbum || tlShowArtist;
     const hasHeader = hasTextHeader || hasThumb || discTotal > 1;
-    const headerBottom = tlShowArtist ? artistY : tlShowAlbum ? titleY : padding + artistSize;
-    const ruleY = hasHeader ? headerBottom + 2.5 : padding;
-    const tracksTop = hasHeader ? ruleY + 4 : padding + trackSize * 0.9;
-    const maxLines = Math.max(1, Math.floor((H - tracksTop - padding) / trackGap));
-    const thumbSize = ruleY - padding;
     const tracks = tracksStr
       .split('\n')
       .map((t) => t.trim())
       .filter(Boolean);
+
+    // Wrap the album / artist header to the column width (less any room taken by
+    // a thumbnail or disc stamp on the right), then stack the lines top-down.
+    const headerRightW = hasThumb ? titleSize + artistSize + 4 : discTotal > 1 ? artistSize * 2.5 : 0;
+    const titleW = Math.max(8, right - left - headerRightW);
+    const titleLineGap = titleSize * 1.05;
+    const artistLineGap = artistSize * 1.2;
+    const titleLines = tlShowAlbum ? wrapText(alb || 'Album', titleFont, titleSize, titleW, 700) : [];
+    const artistLines = tlShowArtist ? wrapText(art || 'Artist', artistFont, artistSize, titleW) : [];
+    const titleBase = titleLines.map((_, i) => padding + titleSize * 0.9 + i * titleLineGap);
+    const lastTitle = titleBase[titleBase.length - 1] ?? padding;
+    const artist0 = tlShowAlbum ? lastTitle + artistSize + 1 : padding + artistSize * 0.9;
+    const artistBase = artistLines.map((_, i) => artist0 + i * artistLineGap);
+    const lastArtist = artistBase[artistBase.length - 1] ?? artist0;
+    const headerBottom = tlShowArtist ? lastArtist : tlShowAlbum ? lastTitle : padding + artistSize;
+    const ruleY = hasHeader ? headerBottom + 2.5 : padding;
+    const tracksTop = hasHeader ? ruleY + 4 : padding + trackSize * 0.9;
+    const maxLines = Math.max(1, Math.floor((H - tracksTop - padding) / trackGap));
+    const thumbSize = ruleY - padding;
 
     // Match the preview: stay one column until the list is long enough.
     const maxOneCol = hasThumb ? 11 : hasTextHeader ? 12 : 15;
@@ -122,8 +134,6 @@ const TracklistSheet = forwardRef<SVGSVGElement, Props>(function TracklistSheet(
         )}
         {tlShowAlbum && (
           <text
-            x={left}
-            y={titleY}
             fill={textColor}
             fontFamily={titleFont}
             fontSize={titleSize}
@@ -131,20 +141,26 @@ const TracklistSheet = forwardRef<SVGSVGElement, Props>(function TracklistSheet(
             fillOpacity={titleOpacity}
             letterSpacing={titleSize * letterSpacing}
           >
-            {alb || 'Album'}
+            {titleLines.map((line, i) => (
+              <tspan key={i} x={left} y={titleBase[i]}>
+                {line}
+              </tspan>
+            ))}
           </text>
         )}
         {tlShowArtist && (
           <text
-            x={left}
-            y={artistY}
             fill={textColor}
             fontFamily={artistFont}
             fontSize={artistSize}
             fillOpacity={artistOpacity}
             letterSpacing={artistSize * letterSpacing}
           >
-            {art || 'Artist'}
+            {artistLines.map((line, i) => (
+              <tspan key={i} x={left} y={artistBase[i]}>
+                {line}
+              </tspan>
+            ))}
           </text>
         )}
         {hasHeader && (
