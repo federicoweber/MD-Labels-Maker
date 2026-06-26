@@ -40,55 +40,63 @@ interface Item {
 interface Row {
   items: Item[];
   h: number;
-  w: number;
 }
 
 /**
- * Lay labels into rows where every label in a row has the same width AND height
- * (same label type), so each group is a clean uniform grid and a row is a single
- * straight horizontal cut. Group by full size — two different labels can share a
- * height (e.g. a 35×50 front and a 70×50 tracklist). Tallest first.
+ * Pack labels into rows where every label in a row has the same height — so a
+ * row is a single straight horizontal (guillotine) cut. Within a height, mix
+ * widths to fill each row (first-fit-decreasing), so e.g. a 35×50 front packs
+ * next to 70×50 tracklists. Tallest rows first.
  */
 function buildRows(items: Item[], contentW: number): Row[] {
-  const groups = new Map<string, Item[]>();
+  const groups = new Map<number, Item[]>();
   for (const it of items) {
-    const key = `${Math.round(it.w * 10) / 10}x${Math.round(it.h * 10) / 10}`;
+    const key = Math.round(it.h * 10) / 10;
     (groups.get(key) ?? groups.set(key, []).get(key)!).push(it);
   }
-  const keys = [...groups.keys()].sort((a, b) => {
-    const [aw, ah] = a.split('x').map(Number);
-    const [bw, bh] = b.split('x').map(Number);
-    return bh - ah || bw - aw;
-  });
   const rows: Row[] = [];
-  for (const key of keys) {
-    const items = groups.get(key)!;
-    const { w: cw, h } = items[0];
-    let row: Item[] = [];
-    let w = 0;
-    for (const it of items) {
-      if (row.length && w + it.w > contentW + 0.01) {
-        rows.push({ items: row, h, w: cw });
-        row = [];
-        w = 0;
+  for (const h of [...groups.keys()].sort((a, b) => b - a)) {
+    const sorted = [...groups.get(h)!].sort((a, b) => b.w - a.w);
+    const bins: { items: Item[]; w: number }[] = [];
+    for (const it of sorted) {
+      let bin = bins.find((b) => b.w + it.w <= contentW + 0.01);
+      if (!bin) {
+        bin = { items: [], w: 0 };
+        bins.push(bin);
       }
-      row.push(it);
-      w += it.w + GAP;
+      bin.items.push(it);
+      bin.w += it.w + GAP;
     }
-    if (row.length) rows.push({ items: row, h, w: cw });
+    for (const bin of bins) rows.push({ items: bin.items, h });
   }
   return rows;
 }
 
-/** Group consecutive rows of the same label size (uniform columns) into tables. */
+/** Group consecutive same-height rows into blocks. */
 function groupBlocks(rows: Row[]): Row[][] {
   const blocks: Row[][] = [];
   for (const row of rows) {
     const last = blocks[blocks.length - 1];
-    if (last && last[0].h === row.h && last[0].w === row.w) last.push(row);
+    if (last && last[0].h === row.h) last.push(row);
     else blocks.push([row]);
   }
   return blocks;
+}
+
+/**
+ * Split a page's rows into table groups. A uniform-width block (all cells the
+ * same width, e.g. spines, or fronts/tracklists alone) becomes one multi-row
+ * table with clean collapsed borders. A mixed-width block (fronts packed with
+ * tracklists) renders each row as its own table — table columns wouldn't align.
+ */
+function tablesFor(rows: Row[]): Row[][] {
+  const tables: Row[][] = [];
+  for (const block of groupBlocks(rows)) {
+    const widths = new Set(block.flatMap((r) => r.items.map((it) => Math.round(it.w * 10) / 10)));
+    if (widths.size <= 1) tables.push(block);
+    else for (const row of block) tables.push([row]);
+  }
+  return tables;
 }
 
 /** Pack whole rows onto pages without splitting a row across a page. */
@@ -177,14 +185,14 @@ export default function PrintView({
             style={{ width: `${pw}mm`, height: `${ph}mm`, padding: `${MARGIN}mm` }}
           >
             <div className="flex flex-col items-start">
-              {groupBlocks(pg).map((block, bi) => (
+              {tablesFor(pg).map((rows, ti) => (
                 <table
-                  key={bi}
+                  key={ti}
                   className="print-table"
-                  style={{ marginTop: bi ? '-1px' : undefined }}
+                  style={{ marginTop: ti ? '-1px' : undefined }}
                 >
                   <tbody>
-                    {block.map((row, ri) => (
+                    {rows.map((row, ri) => (
                       <tr key={ri}>
                         {row.items.map((it) => (
                           <td
