@@ -4,7 +4,7 @@ import { TRACKLIST, PREVIEW_PX_PER_MM, type SizePreset } from '@/lib/dimensions'
 
 type Props = LabelData & { size: SizePreset };
 
-const { padding, titleSize, artistSize } = TRACKLIST;
+const { padding } = TRACKLIST;
 
 /**
  * Optional tracklist sheet for the MD jewel case. One album (two-column tracks)
@@ -28,6 +28,8 @@ const TracklistSheet = forwardRef<SVGSVGElement, Props>(function TracklistSheet(
     trackFont,
     tlShowAlbum,
     tlShowArtist,
+    tlTitleSize: titleSize,
+    tlArtistSize: artistSize,
     showTracklistCover,
     trackSize,
     titleOpacity,

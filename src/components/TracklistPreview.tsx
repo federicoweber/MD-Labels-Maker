@@ -85,8 +85,8 @@ function TracklistColumn({
   cols: number;
 }) {
   const PAD = TRACKLIST.padding * S;
-  const titleY = TRACKLIST.padding + TRACKLIST.titleSize * 0.9;
-  const artistY = titleY + TRACKLIST.artistSize + 1;
+  const titleY = TRACKLIST.padding + data.tlTitleSize * 0.9;
+  const artistY = titleY + data.tlArtistSize + 1;
   const ruleY = (data.tlShowArtist ? artistY : titleY) + 2.5;
   const thumb = (ruleY - TRACKLIST.padding) * S;
   const hasThumb = data.showTracklistCover && !!cover;
@@ -107,7 +107,7 @@ function TracklistColumn({
               <div
                 style={{
                   fontFamily: data.titleFont,
-                  fontSize: TRACKLIST.titleSize * S,
+                  fontSize: data.tlTitleSize * S,
                   fontWeight: 700,
                   opacity: data.titleOpacity,
                   lineHeight: 1.05,
@@ -121,7 +121,7 @@ function TracklistColumn({
               <div
                 style={{
                   fontFamily: data.artistFont,
-                  fontSize: TRACKLIST.artistSize * S,
+                  fontSize: data.tlArtistSize * S,
                   opacity: data.artistOpacity,
                   lineHeight: 1.2,
                   letterSpacing: `${data.letterSpacing}em`,
@@ -136,7 +136,7 @@ function TracklistColumn({
               <div
                 style={{
                   fontFamily: data.titleFont,
-                  fontSize: TRACKLIST.artistSize * S,
+                  fontSize: data.tlArtistSize * S,
                   fontWeight: 700,
                   opacity: data.artistOpacity,
                   lineHeight: 1,

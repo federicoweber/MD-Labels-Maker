@@ -40,42 +40,52 @@ interface Item {
 interface Row {
   items: Item[];
   h: number;
+  w: number;
 }
 
 /**
- * Lay labels into rows where every label in a row has the same height, so each
- * row can be cut with a single straight horizontal cut. Tallest rows first.
+ * Lay labels into rows where every label in a row has the same width AND height
+ * (same label type), so each group is a clean uniform grid and a row is a single
+ * straight horizontal cut. Group by full size — two different labels can share a
+ * height (e.g. a 35×50 front and a 70×50 tracklist). Tallest first.
  */
 function buildRows(items: Item[], contentW: number): Row[] {
-  const groups = new Map<number, Item[]>();
+  const groups = new Map<string, Item[]>();
   for (const it of items) {
-    const key = Math.round(it.h * 10) / 10;
+    const key = `${Math.round(it.w * 10) / 10}x${Math.round(it.h * 10) / 10}`;
     (groups.get(key) ?? groups.set(key, []).get(key)!).push(it);
   }
+  const keys = [...groups.keys()].sort((a, b) => {
+    const [aw, ah] = a.split('x').map(Number);
+    const [bw, bh] = b.split('x').map(Number);
+    return bh - ah || bw - aw;
+  });
   const rows: Row[] = [];
-  for (const h of [...groups.keys()].sort((a, b) => b - a)) {
+  for (const key of keys) {
+    const items = groups.get(key)!;
+    const { w: cw, h } = items[0];
     let row: Item[] = [];
     let w = 0;
-    for (const it of groups.get(h)!) {
+    for (const it of items) {
       if (row.length && w + it.w > contentW + 0.01) {
-        rows.push({ items: row, h });
+        rows.push({ items: row, h, w: cw });
         row = [];
         w = 0;
       }
       row.push(it);
       w += it.w + GAP;
     }
-    if (row.length) rows.push({ items: row, h });
+    if (row.length) rows.push({ items: row, h, w: cw });
   }
   return rows;
 }
 
-/** Group consecutive same-height rows (uniform columns) into table blocks. */
+/** Group consecutive rows of the same label size (uniform columns) into tables. */
 function groupBlocks(rows: Row[]): Row[][] {
   const blocks: Row[][] = [];
   for (const row of rows) {
     const last = blocks[blocks.length - 1];
-    if (last && last[0].h === row.h) last.push(row);
+    if (last && last[0].h === row.h && last[0].w === row.w) last.push(row);
     else blocks.push([row]);
   }
   return blocks;

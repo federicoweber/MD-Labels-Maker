@@ -7,6 +7,9 @@ type Props = LabelData & { size: SizePreset };
 const caption = (album: string, artist: string, showArtist: boolean) =>
   showArtist && artist ? `${album || 'Album'} - ${artist}` : album || 'Album';
 
+const spineCaption = (album: string, artist: string, showAlbum: boolean, showArtist: boolean) =>
+  [showAlbum && (album || 'Album'), showArtist && (artist || 'Artist')].filter(Boolean).join(' - ');
+
 /** MiniDisc spine label — a thin strip with a centred caption (two in 2× mode). */
 const SpineLabel = forwardRef<SVGSVGElement, Props>(function SpineLabel(
   {
@@ -20,7 +23,8 @@ const SpineLabel = forwardRef<SVGSVGElement, Props>(function SpineLabel(
     textColor,
     bgColor,
     titleFont,
-    showArtist,
+    spineShowAlbum,
+    spineShowArtist,
     letterSpacing,
     size,
   },
@@ -82,7 +86,7 @@ const SpineLabel = forwardRef<SVGSVGElement, Props>(function SpineLabel(
           textAnchor="middle"
           dominantBaseline="central"
         >
-          {caption(album, artist, showArtist)}
+          {spineCaption(album, artist, spineShowAlbum, spineShowArtist)}
           {discSuffix}
         </text>
       )}

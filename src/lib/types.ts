@@ -58,15 +58,20 @@ export interface LabelData {
   /** Whether the spine label is included, and how many copies to print. */
   showSpine: boolean;
   spineCount: number;
+  /** Show album / artist in the spine caption. */
+  spineShowAlbum: boolean;
+  spineShowArtist: boolean;
   /** Whether the optional jewel-case tracklist sheet is shown. */
   showTracklist: boolean;
   /** Tracklist text, one track per line (for the optional jewel-case sheet). */
   tracklist: string;
   /** Show a miniature cover next to the tracklist header. */
   showTracklistCover: boolean;
-  /** Show album / artist in the tracklist header. */
+  /** Show album / artist in the tracklist header, and their sizes in mm. */
   tlShowAlbum: boolean;
   tlShowArtist: boolean;
+  tlTitleSize: number;
+  tlArtistSize: number;
   /** Album year, shown bottom-left of the front label when enabled. */
   year: string;
   showYear: boolean;

@@ -4,6 +4,9 @@ import { PREVIEW_PX_PER_MM as S, type SizePreset } from '@/lib/dimensions';
 const caption = (album: string, artist: string, showArtist: boolean) =>
   showArtist && artist ? `${album || 'Album'} - ${artist}` : album || 'Album';
 
+const spineCaption = (album: string, artist: string, showAlbum: boolean, showArtist: boolean) =>
+  [showAlbum && (album || 'Album'), showArtist && (artist || 'Artist')].filter(Boolean).join(' - ');
+
 /** Spine preview. One caption, or two halves in double-album mode. */
 export default function SpinePreview({ data, size }: { data: LabelData; size: SizePreset }) {
   const W = size.width * S;
@@ -39,7 +42,7 @@ export default function SpinePreview({ data, size }: { data: LabelData; size: Si
       ) : (
         <div className="flex w-full items-center justify-center">
           <span className="truncate" style={style}>
-            {caption(data.album, data.artist, data.showArtist)}
+            {spineCaption(data.album, data.artist, data.spineShowAlbum, data.spineShowArtist)}
             {discSuffix}
           </span>
         </div>

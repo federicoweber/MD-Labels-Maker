@@ -70,6 +70,8 @@ const INITIAL: LabelData = {
   showTracklistCover: false,
   tlShowAlbum: true,
   tlShowArtist: true,
+  tlTitleSize: TRACKLIST.titleSize,
+  tlArtistSize: TRACKLIST.artistSize,
   titleOpacity: 1,
   artistOpacity: 1,
   trackOpacity: 1,
@@ -77,6 +79,8 @@ const INITIAL: LabelData = {
   lineHeight: 1.2,
   showSpine: true,
   spineCount: 1,
+  spineShowAlbum: true,
+  spineShowArtist: true,
   showTracklist: false,
   tracklist: '',
 };
@@ -563,6 +567,22 @@ export default function App() {
 
   const trackFields: TypoField[] = [
     {
+      key: 'tl-title',
+      title: 'Album',
+      showSwitch: { checked: data.tlShowAlbum, onChange: (v) => update({ tlShowAlbum: v }) },
+      size: data.tlShowAlbum
+        ? { id: 'tl-title-size', value: data.tlTitleSize, min: 2, max: 8, onChange: (v) => update({ tlTitleSize: v }) }
+        : undefined,
+    },
+    {
+      key: 'tl-artist',
+      title: 'Artist',
+      showSwitch: { checked: data.tlShowArtist, onChange: (v) => update({ tlShowArtist: v }) },
+      size: data.tlShowArtist
+        ? { id: 'tl-artist-size', value: data.tlArtistSize, min: 1.5, max: 6, onChange: (v) => update({ tlArtistSize: v }) }
+        : undefined,
+    },
+    {
       key: 'track',
       title: 'Track',
       font: { value: data.trackFont, onChange: (f) => onFontSelect('track', f) },
@@ -760,6 +780,26 @@ export default function App() {
             <section className="flex flex-col gap-2">
               <SizeSelect label="Spine" value={spineSize} presets={SPINE_PRESETS} onChange={setSpineSize} />
               <SpinePreview data={eff} size={spineSize} />
+              <div className="flex w-80 items-center justify-between">
+                <Label htmlFor="spine-album" className="text-xs">
+                  Album
+                </Label>
+                <Switch
+                  id="spine-album"
+                  checked={data.spineShowAlbum}
+                  onCheckedChange={(v) => update({ spineShowAlbum: v })}
+                />
+              </div>
+              <div className="flex w-80 items-center justify-between">
+                <Label htmlFor="spine-artist" className="text-xs">
+                  Artist
+                </Label>
+                <Switch
+                  id="spine-artist"
+                  checked={data.spineShowArtist}
+                  onCheckedChange={(v) => update({ spineShowArtist: v })}
+                />
+              </div>
             </section>
           )}
 
