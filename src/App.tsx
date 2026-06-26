@@ -93,6 +93,48 @@ function slug(s: string): string {
     .toLowerCase();
 }
 
+/**
+ * Small underlined numeric field that can be cleared while typing (keeps a local
+ * string), committing a clamped value when it's valid or on blur.
+ */
+function CountInput({
+  id,
+  value,
+  min,
+  max,
+  onCommit,
+}: {
+  id: string;
+  value: number;
+  min: number;
+  max: number;
+  onCommit: (n: number) => void;
+}) {
+  const [text, setText] = useState(String(value));
+  useEffect(() => setText(String(value)), [value]);
+  return (
+    <input
+      id={id}
+      type="text"
+      inputMode="numeric"
+      value={text}
+      onChange={(e) => {
+        const v = e.target.value.replace(/\D/g, '');
+        setText(v);
+        const n = parseInt(v, 10);
+        if (!Number.isNaN(n) && n >= min && n <= max) onCommit(n);
+      }}
+      onBlur={() => {
+        const n = parseInt(text, 10);
+        const clamped = Number.isNaN(n) ? value : Math.max(min, Math.min(max, n));
+        onCommit(clamped);
+        setText(String(clamped));
+      }}
+      className="w-10 border-b border-foreground/40 bg-transparent pb-0.5 text-right text-xs tabular-nums outline-none focus:border-foreground"
+    />
+  );
+}
+
 /** A "Fetch cover" button with an optional ◀ n/m ▶ picker for the matches. */
 function CoverControl({
   label,
@@ -663,14 +705,7 @@ export default function App() {
               <Label htmlFor="disc-count" className="text-xs">
                 Discs
               </Label>
-              <input
-                id="disc-count"
-                type="text"
-                inputMode="numeric"
-                value={String(data.discTotal)}
-                onChange={(e) => setDiscCount(Number(e.target.value.replace(/\D/g, '')))}
-                className="w-10 border-b border-foreground/40 bg-transparent pb-0.5 text-right text-xs tabular-nums outline-none focus:border-foreground"
-              />
+              <CountInput id="disc-count" value={data.discTotal} min={1} max={20} onCommit={setDiscCount} />
             </div>
           )}
           {multiDiscLoading && (
@@ -724,21 +759,6 @@ export default function App() {
               onCheckedChange={(v) => update({ showSpine: v })}
             />
           </div>
-          {data.showSpine && (
-            <div className="flex w-full items-center justify-between">
-              <Label htmlFor="spine-count" className="text-xs">
-                Spine copies
-              </Label>
-              <input
-                id="spine-count"
-                type="text"
-                inputMode="numeric"
-                value={String(data.spineCount)}
-                onChange={(e) => setSpineCount(Number(e.target.value.replace(/\D/g, '')))}
-                className="w-10 border-b border-foreground/40 bg-transparent pb-0.5 text-right text-xs tabular-nums outline-none focus:border-foreground"
-              />
-            </div>
-          )}
           <div className="flex w-full items-center justify-between">
             <Label htmlFor="show-tracklist" className="text-xs">
               Tracklist
@@ -774,6 +794,12 @@ export default function App() {
             <section className="flex flex-col gap-2">
               <SizeSelect label="Spine" value={spineSize} presets={SPINE_PRESETS} onChange={setSpineSize} />
               <SpinePreview data={eff} size={spineSize} />
+              <div className="flex w-80 items-center justify-between">
+                <Label htmlFor="spine-count" className="text-xs">
+                  Copies
+                </Label>
+                <CountInput id="spine-count" value={data.spineCount} min={1} max={20} onCommit={setSpineCount} />
+              </div>
               <div className="flex w-80 items-center justify-between">
                 <Label htmlFor="spine-album" className="text-xs">
                   Album

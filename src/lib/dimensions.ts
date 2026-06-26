@@ -39,8 +39,10 @@ export const TRACKLIST = {
 } as const;
 
 export const TRACKLIST_PRESETS: SizePreset[] = [
+  // 53.5mm tall matches the default front cover, so the print packer lays them
+  // out in the same rows.
+  { width: 73.5, height: 53.5 },
   { width: 70, height: 50 },
-  { width: 74, height: 54 },
 ];
 
 /** Target resolution for PNG export. 300 DPI is print quality. */
