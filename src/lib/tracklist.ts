@@ -57,13 +57,39 @@ export async function fetchCovers(artist: string, album: string, max = 6): Promi
 }
 interface MbRelease {
   date?: string;
-  media?: { tracks?: { title: string }[] }[];
+  media?: { tracks?: { title: string; length?: number }[] }[];
 }
 
 export interface TracklistResult {
   tracks: string[];
   year: string;
 }
+
+/** Format a track length (milliseconds) as "M:SS". */
+export function fmtDuration(ms?: number): string {
+  if (!ms || ms <= 0) return '';
+  const total = Math.round(ms / 1000);
+  return `${Math.floor(total / 60)}:${String(total % 60).padStart(2, '0')}`;
+}
+
+/** A track line stores "Title" or "Title\tM:SS" — split it back apart. */
+export function splitTrack(line: string): { title: string; dur: string } {
+  const i = line.indexOf('\t');
+  return i >= 0 ? { title: line.slice(0, i), dur: line.slice(i + 1) } : { title: line, dur: '' };
+}
+
+/** Drop the duration from every line of a tracklist string. */
+export function stripDurations(tracklist: string): string {
+  return tracklist
+    .split('\n')
+    .map((l) => splitTrack(l).title)
+    .join('\n');
+}
+
+const trackLine = (title: string, length?: number) => {
+  const d = fmtDuration(length);
+  return d ? `${title}\t${d}` : title;
+};
 
 /**
  * Look up the tracklist (and release year) for an album by artist + title.
@@ -92,7 +118,7 @@ export async function fetchTracklist(artist: string, album: string): Promise<Tra
     for (const track of medium.tracks ?? []) {
       const title = track.title?.trim();
       if (!title || title.toLowerCase() === '[untitled]') continue;
-      tracks.push(title);
+      tracks.push(trackLine(title, track.length));
     }
   }
   return { tracks, year: data.date?.slice(0, 4) ?? '' };
@@ -134,8 +160,8 @@ export async function fetchDiscs(artist: string, album: string): Promise<DiscsRe
   const discs = (data.media ?? [])
     .map((medium) =>
       (medium.tracks ?? [])
-        .map((t) => t.title?.trim() ?? '')
-        .filter((t) => t && t.toLowerCase() !== '[untitled]'),
+        .filter((t) => t.title?.trim() && t.title.trim().toLowerCase() !== '[untitled]')
+        .map((t) => trackLine(t.title!.trim(), t.length)),
     )
     .filter((d) => d.length > 0);
   return { discs, year: data.date?.slice(0, 4) ?? '' };

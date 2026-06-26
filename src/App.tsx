@@ -19,7 +19,7 @@ import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { Button } from '@/components/ui/button';
 import { fetchFontList, loadFontForPreview } from '@/lib/fonts';
-import { fetchTracklist, fetchCovers, fetchDiscs } from '@/lib/tracklist';
+import { fetchTracklist, fetchCovers, fetchDiscs, stripDurations } from '@/lib/tracklist';
 import { loadDiscs, saveDiscs } from '@/lib/storage';
 import { downloadLabelsZip, type ZipLabel } from '@/lib/exportPng';
 import { extractPalette, bestTextColor } from '@/lib/colors';
@@ -72,6 +72,7 @@ const INITIAL: LabelData = {
   tlShowArtist: true,
   tlTitleSize: TRACKLIST.titleSize,
   tlArtistSize: TRACKLIST.artistSize,
+  showTrackDuration: false,
   titleOpacity: 1,
   artistOpacity: 1,
   trackOpacity: 1,
@@ -498,13 +499,14 @@ export default function App() {
     }
   }
 
-  async function autoFillTracklist() {
+  async function autoFillTracklist(withDur = data.showTrackDuration) {
     if (!data.album.trim() || !data.artist.trim()) return;
     setTracklistLoading(true);
     try {
       const { tracks, year } = await fetchTracklist(data.artist, data.album);
       const patch: Partial<LabelData> = {};
-      if (tracks.length) patch.tracklist = tracks.join('\n');
+      const joined = tracks.join('\n');
+      if (tracks.length) patch.tracklist = withDur ? joined : stripDurations(joined);
       if (year) patch.year = year;
       if (Object.keys(patch).length) update(patch);
     } catch (err) {
@@ -516,15 +518,16 @@ export default function App() {
 
   // Multi-disc: one sidebar entry holds N per-disc tracklists; the N label sets
   // are only materialised for print/export. Fetch fills the per-disc tracklists.
-  async function loadMultiDisc() {
+  async function loadMultiDisc(withDur = data.showTrackDuration) {
     if (!data.album.trim() || !data.artist.trim()) return;
     setMultiDiscLoading(true);
     try {
       const { discs: split, year } = await fetchDiscs(data.artist, data.album);
       const total = Math.max(2, split.length || 2);
-      const discTracklists = Array.from({ length: total }, (_, i) =>
-        split[i] ? split[i].join('\n') : i === 0 ? data.tracklist : '',
-      );
+      const discTracklists = Array.from({ length: total }, (_, i) => {
+        const joined = split[i] ? split[i].join('\n') : i === 0 ? data.tracklist : '';
+        return withDur ? joined : stripDurations(joined);
+      });
       update({
         multiDisc: true,
         discTotal: total,
@@ -890,6 +893,30 @@ export default function App() {
                     id="tl-artist"
                     checked={data.tlShowArtist}
                     onCheckedChange={(v) => update({ tlShowArtist: v })}
+                  />
+                </div>
+                <div className="flex items-center justify-between">
+                  <Label htmlFor="tl-duration" className="text-xs">
+                    Durations
+                  </Label>
+                  <Switch
+                    id="tl-duration"
+                    checked={data.showTrackDuration}
+                    onCheckedChange={(v) => {
+                      if (!v) {
+                        update({
+                          showTrackDuration: false,
+                          tracklist: stripDurations(data.tracklist),
+                          tracklist2: stripDurations(data.tracklist2),
+                          discTracklists: data.discTracklists.map(stripDurations),
+                        });
+                        return;
+                      }
+                      update({ showTrackDuration: true });
+                      const hasDur =
+                        data.tracklist.includes('\t') || data.discTracklists.some((t) => t.includes('\t'));
+                      if (!hasDur) void (data.multiDisc ? loadMultiDisc(true) : autoFillTracklist(true));
+                    }}
                   />
                 </div>
                 <div className="flex items-center justify-between">
