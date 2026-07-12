@@ -74,6 +74,7 @@ const INITIAL: LabelData = {
   showArtist: true,
   trackSize: TRACKLIST.trackSize,
   showTracklistCover: false,
+  tlShowQr: false,
   tlShowAlbum: true,
   tlShowArtist: true,
   tlTitleSize: TRACKLIST.titleSize,
@@ -1056,6 +1057,16 @@ export default function App() {
                     id="tracklist-cover"
                     checked={data.showTracklistCover}
                     onCheckedChange={(v) => update({ showTracklistCover: v })}
+                  />
+                </div>
+                <div className="flex items-center justify-between">
+                  <Label htmlFor="tl-qr" className="text-xs">
+                    QR tracklist
+                  </Label>
+                  <Switch
+                    id="tl-qr"
+                    checked={data.tlShowQr}
+                    onCheckedChange={(v) => update({ tlShowQr: v })}
                   />
                 </div>
                 <div className="flex items-center justify-between">

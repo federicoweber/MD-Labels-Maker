@@ -3,6 +3,8 @@ import type { LabelData } from '@/lib/types';
 import { TRACKLIST, PREVIEW_PX_PER_MM, type SizePreset } from '@/lib/dimensions';
 import { wrapText } from '@/lib/text';
 import { splitTrack } from '@/lib/tracklist';
+import { qrPath, shareDataFor, shareUrl } from '@/lib/share';
+import { QrGraphic } from '@/components/QrGraphic';
 
 type Props = LabelData & { size: SizePreset };
 
@@ -34,6 +36,8 @@ const TracklistSheet = forwardRef<SVGSVGElement, Props>(function TracklistSheet(
     tlArtistSize: artistSize,
     showTrackDuration,
     showTracklistCover,
+    tlShowQr,
+    textBgOpacity,
     trackSize,
     titleOpacity,
     artistOpacity,
@@ -46,6 +50,27 @@ const TracklistSheet = forwardRef<SVGSVGElement, Props>(function TracklistSheet(
   } = props;
   const { width: W, height: H } = size;
   const trackGap = trackSize * lineHeight;
+
+  // QR code linking to the digital tracklist page, bottom-right, in the
+  // sheet's colours (backing follows the text-background opacity). Sized as
+  // small as scannability allows: 0.3mm/module — the floor for a sharp 300dpi
+  // print read by a modern phone — plus a 4-module quiet zone.
+  const QR_MODULE = 0.3; // mm
+  const QR_PAD = 1.2; // quiet zone (4 modules), mm
+  const qr = tlShowQr && !doubleAlbum ? qrPath(shareUrl(shareDataFor(props))) : null;
+  const qrSize = qr ? qr.count * QR_MODULE + 2 * QR_PAD : 0;
+  const qrBlock = qr && (
+    <QrGraphic
+      qr={qr}
+      x={W - padding - qrSize}
+      y={H - padding - qrSize}
+      size={qrSize}
+      pad={QR_PAD}
+      bgColor={bgColor}
+      textColor={textColor}
+      bgOpacity={textBgOpacity}
+    />
+  );
 
   const column = (
     x0: number,
@@ -232,6 +257,7 @@ const TracklistSheet = forwardRef<SVGSVGElement, Props>(function TracklistSheet(
       ) : (
         column(0, W, album, artist, coverDataUrl, tracklist, 2, 'c1')
       )}
+      {qrBlock}
     </svg>
   );
 });

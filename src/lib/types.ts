@@ -79,6 +79,8 @@ export interface LabelData {
   tracklist: string;
   /** Show a miniature cover next to the tracklist header. */
   showTracklistCover: boolean;
+  /** Show the QR code (digital tracklist link) on the tracklist sheet. */
+  tlShowQr: boolean;
   /** Show album / artist in the tracklist header, and their sizes in mm. */
   tlShowAlbum: boolean;
   tlShowArtist: boolean;

@@ -9,9 +9,9 @@ import {
 } from 'lucide-react';
 import type { LabelData } from '@/lib/types';
 import { TrackEditor } from '@/components/TracklistPreview';
+import QrOverlay from '@/components/QrOverlay';
 import { FRONT, PREVIEW_PX_PER_MM as S, frontCoverSize, type SizePreset } from '@/lib/dimensions';
-import { readImageFile } from '@/lib/utils';
-import { qrPath, shareDataFor, shareUrl } from '@/lib/share';
+import { readImageFile, withAlpha } from '@/lib/utils';
 
 interface Props {
   data: LabelData;
@@ -19,14 +19,6 @@ interface Props {
   update: (patch: Partial<LabelData>) => void;
   onCover: (dataUrl: string | null) => void;
   onCover2: (dataUrl: string | null) => void;
-}
-
-/** Append an opacity (0–1) to a #rrggbb hex as an 8-digit hex. */
-function withAlpha(hex: string, opacity: number): string {
-  const a = Math.round(Math.max(0, Math.min(1, opacity)) * 255)
-    .toString(16)
-    .padStart(2, '0');
-  return `${hex}${a}`;
 }
 
 /** Album/artist sit smaller when overlaid on covers in double mode. */
@@ -464,48 +456,6 @@ function TracksOverlay({
         }}
       />
     </div>
-  );
-}
-
-/**
- * The label's QR code, superimposed over the whole cover-art space: the art
- * shows through the white backing at the text-background opacity, mirroring
- * the SVG twin. Clicking it opens the page it encodes.
- */
-function QrOverlay({
-  data,
-  sizeMm,
-  className,
-  style,
-}: {
-  data: LabelData;
-  /** Side of the square, in mm (the cover square / the label width). */
-  sizeMm: number;
-  className?: string;
-  style?: React.CSSProperties;
-}) {
-  const url = shareUrl(shareDataFor(data));
-  const qr = qrPath(url);
-  const box = sizeMm * S;
-  const pad = FRONT.padding;
-  return (
-    <a
-      href={url}
-      target="_blank"
-      rel="noreferrer"
-      title="Open the tracklist page this QR encodes"
-      className={`block shrink-0 ${className ?? ''}`}
-      style={{ width: box, height: box, ...style }}
-    >
-      <svg viewBox={`0 0 ${sizeMm} ${sizeMm}`} width={box} height={box} aria-hidden>
-        <rect width={sizeMm} height={sizeMm} fill={withAlpha(data.bgColor, data.textBgOpacity)} />
-        <path
-          d={qr.path}
-          fill={data.textColor}
-          transform={`translate(${pad} ${pad}) scale(${(sizeMm - 2 * pad) / qr.count})`}
-        />
-      </svg>
-    </a>
   );
 }
 

@@ -1,8 +1,8 @@
-import { useEffect, useMemo } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import MdLogo from '@/components/MdLogo';
 import { decodeShare } from '@/lib/share';
 import { loadFontForPreview } from '@/lib/fonts';
-import { splitTrack } from '@/lib/tracklist';
+import { fetchCovers, splitTrack } from '@/lib/tracklist';
 
 // The app's default label palette/typography, for older QR codes that don't
 // carry style fields.
@@ -36,6 +36,24 @@ export default function ShareView({ encoded }: { encoded: string }) {
     }
   }, [titleFont, artistFont, trackFont]);
 
+  // The cover isn't in the URL (it wouldn't fit a scannable QR) — fetch it
+  // from the Cover Art Archive by artist + album instead.
+  const [cover, setCover] = useState<string | null>(null);
+  const album = data?.album ?? '';
+  const artist = data?.artist ?? '';
+  useEffect(() => {
+    if (!album || !artist) return;
+    let cancelled = false;
+    fetchCovers(artist, album, 1)
+      .then(({ covers }) => {
+        if (!cancelled && covers[0]) setCover(covers[0]);
+      })
+      .catch(() => {});
+    return () => {
+      cancelled = true;
+    };
+  }, [album, artist]);
+
   if (!data) {
     return (
       <div className="flex min-h-svh items-center justify-center p-8 text-center">
@@ -55,6 +73,7 @@ export default function ShareView({ encoded }: { encoded: string }) {
       style={{ background: data.bgColor || FALLBACK.bgColor, color: data.textColor || FALLBACK.textColor }}
     >
       <div className="mx-auto flex min-h-svh w-full max-w-md flex-col gap-6 p-8">
+        {cover && <img src={cover} alt="" className="w-full" />}
         <header className="border-b border-current/40 pb-4">
           {data.disc && (
             <p className="text-xs tracking-wide uppercase opacity-70">Disc {data.disc}</p>

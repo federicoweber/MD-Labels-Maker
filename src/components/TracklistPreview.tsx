@@ -1,5 +1,6 @@
 import { useLayoutEffect, useRef } from 'react';
 import type { LabelData } from '@/lib/types';
+import QrOverlay from '@/components/QrOverlay';
 import { TRACKLIST, PREVIEW_PX_PER_MM as S, type SizePreset } from '@/lib/dimensions';
 
 interface Props {
@@ -21,7 +22,7 @@ export default function TracklistPreview({ data, size, update }: Props) {
   const H = size.height * S;
   return (
     <div
-      className="flex"
+      className="relative flex"
       style={{
         width: W,
         height: H,
@@ -30,6 +31,15 @@ export default function TracklistPreview({ data, size, update }: Props) {
         boxShadow: 'inset 0 0 0 1px #000',
       }}
     >
+      {data.tlShowQr && !data.doubleAlbum && (
+        <QrOverlay
+          data={data}
+          moduleMm={0.3}
+          padMm={1.2}
+          className="absolute"
+          style={{ right: TRACKLIST.padding * S, bottom: TRACKLIST.padding * S }}
+        />
+      )}
       {data.doubleAlbum ? (
         <>
           <TracklistColumn

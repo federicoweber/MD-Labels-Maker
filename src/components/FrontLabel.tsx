@@ -4,6 +4,7 @@ import { FRONT, PREVIEW_PX_PER_MM, frontCoverSize, type SizePreset } from '@/lib
 import { wrapText } from '@/lib/text';
 import { splitTrack } from '@/lib/tracklist';
 import { qrPath, shareDataFor, shareUrl } from '@/lib/share';
+import { QrGraphic } from '@/components/QrGraphic';
 
 type Props = LabelData & { size: SizePreset };
 
@@ -323,14 +324,16 @@ const FrontLabel = forwardRef<SVGSVGElement, Props>(function FrontLabel(props, r
   const qr = showQr && !doubleAlbum ? qrPath(shareUrl(shareDataFor(props))) : null;
   const qrAt = (x: number, y: number, size: number) =>
     qr && (
-      <g>
-        <rect x={x} y={y} width={size} height={size} fill={bgColor} fillOpacity={textBgOpacity} />
-        <path
-          d={qr.path}
-          fill={textColor}
-          transform={`translate(${x + padding} ${y + padding}) scale(${(size - 2 * padding) / qr.count})`}
-        />
-      </g>
+      <QrGraphic
+        qr={qr}
+        x={x}
+        y={y}
+        size={size}
+        pad={padding}
+        bgColor={bgColor}
+        textColor={textColor}
+        bgOpacity={textBgOpacity}
+      />
     );
 
   // Single-mode text geometry.

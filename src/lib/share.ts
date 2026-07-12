@@ -94,9 +94,10 @@ export interface QrModules {
   path: string;
 }
 
-/** Render `text` as QR modules (auto version, error correction L). */
+/** Render `text` as QR modules (auto version, error correction M — the size
+ * headroom is spent on more forgiving scans of worn or inverted prints). */
 export function qrPath(text: string): QrModules {
-  const qr = qrcode(0, 'L');
+  const qr = qrcode(0, 'M');
   qr.addData(text, 'Byte');
   qr.make();
   const count = qr.getModuleCount();
