@@ -106,9 +106,16 @@ export default function ShareView({ encoded }: { encoded: string }) {
           <p className="text-sm opacity-70">No tracklist on this label.</p>
         )}
 
-        <footer className="mt-auto flex items-center justify-between pt-6">
-          <a href={import.meta.env.BASE_URL} title="MiniDisc Labels Factory">
+        <footer className="mt-auto flex items-center justify-between gap-4 pt-6">
+          <a
+            href={import.meta.env.BASE_URL}
+            title="MiniDisc Labels Factory"
+            className="flex items-center gap-3 opacity-80 hover:opacity-100"
+          >
             <MdLogo className="h-8" />
+            <span className="text-xs underline underline-offset-2">
+              Made with MiniDisc Labels Factory
+            </span>
           </a>
           <a href="https://federicoweber.com/" title="federicoweber.com" className="opacity-70 hover:opacity-100">
             <FwdMark className="h-4 w-auto" />
