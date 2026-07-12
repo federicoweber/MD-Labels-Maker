@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import MdLogo from '@/components/MdLogo';
+import { FwdMark } from '@/components/QrGraphic';
 import { decodeShare } from '@/lib/share';
 import { loadFontForPreview } from '@/lib/fonts';
 import { fetchCovers, splitTrack } from '@/lib/tracklist';
@@ -105,9 +106,12 @@ export default function ShareView({ encoded }: { encoded: string }) {
           <p className="text-sm opacity-70">No tracklist on this label.</p>
         )}
 
-        <footer className="mt-auto pt-6">
+        <footer className="mt-auto flex items-center justify-between pt-6">
           <a href={import.meta.env.BASE_URL} title="MiniDisc Labels Factory">
             <MdLogo className="h-8" />
+          </a>
+          <a href="https://federicoweber.com/" title="federicoweber.com" className="opacity-70 hover:opacity-100">
+            <FwdMark className="h-4 w-auto" />
           </a>
         </footer>
       </div>
