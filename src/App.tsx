@@ -8,6 +8,7 @@ import FrontPreview from '@/components/FrontPreview';
 import SpinePreview from '@/components/SpinePreview';
 import TracklistPreview from '@/components/TracklistPreview';
 import SizeSelect from '@/components/SizeSelect';
+import SpotifyControl from '@/components/SpotifyControl';
 import LabelControls, { type TypoField } from '@/components/LabelControls';
 import Controls from '@/components/Controls';
 import ConfirmModal from '@/components/ConfirmModal';
@@ -736,6 +737,22 @@ export default function App() {
               onCycle={cycleCover}
             />
           )}
+          <SpotifyControl
+            onApply={(patch) => {
+              // Imported data replaces any fetched cover options, and the new
+              // artist/album shouldn't re-trigger the auto cover fetch.
+              setCoverOptions([]);
+              setCoverIndex(0);
+              const album = patch.album ?? data.album;
+              const artist = patch.artist ?? data.artist;
+              lastCoverKey.current = `${artist}|${album}`.toLowerCase();
+              const tracklist =
+                patch.tracklist && !data.showTrackDuration
+                  ? stripDurations(patch.tracklist)
+                  : patch.tracklist;
+              update({ ...patch, ...(tracklist !== undefined ? { tracklist } : {}) });
+            }}
+          />
           <div className="flex w-full items-center justify-between">
             <Label htmlFor="multi-disc" className="text-xs">
               Multi-disc album
