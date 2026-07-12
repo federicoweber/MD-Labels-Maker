@@ -10,6 +10,7 @@ import {
 import type { LabelData } from '@/lib/types';
 import { TrackEditor } from '@/components/TracklistPreview';
 import { FRONT, PREVIEW_PX_PER_MM as S, frontCoverSize, type SizePreset } from '@/lib/dimensions';
+import { readImageFile } from '@/lib/utils';
 
 interface Props {
   data: LabelData;
@@ -17,15 +18,6 @@ interface Props {
   update: (patch: Partial<LabelData>) => void;
   onCover: (dataUrl: string | null) => void;
   onCover2: (dataUrl: string | null) => void;
-}
-
-function readImageFile(file: File): Promise<string> {
-  return new Promise((resolve, reject) => {
-    const reader = new FileReader();
-    reader.onload = () => resolve(reader.result as string);
-    reader.onerror = reject;
-    reader.readAsDataURL(file);
-  });
 }
 
 /** Append an opacity (0–1) to a #rrggbb hex as an 8-digit hex. */
@@ -45,7 +37,6 @@ const DOUBLE_TEXT_SCALE = 0.72;
  * album/artist overlaid on the image. The hidden SVG twin exports.
  */
 export default function FrontPreview({ data, size, update, onCover, onCover2 }: Props) {
-  const fileInput = useRef<HTMLInputElement>(null);
   const [pageDragging, setPageDragging] = useState(false);
 
   // Detect a file being dragged anywhere on the page to prompt "DROP".
@@ -128,7 +119,6 @@ export default function FrontPreview({ data, size, update, onCover, onCover2 }: 
           src={data.coverDataUrl}
           onCover={onCover}
           pageDragging={pageDragging}
-          quietHover
           imgStyle={{ objectPosition: `${data.fullHeightAlign * 100}% 50%` }}
           style={{ position: 'absolute', top: 0, left: 0, width: W, height: H }}
         >
@@ -350,25 +340,15 @@ export default function FrontPreview({ data, size, update, onCover, onCover2 }: 
         />
       </svg>
 
-      {/* Hidden input reused for the single-mode cover (slots have their own) */}
-      <input
-        ref={fileInput}
-        type="file"
-        accept="image/*"
-        hidden
-        onChange={(e) => {
-          const f = e.target.files?.[0];
-          if (f?.type.startsWith('image/')) void readImageFile(f).then(onCover);
-        }}
-      />
     </div>
   );
 }
 
 /**
  * Full-height mode: hover controls (on the text band) to move the band up and
- * down the cover. The pill is a vertical drag surface; chevrons nudge. `y` is
- * 0 at the label's top edge, 1 at the bottom.
+ * down the cover. The pill is a vertical drag surface (click it without
+ * dragging to centre); the chevrons snap to the top and bottom. `y` is 0 at
+ * the label's top edge, 1 at the bottom.
  */
 function BandControls({
   y,
@@ -381,40 +361,44 @@ function BandControls({
 }) {
   const root = useRef<HTMLDivElement>(null);
   const drag = useRef<{ y0: number; start: number; range: number } | null>(null);
+  const moved = useRef(false);
   const clamp = (v: number) => Math.max(0, Math.min(1, v));
-  const nudge = (e: React.MouseEvent, dir: number) => {
+  const snap = (e: React.MouseEvent, v: number) => {
     e.stopPropagation();
-    onChange(clamp(y + dir * 0.05));
+    onChange(v);
   };
-  const stop = (e: React.SyntheticEvent) => e.stopPropagation();
   return (
     <div
       ref={root}
-      className="absolute top-1/2 right-1 flex -translate-y-1/2 cursor-ns-resize touch-none flex-col items-center rounded-full bg-black/60 px-1 py-1.5 text-white opacity-0 transition-opacity group-hover/band:opacity-100"
+      className="absolute top-1/2 left-1 flex -translate-y-1/2 cursor-ns-resize touch-none flex-col items-center rounded-full bg-black/60 px-1 py-1.5 text-white opacity-0 transition-opacity group-hover/band:opacity-100"
       onPointerDown={(e) => {
         if ((e.target as HTMLElement).closest('button')) return;
         const band = root.current?.parentElement;
         const range = containerH - (band?.offsetHeight ?? 0);
         if (range <= 0) return;
         drag.current = { y0: e.clientY, start: y, range };
+        moved.current = false;
         e.currentTarget.setPointerCapture(e.pointerId);
       }}
       onPointerMove={(e) => {
         if (!drag.current) return;
-        onChange(clamp(drag.current.start + (e.clientY - drag.current.y0) / drag.current.range));
+        const dy = e.clientY - drag.current.y0;
+        if (Math.abs(dy) > 3) moved.current = true;
+        if (moved.current) onChange(clamp(drag.current.start + dy / drag.current.range));
       }}
       onPointerUp={() => (drag.current = null)}
       onPointerCancel={() => (drag.current = null)}
-      onDoubleClick={(e) => {
-        e.stopPropagation();
-        if (!(e.target as HTMLElement).closest('button')) onChange(1);
+      onClick={(e) => {
+        // A plain click on the grip (no drag) centres the text vertically.
+        if ((e.target as HTMLElement).closest('button')) return;
+        if (!moved.current) onChange(0.5);
+        moved.current = false;
       }}
     >
       <button
         type="button"
-        aria-label="Move text up"
-        onClick={(e) => nudge(e, -1)}
-        onDoubleClick={stop}
+        aria-label="Move text to the top"
+        onClick={(e) => snap(e, 0)}
         className="grid size-5 place-items-center rounded-full hover:bg-white/20"
       >
         <ChevronUp className="size-3.5" />
@@ -422,9 +406,8 @@ function BandControls({
       <MoveVertical className="size-3.5 opacity-70" aria-hidden />
       <button
         type="button"
-        aria-label="Move text down"
-        onClick={(e) => nudge(e, 1)}
-        onDoubleClick={stop}
+        aria-label="Move text to the bottom"
+        onClick={(e) => snap(e, 1)}
         className="grid size-5 place-items-center rounded-full hover:bg-white/20"
       >
         <ChevronDown className="size-3.5" />
@@ -474,7 +457,7 @@ function TracksOverlay({
   );
 }
 
-/** A droppable / clickable cover area with a drop-target overlay. */
+/** A cover area that accepts a dropped image, with a drop-target overlay. */
 function CoverSlot({
   src,
   onCover,
@@ -482,7 +465,6 @@ function CoverSlot({
   style,
   imgStyle,
   contain,
-  quietHover,
   children,
 }: {
   src: string | null;
@@ -491,24 +473,17 @@ function CoverSlot({
   style: React.CSSProperties;
   imgStyle?: React.CSSProperties;
   contain?: boolean;
-  /** Suppress the hover "COVER" veil once an image is set (full-height mode). */
-  quietHover?: boolean;
   children?: React.ReactNode;
 }) {
-  const input = useRef<HTMLInputElement>(null);
-  const pick = (files: FileList | null) => {
-    const f = files?.[0];
-    if (f?.type.startsWith('image/')) void readImageFile(f).then(onCover);
-  };
   return (
     <div
-      className="group cursor-pointer overflow-hidden"
+      className="group overflow-hidden"
       style={style}
-      onClick={() => input.current?.click()}
       onDragOver={(e) => e.preventDefault()}
       onDrop={(e) => {
         e.preventDefault();
-        pick(e.dataTransfer.files);
+        const f = e.dataTransfer.files?.[0];
+        if (f?.type.startsWith('image/')) void readImageFile(f).then(onCover);
       }}
     >
       {src && (
@@ -521,11 +496,7 @@ function CoverSlot({
       )}
       <div
         className={`pointer-events-none absolute inset-0 flex items-center justify-center transition-opacity ${
-          src && !pageDragging
-            ? quietHover
-              ? 'opacity-0'
-              : 'opacity-0 group-hover:opacity-100'
-            : 'opacity-100'
+          src && !pageDragging ? 'opacity-0' : 'opacity-100'
         }`}
         style={{ background: src ? 'rgba(18,16,12,0.6)' : '#3f3d39', color: '#cfc9bd' }}
       >
@@ -543,13 +514,6 @@ function CoverSlot({
         </span>
       </div>
       {children}
-      <input
-        ref={input}
-        type="file"
-        accept="image/*"
-        hidden
-        onChange={(e) => pick(e.target.files)}
-      />
     </div>
   );
 }
@@ -557,8 +521,8 @@ function CoverSlot({
 /**
  * Full-height mode: hover controls to fine-tune the cover's horizontal crop.
  * The whole cover becomes a drag surface (the image follows the pointer); the
- * hover pill's chevrons nudge it and its centre button recentres. Plain clicks
- * (no movement) still fall through to the CoverSlot's file picker.
+ * hover pill's chevrons snap the crop to the cover's left/right edge and its
+ * centre button recentres.
  */
 function AlignControls({
   align,
@@ -596,19 +560,13 @@ function AlignControls({
       }}
       onPointerUp={() => (drag.current = null)}
       onPointerCancel={() => (drag.current = null)}
-      onClick={(e) => {
-        // A drag shouldn't also open the cover picker.
-        if (moved.current) {
-          e.stopPropagation();
-          moved.current = false;
-        }
-      }}
     >
-      <div className="absolute top-1/2 left-1/2 flex -translate-x-1/2 -translate-y-1/2 items-center gap-0.5 rounded-full bg-black/60 px-1.5 py-1 text-white opacity-0 transition-opacity group-hover:opacity-100">
+      {/* Sits at the top (with a z-lift) so the movable text band can't bury it. */}
+      <div className="absolute top-1.5 left-1/2 z-10 flex -translate-x-1/2 items-center gap-0.5 rounded-full bg-black/60 px-1.5 py-1 text-white opacity-0 transition-opacity group-hover:opacity-100">
         <button
           type="button"
-          aria-label="Nudge cover left"
-          onClick={(e) => set(e, align + 0.05)}
+          aria-label="Align cover left"
+          onClick={(e) => set(e, 0)}
           className="grid size-5 place-items-center rounded-full hover:bg-white/20"
         >
           <ChevronLeft className="size-3.5" />
@@ -623,8 +581,8 @@ function AlignControls({
         </button>
         <button
           type="button"
-          aria-label="Nudge cover right"
-          onClick={(e) => set(e, align - 0.05)}
+          aria-label="Align cover right"
+          onClick={(e) => set(e, 1)}
           className="grid size-5 place-items-center rounded-full hover:bg-white/20"
         >
           <ChevronRight className="size-3.5" />

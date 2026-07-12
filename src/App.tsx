@@ -20,6 +20,7 @@ import { Button } from '@/components/ui/button';
 import { fetchFontList, loadFontForPreview } from '@/lib/fonts';
 import { fetchTracklist, fetchCovers, fetchDiscs, stripDurations } from '@/lib/tracklist';
 import { loadDiscs, saveDiscs } from '@/lib/storage';
+import { readImageFile } from '@/lib/utils';
 import { downloadLabelsZip, type ZipLabel } from '@/lib/exportPng';
 import { extractPalette, bestTextColor } from '@/lib/colors';
 import {
@@ -140,11 +141,12 @@ function CountInput({
   );
 }
 
-/** A "Fetch cover" button with an optional ◀ n/m ▶ picker for the matches. */
+/** A "Fetch cover" button with an upload button and an optional ◀ n/m ▶ picker. */
 function CoverControl({
   label,
   loading,
   onFetch,
+  onUpload,
   options,
   index,
   onCycle,
@@ -152,15 +154,31 @@ function CoverControl({
   label: string;
   loading: boolean;
   onFetch: () => void;
+  onUpload: (dataUrl: string) => void;
   options: string[];
   index: number;
   onCycle: (dir: number) => void;
 }) {
+  const fileInput = useRef<HTMLInputElement>(null);
   return (
     <div className="flex items-center gap-3">
       <Button variant="outline" className="w-fit" disabled={loading} onClick={onFetch}>
         {loading ? 'Fetching…' : label}
       </Button>
+      <Button variant="outline" className="w-fit" onClick={() => fileInput.current?.click()}>
+        Upload
+      </Button>
+      <input
+        ref={fileInput}
+        type="file"
+        accept="image/*"
+        hidden
+        onChange={(e) => {
+          const f = e.target.files?.[0];
+          if (f?.type.startsWith('image/')) void readImageFile(f).then(onUpload);
+          e.target.value = '';
+        }}
+      />
       {options.length > 1 && (
         <div className="flex items-center gap-1 text-xs text-muted-foreground">
           <button
@@ -692,6 +710,7 @@ export default function App() {
                 label="Fetch cover 1"
                 loading={coverLoading}
                 onFetch={() => void loadCovers()}
+                onUpload={onCover}
                 options={coverOptions}
                 index={coverIndex}
                 onCycle={cycleCover}
@@ -700,6 +719,7 @@ export default function App() {
                 label="Fetch cover 2"
                 loading={coverLoading2}
                 onFetch={() => void loadCovers2()}
+                onUpload={onCover2}
                 options={coverOptions2}
                 index={coverIndex2}
                 onCycle={cycleCover2}
@@ -710,6 +730,7 @@ export default function App() {
               label="Fetch cover"
               loading={coverLoading}
               onFetch={() => void loadCovers()}
+              onUpload={onCover}
               options={coverOptions}
               index={coverIndex}
               onCycle={cycleCover}
