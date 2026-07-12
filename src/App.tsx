@@ -778,8 +778,7 @@ export default function App() {
               id="show-tracklist"
               checked={data.showTracklist}
               onCheckedChange={(v) => {
-                // The jewel case needs its own spine — print two copies.
-                update(v ? { showTracklist: true, spineCount: Math.max(2, data.spineCount) } : { showTracklist: false });
+                update({ showTracklist: v });
                 if (v && !data.tracklist.trim()) void autoFillTracklist();
               }}
             />
