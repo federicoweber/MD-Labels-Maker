@@ -84,6 +84,7 @@ const INITIAL: LabelData = {
   letterSpacing: 0,
   lineHeight: 1.2,
   frontTracklist: false,
+  showQr: false,
   showSpine: true,
   spineCount: 1,
   spineShowAlbum: true,
@@ -806,6 +807,18 @@ export default function App() {
                 id="full-height"
                 checked={data.fullHeight}
                 onCheckedChange={(v) => update({ fullHeight: v })}
+              />
+            </div>
+          )}
+          {!data.doubleAlbum && (
+            <div className="flex w-full items-center justify-between">
+              <Label htmlFor="show-qr" className="text-xs">
+                QR tracklist
+              </Label>
+              <Switch
+                id="show-qr"
+                checked={data.showQr}
+                onCheckedChange={(v) => update({ showQr: v })}
               />
             </div>
           )}

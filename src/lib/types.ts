@@ -71,6 +71,8 @@ export interface LabelData {
   spineShowArtist: boolean;
   /** Show the tracklist on the cover (front) label, below the title/artist. */
   frontTracklist: boolean;
+  /** Print a QR code on the cover linking to a digital tracklist page. */
+  showQr: boolean;
   /** Whether the optional jewel-case tracklist sheet is shown. */
   showTracklist: boolean;
   /** Tracklist text, one track per line (for the optional jewel-case sheet). */

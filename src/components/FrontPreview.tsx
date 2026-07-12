@@ -1,4 +1,4 @@
-import { useEffect, useLayoutEffect, useRef, useState } from 'react';
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import {
   ChevronDown,
   ChevronLeft,
@@ -11,6 +11,7 @@ import type { LabelData } from '@/lib/types';
 import { TrackEditor } from '@/components/TracklistPreview';
 import { FRONT, PREVIEW_PX_PER_MM as S, frontCoverSize, type SizePreset } from '@/lib/dimensions';
 import { readImageFile } from '@/lib/utils';
+import { qrPath, shareUrl } from '@/lib/share';
 
 interface Props {
   data: LabelData;
@@ -250,7 +251,8 @@ export default function FrontPreview({ data, size, update, onCover, onCover2 }: 
             style={{
               top: portrait ? cover : 0,
               left: portrait ? 0 : cover,
-              width: portrait ? W : W - cover,
+              // Stop short of the QR box so text doesn't run under it.
+              width: (portrait ? W : W - cover) - (data.showQr && portrait ? 14 * S : 0),
               padding: PAD,
               gap: 0.6 * S,
             }}
@@ -308,7 +310,7 @@ export default function FrontPreview({ data, size, update, onCover, onCover2 }: 
             <span
               className="absolute"
               style={{
-                right: PAD,
+                right: PAD + (data.showQr ? (14 + 1.5) * S : 0),
                 bottom: PAD * 0.6,
                 fontFamily: data.yearFont,
                 fontSize: data.yearSize * S,
@@ -321,6 +323,10 @@ export default function FrontPreview({ data, size, update, onCover, onCover2 }: 
             </span>
           )}
         </>
+      )}
+
+      {data.showQr && !data.doubleAlbum && (
+        <QrOverlay data={data} pad={FRONT.padding * S} />
       )}
 
       {/* Border tracing the chamfered outline */}
@@ -454,6 +460,35 @@ function TracksOverlay({
         }}
       />
     </div>
+  );
+}
+
+/**
+ * The label's QR code, bottom-right on a white quiet-zone box, mirroring the
+ * SVG twin. Clicking it opens the digital tracklist page it encodes.
+ */
+function QrOverlay({ data, pad }: { data: LabelData; pad: number }) {
+  const disc = data.discTotal > 1 ? `${data.discNumber}/${data.discTotal}` : undefined;
+  const artist = data.showArtist ? data.artist : '';
+  const { url, qr } = useMemo(() => {
+    const u = shareUrl({ album: data.album, artist, tracklist: data.tracklist, disc });
+    return { url: u, qr: qrPath(u) };
+  }, [data.album, artist, data.tracklist, disc]);
+  const box = 14 * S; // 12mm modules + 1mm quiet zone each side
+  return (
+    <a
+      href={url}
+      target="_blank"
+      rel="noreferrer"
+      title="Open the tracklist page this QR encodes"
+      className="absolute"
+      style={{ right: pad, bottom: pad, width: box, height: box }}
+    >
+      <svg viewBox="0 0 14 14" width={box} height={box} aria-hidden>
+        <rect width={14} height={14} fill="#fff" />
+        <path d={qr.path} fill="#000" transform={`translate(1 1) scale(${12 / qr.count})`} />
+      </svg>
+    </a>
   );
 }
 
