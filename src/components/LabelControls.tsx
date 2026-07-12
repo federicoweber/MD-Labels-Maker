@@ -24,6 +24,8 @@ interface Props {
   palette: string[];
   bgColor: string;
   onBgColor: (hex: string) => void;
+  /** Opacity of the band behind overlaid text (double-album / full-height modes). */
+  bgOpacity?: { value: number; onChange: (v: number) => void };
   textColor: string;
   onTextColor: (hex: string) => void;
   letterSpacing: number;
@@ -46,6 +48,7 @@ export default function LabelControls({
   palette,
   bgColor,
   onBgColor,
+  bgOpacity,
   textColor,
   onTextColor,
   letterSpacing,
@@ -70,8 +73,23 @@ export default function LabelControls({
           </TabsTrigger>
         </TabsList>
 
-        <TabsContent value="bg" className="pt-3">
+        <TabsContent value="bg" className="space-y-3 pt-3">
           <ColorPicker value={bgColor} onChange={onBgColor} colors={swatches} />
+          {bgOpacity && (
+            <>
+              <Rule />
+              <SizeSlider
+                id="text-bg-opacity"
+                label="Text background"
+                value={bgOpacity.value}
+                min={0}
+                max={1}
+                step={0.05}
+                format={(v) => `${Math.round(v * 100)}%`}
+                onChange={bgOpacity.onChange}
+              />
+            </>
+          )}
         </TabsContent>
 
         <TabsContent value="text" className="space-y-3 pt-3">

@@ -8,7 +8,6 @@ import FrontPreview from '@/components/FrontPreview';
 import SpinePreview from '@/components/SpinePreview';
 import TracklistPreview from '@/components/TracklistPreview';
 import SizeSelect from '@/components/SizeSelect';
-import SizeSlider from '@/components/SizeSlider';
 import LabelControls, { type TypoField } from '@/components/LabelControls';
 import Controls from '@/components/Controls';
 import ConfirmModal from '@/components/ConfirmModal';
@@ -750,32 +749,16 @@ export default function App() {
             </div>
           )}
           {(data.doubleAlbum || data.fullHeight) && (
-            <>
-              <div className="flex w-full items-center justify-between">
-                <Label htmlFor="hide-front-text" className="text-xs">
-                  Hide front text
-                </Label>
-                <Switch
-                  id="hide-front-text"
-                  checked={data.doubleHideText}
-                  onCheckedChange={(v) => update({ doubleHideText: v })}
-                />
-              </div>
-              {!data.doubleHideText && (
-                <div className="w-full">
-                  <SizeSlider
-                    id="text-bg-opacity"
-                    label="Text background"
-                    value={data.textBgOpacity}
-                    min={0}
-                    max={1}
-                    step={0.05}
-                    format={(v) => `${Math.round(v * 100)}%`}
-                    onChange={(v) => update({ textBgOpacity: v })}
-                  />
-                </div>
-              )}
-            </>
+            <div className="flex w-full items-center justify-between">
+              <Label htmlFor="hide-front-text" className="text-xs">
+                Hide front text
+              </Label>
+              <Switch
+                id="hide-front-text"
+                checked={data.doubleHideText}
+                onCheckedChange={(v) => update({ doubleHideText: v })}
+              />
+            </div>
           )}
           <div className="flex w-full items-center justify-between">
             <Label htmlFor="show-spine" className="text-xs">
@@ -808,6 +791,11 @@ export default function App() {
             palette={palette}
             bgColor={data.bgColor}
             onBgColor={(h) => update({ bgColor: h })}
+            bgOpacity={
+              (data.doubleAlbum || data.fullHeight) && !data.doubleHideText
+                ? { value: data.textBgOpacity, onChange: (v) => update({ textBgOpacity: v }) }
+                : undefined
+            }
             textColor={data.textColor}
             onTextColor={(h) => update({ textColor: h })}
             letterSpacing={data.letterSpacing}
