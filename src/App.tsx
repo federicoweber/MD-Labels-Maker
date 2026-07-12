@@ -880,7 +880,9 @@ export default function App() {
             bgColor={data.bgColor}
             onBgColor={(h) => update({ bgColor: h })}
             bgOpacity={
-              data.frontTracklist || ((data.doubleAlbum || data.fullHeight) && !data.doubleHideText)
+              data.frontTracklist ||
+              data.showQr ||
+              ((data.doubleAlbum || data.fullHeight) && !data.doubleHideText)
                 ? { value: data.textBgOpacity, onChange: (v) => update({ textBgOpacity: v }) }
                 : undefined
             }

@@ -296,7 +296,7 @@ const FrontLabel = forwardRef<SVGSVGElement, Props>(function FrontLabel(props, r
             )}
             {discTotal > 1 && (
               <text
-                x={discStampX}
+                x={W - padding}
                 y={metaBase}
                 fill={textColor}
                 fillOpacity={artistOpacity}
@@ -310,17 +310,17 @@ const FrontLabel = forwardRef<SVGSVGElement, Props>(function FrontLabel(props, r
             )}
           </g>
         )}
-        {qrBlock}
+        {qrAt(W - QR_BOX, blockTop - QR_BOX)}
       </>
     );
   };
 
-  // QR code linking to the digital tracklist page — bottom-right on a white
-  // quiet-zone box so it scans against any cover art. Vector modules keep the
-  // print crisp. Applies to both single and full-height modes.
-  const QR_SIZE = 12; // module area, mm
-  const QR_PAD = 1; // quiet zone, mm
-  const qrBox = QR_SIZE + 2 * QR_PAD;
+  // QR code linking to the digital tracklist page — superimposed on the cover
+  // art like the tracks panel: a box whose white backing follows the text
+  // background opacity, with crisp vector modules. Positioned per mode (flush
+  // in the cover square's corner, or riding on the full-height text stack).
+  const QR_BOX = 16; // mm
+  const QR_PAD = 1.5; // quiet zone inside the box, mm
   const qr =
     showQr && !doubleAlbum
       ? qrPath(
@@ -332,27 +332,23 @@ const FrontLabel = forwardRef<SVGSVGElement, Props>(function FrontLabel(props, r
           }),
         )
       : null;
-  const qrX = W - padding - qrBox;
-  const qrY = H - padding - qrBox;
-  const qrBlock = qr && (
-    <g>
-      <rect x={qrX} y={qrY} width={qrBox} height={qrBox} fill="#fff" />
-      <path
-        d={qr.path}
-        fill="#000"
-        transform={`translate(${qrX + QR_PAD} ${qrY + QR_PAD}) scale(${QR_SIZE / qr.count})`}
-      />
-    </g>
-  );
-  // With a QR in the corner, the disc stamp moves to its left.
-  const discStampX = qr ? qrX - 1.5 : W - padding;
+  const qrAt = (x: number, y: number) =>
+    qr && (
+      <g>
+        <rect x={x} y={y} width={QR_BOX} height={QR_BOX} fill="#fff" fillOpacity={textBgOpacity} />
+        <path
+          d={qr.path}
+          fill="#000"
+          transform={`translate(${x + QR_PAD} ${y + QR_PAD}) scale(${(QR_BOX - 2 * QR_PAD) / qr.count})`}
+        />
+      </g>
+    );
 
-  // Single-mode text geometry. With a QR bottom-right, the text column stops
-  // short of it so the title doesn't run under the white box.
+  // Single-mode text geometry.
   const singleTracks = doubleAlbum || fullHeight ? null : buildTracks(cover, cover);
   const textX = (portrait ? 0 : cover) + padding;
   const textTop = (portrait ? cover : 0) + padding;
-  const textMaxWidth = (portrait ? W : W - cover) - 2 * padding - (qr && portrait ? qrBox : 0);
+  const textMaxWidth = (portrait ? W : W - cover) - 2 * padding;
   const titleLines = wrapText(album || 'Album', titleFont, titleSize, textMaxWidth, 700);
   const titleLH = titleSize * lineHeight;
   const firstBaseline = textTop + titleSize * 0.85;
@@ -456,7 +452,7 @@ const FrontLabel = forwardRef<SVGSVGElement, Props>(function FrontLabel(props, r
             )}
             {discTotal > 1 && (
               <text
-                x={discStampX}
+                x={W - padding}
                 y={H - padding}
                 fill={textColor}
                 fillOpacity={artistOpacity}
@@ -468,7 +464,7 @@ const FrontLabel = forwardRef<SVGSVGElement, Props>(function FrontLabel(props, r
                 {discNumber}/{discTotal}
               </text>
             )}
-            {qrBlock}
+            {qrAt(cover - QR_BOX, cover - QR_BOX)}
           </>
         )}
       </g>

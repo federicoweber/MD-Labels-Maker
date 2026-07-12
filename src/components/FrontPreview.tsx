@@ -130,7 +130,7 @@ export default function FrontPreview({ data, size, update, onCover, onCover2 }: 
               onChange={(v) => update({ fullHeightAlign: v })}
             />
           )}
-          {(data.frontTracklist || !data.doubleHideText) && (
+          {(data.frontTracklist || data.showQr || !data.doubleHideText) && (
             <div
               className="group/band absolute right-0 left-0 flex flex-col"
               style={{
@@ -144,6 +144,7 @@ export default function FrontPreview({ data, size, update, onCover, onCover2 }: 
                 containerH={H}
                 onChange={(v) => update({ fullHeightTextY: v })}
               />
+              {data.showQr && <QrOverlay data={data} className="self-end" />}
               {data.frontTracklist && <TracksOverlay data={data} update={update} />}
               {!data.doubleHideText && (
                 <div
@@ -245,14 +246,20 @@ export default function FrontPreview({ data, size, update, onCover, onCover2 }: 
               }}
             />
           )}
+          {data.showQr && (
+            <QrOverlay
+              data={data}
+              className="absolute"
+              style={{ left: cover - 16 * S, top: cover - 16 * S }}
+            />
+          )}
 
           <div
             className="absolute flex flex-col justify-start"
             style={{
               top: portrait ? cover : 0,
               left: portrait ? 0 : cover,
-              // Stop short of the QR box so text doesn't run under it.
-              width: (portrait ? W : W - cover) - (data.showQr && portrait ? 14 * S : 0),
+              width: portrait ? W : W - cover,
               padding: PAD,
               gap: 0.6 * S,
             }}
@@ -310,7 +317,7 @@ export default function FrontPreview({ data, size, update, onCover, onCover2 }: 
             <span
               className="absolute"
               style={{
-                right: PAD + (data.showQr ? (14 + 1.5) * S : 0),
+                right: PAD,
                 bottom: PAD * 0.6,
                 fontFamily: data.yearFont,
                 fontSize: data.yearSize * S,
@@ -323,10 +330,6 @@ export default function FrontPreview({ data, size, update, onCover, onCover2 }: 
             </span>
           )}
         </>
-      )}
-
-      {data.showQr && !data.doubleAlbum && (
-        <QrOverlay data={data} pad={FRONT.padding * S} />
       )}
 
       {/* Border tracing the chamfered outline */}
@@ -464,29 +467,38 @@ function TracksOverlay({
 }
 
 /**
- * The label's QR code, bottom-right on a white quiet-zone box, mirroring the
- * SVG twin. Clicking it opens the digital tracklist page it encodes.
+ * The label's QR code, superimposed on the cover art like the tracks panel:
+ * a 16mm box whose white backing follows the text-background opacity,
+ * mirroring the SVG twin. Clicking it opens the page it encodes.
  */
-function QrOverlay({ data, pad }: { data: LabelData; pad: number }) {
+function QrOverlay({
+  data,
+  className,
+  style,
+}: {
+  data: LabelData;
+  className?: string;
+  style?: React.CSSProperties;
+}) {
   const disc = data.discTotal > 1 ? `${data.discNumber}/${data.discTotal}` : undefined;
   const artist = data.showArtist ? data.artist : '';
   const { url, qr } = useMemo(() => {
     const u = shareUrl({ album: data.album, artist, tracklist: data.tracklist, disc });
     return { url: u, qr: qrPath(u) };
   }, [data.album, artist, data.tracklist, disc]);
-  const box = 14 * S; // 12mm modules + 1mm quiet zone each side
+  const box = 16 * S;
   return (
     <a
       href={url}
       target="_blank"
       rel="noreferrer"
       title="Open the tracklist page this QR encodes"
-      className="absolute"
-      style={{ right: pad, bottom: pad, width: box, height: box }}
+      className={`block shrink-0 ${className ?? ''}`}
+      style={{ width: box, height: box, ...style }}
     >
-      <svg viewBox="0 0 14 14" width={box} height={box} aria-hidden>
-        <rect width={14} height={14} fill="#fff" />
-        <path d={qr.path} fill="#000" transform={`translate(1 1) scale(${12 / qr.count})`} />
+      <svg viewBox="0 0 16 16" width={box} height={box} aria-hidden>
+        <rect width={16} height={16} fill={withAlpha('#ffffff', data.textBgOpacity)} />
+        <path d={qr.path} fill="#000" transform={`translate(1.5 1.5) scale(${13 / qr.count})`} />
       </svg>
     </a>
   );
