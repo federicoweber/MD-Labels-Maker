@@ -16,6 +16,8 @@ const FrontLabel = forwardRef<SVGSVGElement, Props>(function FrontLabel(props, r
     coverDataUrl2,
     doubleAlbum,
     doubleHideText,
+    fullHeight,
+    fullHeightAlign,
     textBgOpacity,
     album,
     album2,
@@ -107,6 +109,113 @@ const FrontLabel = forwardRef<SVGSVGElement, Props>(function FrontLabel(props, r
     );
   };
 
+  // Full-height mode: the (square) cover fills the label's height and is
+  // cropped horizontally; `fullHeightAlign` pans the crop (0 = left … 1 =
+  // right). Text overlays the bottom on a band, like double mode but full size.
+  const fullHeightBlock = () => {
+    const side = Math.max(W, H);
+    const maxW = W - 2 * padding;
+    const lines = wrapText(album || 'Album', titleFont, titleSize, maxW, 700);
+    const lh = titleSize * lineHeight;
+    const metaRow = (showYear && !!year) || discTotal > 1;
+    let base = H - padding * 0.7;
+    const metaBase = base;
+    if (metaRow) base -= yearSize + 0.8;
+    const artistBase = base;
+    if (showArtist) base -= artistSize + 0.6;
+    const lastTitleBase = base;
+    const firstTitleBase = lastTitleBase - (lines.length - 1) * lh;
+    const bandY = firstTitleBase - titleSize - padding * 0.4;
+    return (
+      <>
+        {coverDataUrl ? (
+          <image
+            href={coverDataUrl}
+            x={(W - side) * fullHeightAlign}
+            y={(H - side) / 2}
+            width={side}
+            height={side}
+            preserveAspectRatio="xMidYMid slice"
+          />
+        ) : (
+          <>
+            <rect x={0} y={0} width={W} height={H} fill="#d8d8d8" />
+            <text
+              x={W / 2}
+              y={H / 2}
+              fill="#8a8a8a"
+              fontFamily="'Roboto Mono', monospace"
+              fontSize={2.4}
+              textAnchor="middle"
+              dominantBaseline="middle"
+            >
+              drop cover
+            </text>
+          </>
+        )}
+        {!doubleHideText && (
+          <>
+            <rect x={0} y={bandY} width={W} height={H - bandY} fill={bgColor} fillOpacity={textBgOpacity} />
+            <text
+              fill={textColor}
+              fillOpacity={titleOpacity}
+              fontFamily={titleFont}
+              fontSize={titleSize}
+              fontWeight={700}
+              letterSpacing={titleSize * letterSpacing}
+            >
+              {lines.map((line, i) => (
+                <tspan key={i} x={padding} y={lastTitleBase - (lines.length - 1 - i) * lh}>
+                  {line || ' '}
+                </tspan>
+              ))}
+            </text>
+            {showArtist && (
+              <text
+                x={padding}
+                y={artistBase}
+                fill={textColor}
+                fillOpacity={artistOpacity}
+                fontFamily={artistFont}
+                fontSize={artistSize}
+                letterSpacing={artistSize * letterSpacing}
+              >
+                {artist || 'Artist'}
+              </text>
+            )}
+            {showYear && year && (
+              <text
+                x={padding}
+                y={metaBase}
+                fill={textColor}
+                fillOpacity={artistOpacity}
+                fontFamily={yearFont}
+                fontSize={yearSize}
+                letterSpacing={yearSize * letterSpacing}
+              >
+                {year}
+              </text>
+            )}
+            {discTotal > 1 && (
+              <text
+                x={W - padding}
+                y={metaBase}
+                fill={textColor}
+                fillOpacity={artistOpacity}
+                fontFamily={yearFont}
+                fontSize={yearSize}
+                textAnchor="end"
+                letterSpacing={yearSize * letterSpacing}
+              >
+                {discNumber}/{discTotal}
+              </text>
+            )}
+          </>
+        )}
+      </>
+    );
+  };
+
   // Single-mode text geometry.
   const textX = (portrait ? 0 : cover) + padding;
   const textTop = (portrait ? cover : 0) + padding;
@@ -141,6 +250,8 @@ const FrontLabel = forwardRef<SVGSVGElement, Props>(function FrontLabel(props, r
             {albumBlock(coverDataUrl, album, artist, 0, 'a1')}
             {albumBlock(coverDataUrl2, album2, artist2, half, 'a2')}
           </>
+        ) : fullHeight ? (
+          fullHeightBlock()
         ) : (
           <>
             {coverDataUrl ? (

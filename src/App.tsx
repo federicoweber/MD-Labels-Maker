@@ -47,6 +47,8 @@ const INITIAL: LabelData = {
   tracklist2: '',
   doubleHideText: false,
   showChamfer: true,
+  fullHeight: false,
+  fullHeightAlign: 0.5,
   textBgOpacity: 1,
   textColor: '#ece8e0',
   bgColor: '#6e6a63',
@@ -735,7 +737,19 @@ export default function App() {
               onCheckedChange={(v) => update({ showChamfer: v })}
             />
           </div>
-          {data.doubleAlbum && (
+          {!data.doubleAlbum && (
+            <div className="flex w-full items-center justify-between">
+              <Label htmlFor="full-height" className="text-xs">
+                Full-height cover
+              </Label>
+              <Switch
+                id="full-height"
+                checked={data.fullHeight}
+                onCheckedChange={(v) => update({ fullHeight: v })}
+              />
+            </div>
+          )}
+          {(data.doubleAlbum || data.fullHeight) && (
             <>
               <div className="flex w-full items-center justify-between">
                 <Label htmlFor="hide-front-text" className="text-xs">

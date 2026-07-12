@@ -1,4 +1,5 @@
 import { useEffect, useLayoutEffect, useRef, useState } from 'react';
+import { ChevronLeft, ChevronRight, MoveHorizontal } from 'lucide-react';
 import type { LabelData } from '@/lib/types';
 import { FRONT, PREVIEW_PX_PER_MM as S, frontCoverSize, type SizePreset } from '@/lib/dimensions';
 
@@ -114,6 +115,99 @@ export default function FrontPreview({ data, size, update, onCover, onCover2 }: 
             )}
           </CoverSlot>
         </>
+      ) : data.fullHeight ? (
+        <CoverSlot
+          src={data.coverDataUrl}
+          onCover={onCover}
+          pageDragging={pageDragging}
+          quietHover
+          imgStyle={{ objectPosition: `${data.fullHeightAlign * 100}% 50%` }}
+          style={{ position: 'absolute', top: 0, left: 0, width: W, height: H }}
+        >
+          {data.coverDataUrl && H > W && (
+            <AlignControls
+              align={data.fullHeightAlign}
+              maxShift={H - W}
+              onChange={(v) => update({ fullHeightAlign: v })}
+            />
+          )}
+          {!data.doubleHideText && (
+            <div
+              className="absolute right-0 bottom-0 left-0 flex flex-col justify-end"
+              style={{
+                padding: PAD,
+                gap: 0.2 * S,
+                background: withAlpha(data.bgColor, data.textBgOpacity),
+              }}
+              onClick={(e) => e.stopPropagation()}
+            >
+              <AutoTextarea
+                value={data.album}
+                placeholder="Album"
+                onChange={(v) => update({ album: v })}
+                style={{
+                  fontFamily: data.titleFont,
+                  fontSize: data.titleSize * S,
+                  fontWeight: 700,
+                  color: data.textColor,
+                  opacity: data.titleOpacity,
+                  lineHeight: data.lineHeight,
+                  letterSpacing: `${data.letterSpacing}em`,
+                }}
+              />
+              {data.showArtist && (
+                <input
+                  className="label-field w-full bg-transparent p-0 outline-none"
+                  style={{
+                    fontFamily: data.artistFont,
+                    fontSize: data.artistSize * S,
+                    color: data.textColor,
+                    opacity: data.artistOpacity,
+                    lineHeight: 1.1,
+                    letterSpacing: `${data.letterSpacing}em`,
+                  }}
+                  value={data.artist}
+                  placeholder="Artist"
+                  onChange={(e) => update({ artist: e.target.value })}
+                />
+              )}
+              {(data.showYear || data.discTotal > 1) && (
+                <div className="flex items-baseline justify-between">
+                  {data.showYear ? (
+                    <input
+                      className="label-field bg-transparent p-0 outline-none"
+                      style={{
+                        width: 70,
+                        fontFamily: data.yearFont,
+                        fontSize: data.yearSize * S,
+                        color: data.textColor,
+                        opacity: data.artistOpacity,
+                      }}
+                      value={data.year}
+                      placeholder="Year"
+                      onChange={(e) => update({ year: e.target.value })}
+                    />
+                  ) : (
+                    <span />
+                  )}
+                  {data.discTotal > 1 && (
+                    <span
+                      style={{
+                        fontFamily: data.yearFont,
+                        fontSize: data.yearSize * S,
+                        color: data.textColor,
+                        opacity: data.artistOpacity,
+                        lineHeight: 1,
+                      }}
+                    >
+                      {data.discNumber}/{data.discTotal}
+                    </span>
+                  )}
+                </div>
+              )}
+            </div>
+          )}
+        </CoverSlot>
       ) : (
         <>
           <CoverSlot
@@ -239,14 +333,19 @@ function CoverSlot({
   onCover,
   pageDragging,
   style,
+  imgStyle,
   contain,
+  quietHover,
   children,
 }: {
   src: string | null;
   onCover: (dataUrl: string | null) => void;
   pageDragging: boolean;
   style: React.CSSProperties;
+  imgStyle?: React.CSSProperties;
   contain?: boolean;
+  /** Suppress the hover "COVER" veil once an image is set (full-height mode). */
+  quietHover?: boolean;
   children?: React.ReactNode;
 }) {
   const input = useRef<HTMLInputElement>(null);
@@ -266,11 +365,20 @@ function CoverSlot({
       }}
     >
       {src && (
-        <img src={src} alt="" className={`size-full ${contain ? 'object-contain' : 'object-cover'}`} />
+        <img
+          src={src}
+          alt=""
+          className={`size-full ${contain ? 'object-contain' : 'object-cover'}`}
+          style={imgStyle}
+        />
       )}
       <div
-        className={`absolute inset-0 flex items-center justify-center transition-opacity ${
-          src && !pageDragging ? 'opacity-0 group-hover:opacity-100' : 'opacity-100'
+        className={`pointer-events-none absolute inset-0 flex items-center justify-center transition-opacity ${
+          src && !pageDragging
+            ? quietHover
+              ? 'opacity-0'
+              : 'opacity-0 group-hover:opacity-100'
+            : 'opacity-100'
         }`}
         style={{ background: src ? 'rgba(18,16,12,0.6)' : '#3f3d39', color: '#cfc9bd' }}
       >
@@ -295,6 +403,86 @@ function CoverSlot({
         hidden
         onChange={(e) => pick(e.target.files)}
       />
+    </div>
+  );
+}
+
+/**
+ * Full-height mode: hover controls to fine-tune the cover's horizontal crop.
+ * The whole cover becomes a drag surface (the image follows the pointer); the
+ * hover pill's chevrons nudge it and its centre button recentres. Plain clicks
+ * (no movement) still fall through to the CoverSlot's file picker.
+ */
+function AlignControls({
+  align,
+  maxShift,
+  onChange,
+}: {
+  /** 0 = show the cover's left edge … 1 = its right edge. */
+  align: number;
+  /** How much wider the full-height cover is than the label, in px. */
+  maxShift: number;
+  onChange: (v: number) => void;
+}) {
+  const drag = useRef<{ x: number; align: number } | null>(null);
+  const moved = useRef(false);
+  const clamp = (v: number) => Math.max(0, Math.min(1, v));
+  const set = (e: React.MouseEvent, v: number) => {
+    e.stopPropagation();
+    onChange(clamp(v));
+  };
+  return (
+    <div
+      className="absolute inset-0 cursor-ew-resize touch-none"
+      onPointerDown={(e) => {
+        // Capturing here would steal the pill buttons' clicks — let them be.
+        if ((e.target as HTMLElement).closest('button')) return;
+        drag.current = { x: e.clientX, align };
+        moved.current = false;
+        e.currentTarget.setPointerCapture(e.pointerId);
+      }}
+      onPointerMove={(e) => {
+        if (!drag.current) return;
+        const dx = e.clientX - drag.current.x;
+        if (Math.abs(dx) > 3) moved.current = true;
+        if (moved.current) onChange(clamp(drag.current.align - dx / maxShift));
+      }}
+      onPointerUp={() => (drag.current = null)}
+      onPointerCancel={() => (drag.current = null)}
+      onClick={(e) => {
+        // A drag shouldn't also open the cover picker.
+        if (moved.current) {
+          e.stopPropagation();
+          moved.current = false;
+        }
+      }}
+    >
+      <div className="absolute top-1/2 left-1/2 flex -translate-x-1/2 -translate-y-1/2 items-center gap-0.5 rounded-full bg-black/60 px-1.5 py-1 text-white opacity-0 transition-opacity group-hover:opacity-100">
+        <button
+          type="button"
+          aria-label="Nudge cover left"
+          onClick={(e) => set(e, align + 0.05)}
+          className="grid size-5 place-items-center rounded-full hover:bg-white/20"
+        >
+          <ChevronLeft className="size-3.5" />
+        </button>
+        <button
+          type="button"
+          aria-label="Centre cover"
+          onClick={(e) => set(e, 0.5)}
+          className="grid size-5 place-items-center rounded-full hover:bg-white/20"
+        >
+          <MoveHorizontal className="size-3.5" />
+        </button>
+        <button
+          type="button"
+          aria-label="Nudge cover right"
+          onClick={(e) => set(e, align - 0.05)}
+          className="grid size-5 place-items-center rounded-full hover:bg-white/20"
+        >
+          <ChevronRight className="size-3.5" />
+        </button>
+      </div>
     </div>
   );
 }

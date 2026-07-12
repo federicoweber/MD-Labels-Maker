@@ -20,6 +20,10 @@ export interface LabelData {
   doubleHideText: boolean;
   /** Cut (chamfer) the front label's top-left corner. */
   showChamfer: boolean;
+  /** Single-album mode: scale the cover to the label's full height (cropped horizontally). */
+  fullHeight: boolean;
+  /** Horizontal crop alignment of the full-height cover (0 = left edge, 0.5 = centre, 1 = right edge). */
+  fullHeightAlign: number;
   /** Opacity (0–1) of the background behind overlaid front text. */
   textBgOpacity: number;
   /** Front/spine text colour (hex), auto-optimised for contrast. */
