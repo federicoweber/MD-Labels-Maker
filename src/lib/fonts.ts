@@ -28,6 +28,11 @@ const WIPEOUT_NAMES = WIPEOUT_FONTS.map((f) => f.family);
 const WIPEOUT_SET = new Set(WIPEOUT_NAMES);
 const WIPEOUT_FILE = new Map(WIPEOUT_FONTS.map((f) => [f.family, f.file]));
 
+/** URL of a bundled font, honouring the deploy sub-path (Vite `base`). */
+function localFontUrl(file: string): string {
+  return `${import.meta.env.BASE_URL}fonts/${file}`;
+}
+
 export function isLocalFont(family: string): boolean {
   return WIPEOUT_SET.has(family);
 }
@@ -37,7 +42,7 @@ export function injectLocalFontFaces(): void {
   if (document.getElementById('wipeout-fontfaces')) return;
   const css = WIPEOUT_FONTS.map(
     (f) =>
-      `@font-face{font-family:'${f.family}';src:url('/fonts/${f.file}') format('truetype');font-display:swap;}`,
+      `@font-face{font-family:'${f.family}';src:url('${localFontUrl(f.file)}') format('truetype');font-display:swap;}`,
   ).join('\n');
   const style = document.createElement('style');
   style.id = 'wipeout-fontfaces';
@@ -155,7 +160,7 @@ export async function buildEmbeddedFontCss(family: string): Promise<string> {
   // Local WipEout fonts: inline the bundled TTF directly.
   const localFile = WIPEOUT_FILE.get(family);
   if (localFile) {
-    const dataUrl = await fetchAsDataUrl(`/fonts/${localFile}`);
+    const dataUrl = await fetchAsDataUrl(localFontUrl(localFile));
     return `@font-face{font-family:'${family}';src:url(${dataUrl}) format('truetype');font-weight:400 700;}`;
   }
   const css = await fetchFontCss(family);

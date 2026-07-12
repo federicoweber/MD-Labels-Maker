@@ -4,7 +4,7 @@ import { cn } from '@/lib/utils';
 export default function MdLogo({ className }: { className?: string }) {
   return (
     <img
-      src="/minidisc-logo.svg"
+      src={`${import.meta.env.BASE_URL}minidisc-logo.svg`}
       alt="MiniDisc"
       className={cn('h-12 w-auto self-start object-contain object-left', className)}
     />
