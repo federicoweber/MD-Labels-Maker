@@ -70,6 +70,18 @@ export async function login(): Promise<void> {
   const clientId = getClientId();
   if (!clientId) throw new Error('Missing Spotify Client ID');
 
+  // The PKCE verifier lives in sessionStorage, which is per-origin — starting
+  // the login on localhost while the redirect URI uses 127.0.0.1 (Spotify
+  // rejects "localhost") strands the callback on an origin with no verifier.
+  // Hop to the redirect URI's origin first; the user clicks Connect again there.
+  const redirectOrigin = new URL(getRedirectUri()).origin;
+  if (window.location.origin !== redirectOrigin && window.location.hostname === 'localhost') {
+    window.location.assign(
+      `${redirectOrigin}${window.location.pathname}${window.location.search}`,
+    );
+    return;
+  }
+
   const verifier = randomString(64);
   const challenge = base64UrlEncode(await sha256(verifier));
   const state = randomString(16);
