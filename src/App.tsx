@@ -19,7 +19,13 @@ import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { Button } from '@/components/ui/button';
 import { fetchFontList, loadFontForPreview } from '@/lib/fonts';
-import { fetchTracklist, fetchCovers, fetchDiscs, stripDurations } from '@/lib/tracklist';
+import {
+  fetchTracklist,
+  fetchCovers,
+  fetchDiscs,
+  stripDurations,
+  type CoverOption,
+} from '@/lib/tracklist';
 import { loadDiscs, saveDiscs } from '@/lib/storage';
 import { readImageFile } from '@/lib/utils';
 import { shareDataFor, shareUrl } from '@/lib/share';
@@ -36,6 +42,7 @@ const DEFAULT_FONT = 'Inconsolata';
 
 const INITIAL: LabelData = {
   coverDataUrl: null,
+  coverSourceUrl: null,
   album: '',
   artist: '',
   multiDisc: false,
@@ -181,7 +188,8 @@ function CoverControl({
   loading: boolean;
   onFetch: () => void;
   onUpload: (dataUrl: string) => void;
-  options: string[];
+  /** Only the count is shown; elements are opaque here. */
+  options: unknown[];
   index: number;
   onCycle: (dir: number) => void;
 }) {
@@ -245,9 +253,9 @@ export default function App() {
     );
 
   const [palette, setPalette] = useState<string[]>([]);
-  const [coverOptions, setCoverOptions] = useState<string[]>([]);
+  const [coverOptions, setCoverOptions] = useState<CoverOption[]>([]);
   const [coverIndex, setCoverIndex] = useState(0);
-  const [coverOptions2, setCoverOptions2] = useState<string[]>([]);
+  const [coverOptions2, setCoverOptions2] = useState<CoverOption[]>([]);
   const [coverIndex2, setCoverIndex2] = useState(0);
   const [coverLoading, setCoverLoading] = useState(false);
   const [coverLoading2, setCoverLoading2] = useState(false);
@@ -377,12 +385,13 @@ export default function App() {
     };
   }, [data.coverDataUrl, data.coverDataUrl2, data.doubleAlbum]);
 
-  // Manual cover (drop / browse): drops any auto-fetched options.
+  // Manual cover (drop / browse): drops any auto-fetched options. No public
+  // source URL exists for a local file, so QR share links fall back to search.
   function onCover(dataUrl: string | null) {
     setCoverOptions([]);
     setCoverIndex(0);
     if (dataUrl) lastCoverKey.current = `${data.artist}|${data.album}`.toLowerCase();
-    update({ coverDataUrl: dataUrl });
+    update({ coverDataUrl: dataUrl, coverSourceUrl: null });
   }
 
   function onCover2(dataUrl: string | null) {
@@ -396,14 +405,14 @@ export default function App() {
     if (coverOptions2.length < 2) return;
     const next = (coverIndex2 + dir + coverOptions2.length) % coverOptions2.length;
     setCoverIndex2(next);
-    update({ coverDataUrl2: coverOptions2[next] });
+    update({ coverDataUrl2: coverOptions2[next].dataUrl });
   }
 
   function cycleCover(dir: number) {
     if (coverOptions.length < 2) return;
     const next = (coverIndex + dir + coverOptions.length) % coverOptions.length;
     setCoverIndex(next);
-    update({ coverDataUrl: coverOptions[next] });
+    update({ coverDataUrl: coverOptions[next].dataUrl, coverSourceUrl: coverOptions[next].url });
   }
 
   async function loadCovers() {
@@ -417,7 +426,11 @@ export default function App() {
       if (covers.length) {
         setCoverOptions(covers);
         setCoverIndex(0);
-        update(year && !data.year ? { coverDataUrl: covers[0], year } : { coverDataUrl: covers[0] });
+        update({
+          coverDataUrl: covers[0].dataUrl,
+          coverSourceUrl: covers[0].url,
+          ...(year && !data.year ? { year } : {}),
+        });
       } else if (year && !data.year) {
         update({ year });
       }
@@ -457,7 +470,7 @@ export default function App() {
       if (covers.length) {
         setCoverOptions2(covers);
         setCoverIndex2(0);
-        patch.coverDataUrl2 = covers[0];
+        patch.coverDataUrl2 = covers[0].dataUrl;
       }
       if (tl.tracks.length && !data.tracklist2.trim()) patch.tracklist2 = tl.tracks.join('\n');
       if (Object.keys(patch).length) update(patch);

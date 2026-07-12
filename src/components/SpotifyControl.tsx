@@ -71,7 +71,7 @@ export default function SpotifyControl({ onApply }: Props) {
       onApply({
         album: p.name,
         tracklist: trackLines(tracks),
-        ...(cover ? { coverDataUrl: cover } : {}),
+        ...(cover ? { coverDataUrl: cover, coverSourceUrl: coverUrl } : {}),
       });
     } catch (err) {
       console.warn('Playlist import failed:', err);
@@ -93,7 +93,7 @@ export default function SpotifyControl({ onApply }: Props) {
         artist: a.artists.map((x) => x.name).join(', '),
         year: a.release_date?.slice(0, 4) ?? '',
         tracklist: trackLines(tracks),
-        ...(cover ? { coverDataUrl: cover } : {}),
+        ...(cover ? { coverDataUrl: cover, coverSourceUrl: coverUrl } : {}),
       });
     } catch (err) {
       console.warn('Album import failed:', err);

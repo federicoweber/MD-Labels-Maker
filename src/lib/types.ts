@@ -1,6 +1,9 @@
 /** All the user-controlled data that drives the labels. */
 export interface LabelData {
   coverDataUrl: string | null;
+  /** Public source URL of the cover when it came from a fetch/import (encoded
+   * into the QR share link so the scanned page shows the same artwork). */
+  coverSourceUrl: string | null;
   album: string;
   artist: string;
   /** Multi-disc album: prints one label set per disc with an "n/n" stamp. */

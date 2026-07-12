@@ -19,6 +19,29 @@ export interface ShareData {
   titleFont?: string;
   artistFont?: string;
   trackFont?: string;
+  /** Public URL of the exact cover the label uses (the page shows this instead
+   * of re-searching, so the artwork always matches the printed label). */
+  coverUrl?: string;
+}
+
+// Known cover hosts pack to a short prefix + id so the QR stays small.
+const CAA_RE = /^https:\/\/coverartarchive\.org\/release\/([0-9a-f-]+)\/front-500$/;
+const SCDN_RE = /^https:\/\/i\.scdn\.co\/image\/([0-9a-f]+)$/;
+
+function packCoverUrl(url: string | null | undefined): string {
+  if (!url) return '';
+  const caa = url.match(CAA_RE);
+  if (caa) return `c:${caa[1]}`;
+  const scdn = url.match(SCDN_RE);
+  if (scdn) return `s:${scdn[1]}`;
+  return url.startsWith('https://') ? url : '';
+}
+
+function unpackCoverUrl(packed: string | undefined): string | undefined {
+  if (!packed) return undefined;
+  if (packed.startsWith('c:')) return `https://coverartarchive.org/release/${packed.slice(2)}/front-500`;
+  if (packed.startsWith('s:')) return `https://i.scdn.co/image/${packed.slice(2)}`;
+  return packed;
 }
 
 /** The share payload for a label (pass the derived/eff data). */
@@ -33,6 +56,7 @@ export function shareDataFor(d: LabelData): ShareData {
     titleFont: d.titleFont,
     artistFont: d.artistFont,
     trackFont: d.trackFont,
+    coverUrl: d.coverSourceUrl ?? undefined,
   };
 }
 
@@ -60,14 +84,15 @@ export function encodeShare(d: ShareData): string {
     d.titleFont ?? '',
     d.artistFont ?? '',
     d.trackFont ?? '',
+    packCoverUrl(d.coverUrl),
   ]);
   return toBase64Url(deflateSync(strToU8(payload), { level: 9 }));
 }
 
 export function decodeShare(encoded: string): ShareData {
   const payload = strFromU8(inflateSync(fromBase64Url(encoded)));
-  // Older QR codes carry only the first four fields.
-  const [album, artist, tracklist, disc, bgColor, textColor, titleFont, artistFont, trackFont] =
+  // Older QR codes carry only a prefix of these fields.
+  const [album, artist, tracklist, disc, bgColor, textColor, titleFont, artistFont, trackFont, cover] =
     JSON.parse(payload) as string[];
   return {
     album: album ?? '',
@@ -79,6 +104,7 @@ export function decodeShare(encoded: string): ShareData {
     titleFont: titleFont || undefined,
     artistFont: artistFont || undefined,
     trackFont: trackFont || undefined,
+    coverUrl: unpackCoverUrl(cover),
   };
 }
 

@@ -37,23 +37,26 @@ export default function ShareView({ encoded }: { encoded: string }) {
     }
   }, [titleFont, artistFont, trackFont]);
 
-  // The cover isn't in the URL (it wouldn't fit a scannable QR) — fetch it
-  // from the Cover Art Archive by artist + album instead.
-  const [cover, setCover] = useState<string | null>(null);
+  // The cover image itself won't fit a scannable QR, but its source URL does:
+  // newer links carry the exact cover the label used. Older links (or uploaded
+  // covers, which have no public URL) fall back to a Cover Art Archive search.
+  const [fetchedCover, setFetchedCover] = useState<string | null>(null);
   const album = data?.album ?? '';
   const artist = data?.artist ?? '';
+  const coverUrl = data?.coverUrl;
   useEffect(() => {
-    if (!album || !artist) return;
+    if (coverUrl || !album || !artist) return;
     let cancelled = false;
     fetchCovers(artist, album, 1)
       .then(({ covers }) => {
-        if (!cancelled && covers[0]) setCover(covers[0]);
+        if (!cancelled && covers[0]) setFetchedCover(covers[0].dataUrl);
       })
       .catch(() => {});
     return () => {
       cancelled = true;
     };
-  }, [album, artist]);
+  }, [coverUrl, album, artist]);
+  const cover = coverUrl ?? fetchedCover;
 
   if (!data) {
     return (

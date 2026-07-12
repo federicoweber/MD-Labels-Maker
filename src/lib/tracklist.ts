@@ -10,8 +10,15 @@ interface MbReleaseSearch {
   }[];
 }
 
+export interface CoverOption {
+  /** Inlined image for the label (embeddable in the SVG export). */
+  dataUrl: string;
+  /** The public source URL (kept so QR share links can show the same art). */
+  url: string;
+}
+
 export interface CoverResult {
-  covers: string[];
+  covers: CoverOption[];
   year: string;
 }
 
@@ -41,14 +48,15 @@ export async function fetchCovers(artist: string, album: string, max = 6): Promi
   const releases = search.releases ?? [];
   const year = releases.find((r) => r.date)?.date?.slice(0, 4) ?? '';
 
-  const covers: string[] = [];
+  const covers: CoverOption[] = [];
   for (const release of releases) {
     if (covers.length >= max) break;
     try {
-      const imgRes = await fetch(`https://coverartarchive.org/release/${release.id}/front-500`);
+      const url = `https://coverartarchive.org/release/${release.id}/front-500`;
+      const imgRes = await fetch(url);
       if (!imgRes.ok) continue;
       const blob = await imgRes.blob();
-      if (blob.type.startsWith('image/')) covers.push(await blobToDataUrl(blob));
+      if (blob.type.startsWith('image/')) covers.push({ dataUrl: await blobToDataUrl(blob), url });
     } catch {
       /* try the next release */
     }
