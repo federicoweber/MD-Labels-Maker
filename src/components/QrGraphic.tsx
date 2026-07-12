@@ -48,9 +48,9 @@ export function QrGraphic({
   const logoH = logoW * (LOGO_H / LOGO_W);
   const scale = logoW / LOGO_W;
   // The knockout behind the logo traces its own silhouette: the same path
-  // drawn with a thick round-joined stroke dilates it outward by half the
-  // stroke width (~17% of the logo width) instead of clearing a square patch.
-  const knockout = 5; // path units
+  // drawn with a round-joined stroke dilates it outward by half the stroke
+  // width (~0.5mm at cover size) instead of clearing a square patch.
+  const knockout = 2; // path units
   return (
     <g>
       <rect x={x} y={y} width={size} height={size} fill={bgColor} fillOpacity={bgOpacity} />
