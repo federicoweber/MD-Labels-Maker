@@ -3,7 +3,7 @@ import type { LabelData } from '@/lib/types';
 import { FRONT, PREVIEW_PX_PER_MM, frontCoverSize, type SizePreset } from '@/lib/dimensions';
 import { wrapText } from '@/lib/text';
 import { splitTrack } from '@/lib/tracklist';
-import { qrPath, shareUrl } from '@/lib/share';
+import { qrPath, shareDataFor, shareUrl } from '@/lib/share';
 
 type Props = LabelData & { size: SizePreset };
 
@@ -316,27 +316,18 @@ const FrontLabel = forwardRef<SVGSVGElement, Props>(function FrontLabel(props, r
   };
 
   // QR code linking to the digital tracklist page — superimposed over the
-  // whole cover-art space (the art shows through the white backing at the
-  // text-background opacity). Vector modules keep the print crisp. In
-  // full-height mode the square rides on top of the text stack.
-  const qr =
-    showQr && !doubleAlbum
-      ? qrPath(
-          shareUrl({
-            album,
-            artist: showArtist ? artist : '',
-            tracklist,
-            disc: discTotal > 1 ? `${discNumber}/${discTotal}` : undefined,
-          }),
-        )
-      : null;
+  // whole cover-art space in the label's own colours: bgColor backing (at the
+  // text-background opacity, so the art shows through) with textColor modules.
+  // Vector modules keep the print crisp. In full-height mode the square rides
+  // on top of the text stack.
+  const qr = showQr && !doubleAlbum ? qrPath(shareUrl(shareDataFor(props))) : null;
   const qrAt = (x: number, y: number, size: number) =>
     qr && (
       <g>
-        <rect x={x} y={y} width={size} height={size} fill="#fff" fillOpacity={textBgOpacity} />
+        <rect x={x} y={y} width={size} height={size} fill={bgColor} fillOpacity={textBgOpacity} />
         <path
           d={qr.path}
-          fill="#000"
+          fill={textColor}
           transform={`translate(${x + padding} ${y + padding}) scale(${(size - 2 * padding) / qr.count})`}
         />
       </g>

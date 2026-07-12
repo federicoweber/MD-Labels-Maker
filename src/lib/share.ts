@@ -5,6 +5,7 @@
 
 import { deflateSync, inflateSync, strToU8, strFromU8 } from 'fflate';
 import qrcode from 'qrcode-generator';
+import type { LabelData } from './types';
 
 export interface ShareData {
   album: string;
@@ -12,6 +13,27 @@ export interface ShareData {
   tracklist: string;
   /** "n/m" when part of a multi-disc set. */
   disc?: string;
+  /** Label styling, so the viewer page matches the cover. */
+  bgColor?: string;
+  textColor?: string;
+  titleFont?: string;
+  artistFont?: string;
+  trackFont?: string;
+}
+
+/** The share payload for a label (pass the derived/eff data). */
+export function shareDataFor(d: LabelData): ShareData {
+  return {
+    album: d.album,
+    artist: d.showArtist ? d.artist : '',
+    tracklist: d.tracklist,
+    disc: d.discTotal > 1 ? `${d.discNumber}/${d.discTotal}` : undefined,
+    bgColor: d.bgColor,
+    textColor: d.textColor,
+    titleFont: d.titleFont,
+    artistFont: d.artistFont,
+    trackFont: d.trackFont,
+  };
 }
 
 function toBase64Url(bytes: Uint8Array): string {
@@ -28,18 +50,35 @@ function fromBase64Url(s: string): Uint8Array {
 }
 
 export function encodeShare(d: ShareData): string {
-  const payload = JSON.stringify([d.album, d.artist, d.tracklist, d.disc ?? '']);
+  const payload = JSON.stringify([
+    d.album,
+    d.artist,
+    d.tracklist,
+    d.disc ?? '',
+    d.bgColor ?? '',
+    d.textColor ?? '',
+    d.titleFont ?? '',
+    d.artistFont ?? '',
+    d.trackFont ?? '',
+  ]);
   return toBase64Url(deflateSync(strToU8(payload), { level: 9 }));
 }
 
 export function decodeShare(encoded: string): ShareData {
   const payload = strFromU8(inflateSync(fromBase64Url(encoded)));
-  const [album, artist, tracklist, disc] = JSON.parse(payload) as string[];
+  // Older QR codes carry only the first four fields.
+  const [album, artist, tracklist, disc, bgColor, textColor, titleFont, artistFont, trackFont] =
+    JSON.parse(payload) as string[];
   return {
     album: album ?? '',
     artist: artist ?? '',
     tracklist: tracklist ?? '',
     disc: disc || undefined,
+    bgColor: bgColor || undefined,
+    textColor: textColor || undefined,
+    titleFont: titleFont || undefined,
+    artistFont: artistFont || undefined,
+    trackFont: trackFont || undefined,
   };
 }
 

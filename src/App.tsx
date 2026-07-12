@@ -22,7 +22,7 @@ import { fetchFontList, loadFontForPreview } from '@/lib/fonts';
 import { fetchTracklist, fetchCovers, fetchDiscs, stripDurations } from '@/lib/tracklist';
 import { loadDiscs, saveDiscs } from '@/lib/storage';
 import { readImageFile } from '@/lib/utils';
-import { shareUrl } from '@/lib/share';
+import { shareDataFor, shareUrl } from '@/lib/share';
 import { downloadLabelsZip, type ZipLabel } from '@/lib/exportPng';
 import { extractPalette, bestTextColor } from '@/lib/colors';
 import {
@@ -154,12 +154,7 @@ function CopyShareButton({ data }: { data: LabelData }) {
       title="Copy the tracklist page link"
       className="text-muted-foreground hover:text-foreground"
       onClick={() => {
-        const url = shareUrl({
-          album: data.album,
-          artist: data.showArtist ? data.artist : '',
-          tracklist: data.tracklist,
-          disc: data.discTotal > 1 ? `${data.discNumber}/${data.discTotal}` : undefined,
-        });
+        const url = shareUrl(shareDataFor(data));
         void navigator.clipboard.writeText(url).then(() => {
           setCopied(true);
           window.setTimeout(() => setCopied(false), 1500);
@@ -844,7 +839,7 @@ export default function App() {
                 <Label htmlFor="show-qr" className="text-xs">
                   QR tracklist
                 </Label>
-                {data.showQr && <CopyShareButton data={data} />}
+                {data.showQr && <CopyShareButton data={eff} />}
               </div>
               <Switch
                 id="show-qr"

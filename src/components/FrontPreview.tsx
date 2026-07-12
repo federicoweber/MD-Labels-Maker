@@ -1,4 +1,4 @@
-import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import {
   ChevronDown,
   ChevronLeft,
@@ -11,7 +11,7 @@ import type { LabelData } from '@/lib/types';
 import { TrackEditor } from '@/components/TracklistPreview';
 import { FRONT, PREVIEW_PX_PER_MM as S, frontCoverSize, type SizePreset } from '@/lib/dimensions';
 import { readImageFile } from '@/lib/utils';
-import { qrPath, shareUrl } from '@/lib/share';
+import { qrPath, shareDataFor, shareUrl } from '@/lib/share';
 
 interface Props {
   data: LabelData;
@@ -484,12 +484,8 @@ function QrOverlay({
   className?: string;
   style?: React.CSSProperties;
 }) {
-  const disc = data.discTotal > 1 ? `${data.discNumber}/${data.discTotal}` : undefined;
-  const artist = data.showArtist ? data.artist : '';
-  const { url, qr } = useMemo(() => {
-    const u = shareUrl({ album: data.album, artist, tracklist: data.tracklist, disc });
-    return { url: u, qr: qrPath(u) };
-  }, [data.album, artist, data.tracklist, disc]);
+  const url = shareUrl(shareDataFor(data));
+  const qr = qrPath(url);
   const box = sizeMm * S;
   const pad = FRONT.padding;
   return (
@@ -502,10 +498,10 @@ function QrOverlay({
       style={{ width: box, height: box, ...style }}
     >
       <svg viewBox={`0 0 ${sizeMm} ${sizeMm}`} width={box} height={box} aria-hidden>
-        <rect width={sizeMm} height={sizeMm} fill={withAlpha('#ffffff', data.textBgOpacity)} />
+        <rect width={sizeMm} height={sizeMm} fill={withAlpha(data.bgColor, data.textBgOpacity)} />
         <path
           d={qr.path}
-          fill="#000"
+          fill={data.textColor}
           transform={`translate(${pad} ${pad}) scale(${(sizeMm - 2 * pad) / qr.count})`}
         />
       </svg>
