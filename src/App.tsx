@@ -80,6 +80,7 @@ const INITIAL: LabelData = {
   trackOpacity: 1,
   letterSpacing: 0,
   lineHeight: 1.2,
+  frontTracklist: false,
   showSpine: true,
   spineCount: 1,
   spineShowAlbum: true,
@@ -594,6 +595,27 @@ export default function App() {
         ? { id: 'subtitle-opacity', value: data.artistOpacity, onChange: (v) => update({ artistOpacity: v }) }
         : undefined,
     },
+    ...(data.frontTracklist
+      ? [
+          {
+            key: 'front-tracks',
+            title: 'Tracks',
+            font: { value: data.trackFont, onChange: (f: string) => onFontSelect('track', f) },
+            size: {
+              id: 'front-track-size',
+              value: data.trackSize,
+              min: 1.2,
+              max: 4,
+              onChange: (v: number) => update({ trackSize: v }),
+            },
+            opacity: {
+              id: 'front-track-opacity',
+              value: data.trackOpacity,
+              onChange: (v: number) => update({ trackOpacity: v }),
+            },
+          } satisfies TypoField,
+        ]
+      : []),
     {
       key: 'year',
       title: 'Year',
@@ -652,7 +674,7 @@ export default function App() {
 
       <main className="flex flex-1 flex-wrap content-start items-start gap-36 overflow-auto bg-background p-12 pt-5">
         <section className="flex flex-col gap-2">
-          <SizeSelect label="Front" value={frontSize} presets={FRONT_PRESETS} onChange={setFrontSize} />
+          <SizeSelect label="Cover" value={frontSize} presets={FRONT_PRESETS} onChange={setFrontSize} />
           <FrontPreview
             data={eff}
             size={frontSize}
@@ -748,10 +770,25 @@ export default function App() {
               />
             </div>
           )}
+          {!data.doubleAlbum && (
+            <div className="flex w-full items-center justify-between">
+              <Label htmlFor="front-tracklist" className="text-xs">
+                Tracklist on cover
+              </Label>
+              <Switch
+                id="front-tracklist"
+                checked={data.frontTracklist}
+                onCheckedChange={(v) => {
+                  update({ frontTracklist: v });
+                  if (v && !data.tracklist.trim()) void autoFillTracklist();
+                }}
+              />
+            </div>
+          )}
           {(data.doubleAlbum || data.fullHeight) && (
             <div className="flex w-full items-center justify-between">
               <Label htmlFor="hide-front-text" className="text-xs">
-                Hide front text
+                Hide cover text
               </Label>
               <Switch
                 id="hide-front-text"
@@ -791,7 +828,7 @@ export default function App() {
             bgColor={data.bgColor}
             onBgColor={(h) => update({ bgColor: h })}
             bgOpacity={
-              (data.doubleAlbum || data.fullHeight) && !data.doubleHideText
+              data.frontTracklist || ((data.doubleAlbum || data.fullHeight) && !data.doubleHideText)
                 ? { value: data.textBgOpacity, onChange: (v) => update({ textBgOpacity: v }) }
                 : undefined
             }

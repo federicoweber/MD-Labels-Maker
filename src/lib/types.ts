@@ -67,6 +67,8 @@ export interface LabelData {
   /** Show album / artist in the spine caption. */
   spineShowAlbum: boolean;
   spineShowArtist: boolean;
+  /** Show the tracklist on the cover (front) label, below the title/artist. */
+  frontTracklist: boolean;
   /** Whether the optional jewel-case tracklist sheet is shown. */
   showTracklist: boolean;
   /** Tracklist text, one track per line (for the optional jewel-case sheet). */

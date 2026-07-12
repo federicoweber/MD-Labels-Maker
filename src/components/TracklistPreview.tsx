@@ -180,7 +180,7 @@ function TracklistColumn({
 }
 
 /** ContentEditable numbered track list (one or two columns). */
-function TrackEditor({
+export function TrackEditor({
   value,
   onChange,
   cols,

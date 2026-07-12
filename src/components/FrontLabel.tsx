@@ -2,6 +2,7 @@ import { forwardRef, useId } from 'react';
 import type { LabelData } from '@/lib/types';
 import { FRONT, PREVIEW_PX_PER_MM, frontCoverSize, type SizePreset } from '@/lib/dimensions';
 import { wrapText } from '@/lib/text';
+import { splitTrack } from '@/lib/tracklist';
 
 type Props = LabelData & { size: SizePreset };
 
@@ -28,11 +29,17 @@ const FrontLabel = forwardRef<SVGSVGElement, Props>(function FrontLabel(props, r
     titleFont,
     artistFont,
     yearFont,
+    trackFont,
     titleSize,
     artistSize,
+    trackSize,
     titleOpacity,
     artistOpacity,
+    trackOpacity,
     showArtist,
+    frontTracklist,
+    tracklist,
+    showTrackDuration,
     year,
     showYear,
     yearSize,
@@ -109,6 +116,74 @@ const FrontLabel = forwardRef<SVGSVGElement, Props>(function FrontLabel(props, r
     );
   };
 
+  // "Tracklist on cover": numbered tracks superimposed on the art, on a
+  // translucent bgColor panel (same opacity as the text band). Bottom-anchored
+  // at `bottom`, growing upward; tracks that don't fit `maxH` are dropped.
+  const tracksPanel = (x0: number, w: number, bottom: number, maxH: number, key: string) => {
+    if (!frontTracklist) return null;
+    const gap = trackSize * lineHeight;
+    const innerPad = padding * 0.6;
+    const maxW = w - 2 * padding;
+    const maxLines = Math.max(0, Math.floor((maxH - 2 * innerPad) / gap));
+    const items = tracklist
+      .split('\n')
+      .map((t) => t.trim())
+      .filter(Boolean);
+    const rows: { lines: string[]; dur: string }[] = [];
+    let used = 0;
+    for (let i = 0; i < items.length; i++) {
+      const { title, dur } = splitTrack(items[i]);
+      const showDur = showTrackDuration && !!dur;
+      const durW = showDur ? dur.length * trackSize * 0.62 + 1.5 : 0;
+      const lines = wrapText(`${i + 1}. ${title}`, trackFont, trackSize, maxW - durW);
+      if (used + lines.length > maxLines) break;
+      rows.push({ lines, dur: showDur ? dur : '' });
+      used += lines.length;
+    }
+    if (!used) return null;
+    const top = bottom - (used * gap + 2 * innerPad);
+    let base = top + innerPad + trackSize * 0.85;
+    return (
+      <g key={key}>
+        <rect x={x0} y={top} width={w} height={bottom - top} fill={bgColor} fillOpacity={textBgOpacity} />
+        {rows.map((r, i) => {
+          const y0 = base;
+          base += r.lines.length * gap;
+          return (
+            <g key={i}>
+              <text
+                fill={textColor}
+                fillOpacity={trackOpacity}
+                fontFamily={trackFont}
+                fontSize={trackSize}
+                letterSpacing={trackSize * letterSpacing}
+              >
+                {r.lines.map((line, li) => (
+                  <tspan key={li} x={x0 + padding} y={y0 + li * gap}>
+                    {line}
+                  </tspan>
+                ))}
+              </text>
+              {r.dur && (
+                <text
+                  x={x0 + w - padding}
+                  y={y0}
+                  fill={textColor}
+                  fillOpacity={trackOpacity * 0.7}
+                  fontFamily={trackFont}
+                  fontSize={trackSize}
+                  textAnchor="end"
+                >
+                  {r.dur}
+                </text>
+              )}
+            </g>
+          );
+        })}
+      </g>
+    );
+  };
+
   // Full-height mode: the (square) cover fills the label's height and is
   // cropped horizontally; `fullHeightAlign` pans the crop (0 = left … 1 =
   // right). Text overlays the bottom on a band, like double mode but full size.
@@ -153,6 +228,7 @@ const FrontLabel = forwardRef<SVGSVGElement, Props>(function FrontLabel(props, r
             </text>
           </>
         )}
+        {tracksPanel(0, W, doubleHideText ? H : bandY, doubleHideText ? H : bandY, 'ft')}
         {!doubleHideText && (
           <>
             <rect x={0} y={bandY} width={W} height={H - bandY} fill={bgColor} fillOpacity={textBgOpacity} />
@@ -279,6 +355,7 @@ const FrontLabel = forwardRef<SVGSVGElement, Props>(function FrontLabel(props, r
                 </text>
               </>
             )}
+            {tracksPanel(0, cover, cover, cover, 'ft')}
 
             <text
               fill={textColor}

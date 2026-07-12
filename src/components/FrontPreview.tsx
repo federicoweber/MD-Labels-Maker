@@ -1,6 +1,7 @@
 import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { ChevronLeft, ChevronRight, MoveHorizontal } from 'lucide-react';
 import type { LabelData } from '@/lib/types';
+import { TrackEditor } from '@/components/TracklistPreview';
 import { FRONT, PREVIEW_PX_PER_MM as S, frontCoverSize, type SizePreset } from '@/lib/dimensions';
 
 interface Props {
@@ -131,77 +132,84 @@ export default function FrontPreview({ data, size, update, onCover, onCover2 }: 
               onChange={(v) => update({ fullHeightAlign: v })}
             />
           )}
-          {!data.doubleHideText && (
+          {(data.frontTracklist || !data.doubleHideText) && (
             <div
-              className="absolute right-0 bottom-0 left-0 flex flex-col justify-end"
-              style={{
-                padding: PAD,
-                gap: 0.2 * S,
-                background: withAlpha(data.bgColor, data.textBgOpacity),
-              }}
+              className="absolute right-0 bottom-0 left-0 flex flex-col"
               onClick={(e) => e.stopPropagation()}
             >
-              <AutoTextarea
-                value={data.album}
-                placeholder="Album"
-                onChange={(v) => update({ album: v })}
-                style={{
-                  fontFamily: data.titleFont,
-                  fontSize: data.titleSize * S,
-                  fontWeight: 700,
-                  color: data.textColor,
-                  opacity: data.titleOpacity,
-                  lineHeight: data.lineHeight,
-                  letterSpacing: `${data.letterSpacing}em`,
-                }}
-              />
-              {data.showArtist && (
-                <input
-                  className="label-field w-full bg-transparent p-0 outline-none"
+              {data.frontTracklist && <TracksOverlay data={data} update={update} />}
+              {!data.doubleHideText && (
+                <div
+                  className="flex flex-col justify-end"
                   style={{
-                    fontFamily: data.artistFont,
-                    fontSize: data.artistSize * S,
-                    color: data.textColor,
-                    opacity: data.artistOpacity,
-                    lineHeight: 1.1,
-                    letterSpacing: `${data.letterSpacing}em`,
+                    padding: PAD,
+                    gap: 0.2 * S,
+                    background: withAlpha(data.bgColor, data.textBgOpacity),
                   }}
-                  value={data.artist}
-                  placeholder="Artist"
-                  onChange={(e) => update({ artist: e.target.value })}
-                />
-              )}
-              {(data.showYear || data.discTotal > 1) && (
-                <div className="flex items-baseline justify-between">
-                  {data.showYear ? (
+                >
+                  <AutoTextarea
+                    value={data.album}
+                    placeholder="Album"
+                    onChange={(v) => update({ album: v })}
+                    style={{
+                      fontFamily: data.titleFont,
+                      fontSize: data.titleSize * S,
+                      fontWeight: 700,
+                      color: data.textColor,
+                      opacity: data.titleOpacity,
+                      lineHeight: data.lineHeight,
+                      letterSpacing: `${data.letterSpacing}em`,
+                    }}
+                  />
+                  {data.showArtist && (
                     <input
-                      className="label-field bg-transparent p-0 outline-none"
+                      className="label-field w-full bg-transparent p-0 outline-none"
                       style={{
-                        width: 70,
-                        fontFamily: data.yearFont,
-                        fontSize: data.yearSize * S,
+                        fontFamily: data.artistFont,
+                        fontSize: data.artistSize * S,
                         color: data.textColor,
                         opacity: data.artistOpacity,
+                        lineHeight: 1.1,
+                        letterSpacing: `${data.letterSpacing}em`,
                       }}
-                      value={data.year}
-                      placeholder="Year"
-                      onChange={(e) => update({ year: e.target.value })}
+                      value={data.artist}
+                      placeholder="Artist"
+                      onChange={(e) => update({ artist: e.target.value })}
                     />
-                  ) : (
-                    <span />
                   )}
-                  {data.discTotal > 1 && (
-                    <span
-                      style={{
-                        fontFamily: data.yearFont,
-                        fontSize: data.yearSize * S,
-                        color: data.textColor,
-                        opacity: data.artistOpacity,
-                        lineHeight: 1,
-                      }}
-                    >
-                      {data.discNumber}/{data.discTotal}
-                    </span>
+                  {(data.showYear || data.discTotal > 1) && (
+                    <div className="flex items-baseline justify-between">
+                      {data.showYear ? (
+                        <input
+                          className="label-field bg-transparent p-0 outline-none"
+                          style={{
+                            width: 70,
+                            fontFamily: data.yearFont,
+                            fontSize: data.yearSize * S,
+                            color: data.textColor,
+                            opacity: data.artistOpacity,
+                          }}
+                          value={data.year}
+                          placeholder="Year"
+                          onChange={(e) => update({ year: e.target.value })}
+                        />
+                      ) : (
+                        <span />
+                      )}
+                      {data.discTotal > 1 && (
+                        <span
+                          style={{
+                            fontFamily: data.yearFont,
+                            fontSize: data.yearSize * S,
+                            color: data.textColor,
+                            opacity: data.artistOpacity,
+                            lineHeight: 1,
+                          }}
+                        >
+                          {data.discNumber}/{data.discTotal}
+                        </span>
+                      )}
+                    </div>
                   )}
                 </div>
               )}
@@ -216,6 +224,20 @@ export default function FrontPreview({ data, size, update, onCover, onCover2 }: 
             pageDragging={pageDragging}
             style={{ position: 'absolute', top: 0, left: 0, width: cover, height: cover }}
           />
+          {data.frontTracklist && (
+            <TracksOverlay
+              data={data}
+              update={update}
+              style={{
+                position: 'absolute',
+                left: 0,
+                top: cover,
+                width: cover,
+                transform: 'translateY(-100%)',
+                maxHeight: cover,
+              }}
+            />
+          )}
 
           <div
             className="absolute flex flex-col justify-start"
@@ -321,6 +343,47 @@ export default function FrontPreview({ data, size, update, onCover, onCover2 }: 
         onChange={(e) => {
           const f = e.target.files?.[0];
           if (f?.type.startsWith('image/')) void readImageFile(f).then(onCover);
+        }}
+      />
+    </div>
+  );
+}
+
+/**
+ * Editable numbered tracks superimposed on the cover art, on a translucent
+ * bgColor panel that shares the text band's opacity.
+ */
+function TracksOverlay({
+  data,
+  update,
+  style,
+}: {
+  data: LabelData;
+  update: (patch: Partial<LabelData>) => void;
+  style?: React.CSSProperties;
+}) {
+  return (
+    <div
+      style={{
+        padding: `${FRONT.padding * 0.6 * S}px ${FRONT.padding * S}px`,
+        background: withAlpha(data.bgColor, data.textBgOpacity),
+        overflow: 'hidden',
+        ...style,
+      }}
+      onClick={(e) => e.stopPropagation()}
+    >
+      <TrackEditor
+        value={data.tracklist}
+        onChange={(v) => update({ tracklist: v })}
+        cols={1}
+        style={{
+          fontFamily: data.trackFont,
+          fontSize: data.trackSize * S,
+          color: data.textColor,
+          opacity: data.trackOpacity,
+          lineHeight: data.lineHeight,
+          letterSpacing: `${data.letterSpacing}em`,
+          minHeight: data.trackSize * S * data.lineHeight,
         }}
       />
     </div>
