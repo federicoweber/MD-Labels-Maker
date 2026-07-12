@@ -310,17 +310,15 @@ const FrontLabel = forwardRef<SVGSVGElement, Props>(function FrontLabel(props, r
             )}
           </g>
         )}
-        {qrAt(W - QR_BOX, blockTop - QR_BOX)}
+        {qrAt(0, Math.max(0, blockTop - W), W)}
       </>
     );
   };
 
-  // QR code linking to the digital tracklist page — superimposed on the cover
-  // art like the tracks panel: a box whose white backing follows the text
-  // background opacity, with crisp vector modules. Positioned per mode (flush
-  // in the cover square's corner, or riding on the full-height text stack).
-  const QR_BOX = 16; // mm
-  const QR_PAD = 1.5; // quiet zone inside the box, mm
+  // QR code linking to the digital tracklist page — superimposed over the
+  // whole cover-art space (the art shows through the white backing at the
+  // text-background opacity). Vector modules keep the print crisp. In
+  // full-height mode the square rides on top of the text stack.
   const qr =
     showQr && !doubleAlbum
       ? qrPath(
@@ -332,14 +330,14 @@ const FrontLabel = forwardRef<SVGSVGElement, Props>(function FrontLabel(props, r
           }),
         )
       : null;
-  const qrAt = (x: number, y: number) =>
+  const qrAt = (x: number, y: number, size: number) =>
     qr && (
       <g>
-        <rect x={x} y={y} width={QR_BOX} height={QR_BOX} fill="#fff" fillOpacity={textBgOpacity} />
+        <rect x={x} y={y} width={size} height={size} fill="#fff" fillOpacity={textBgOpacity} />
         <path
           d={qr.path}
           fill="#000"
-          transform={`translate(${x + QR_PAD} ${y + QR_PAD}) scale(${(QR_BOX - 2 * QR_PAD) / qr.count})`}
+          transform={`translate(${x + padding} ${y + padding}) scale(${(size - 2 * padding) / qr.count})`}
         />
       </g>
     );
@@ -464,7 +462,7 @@ const FrontLabel = forwardRef<SVGSVGElement, Props>(function FrontLabel(props, r
                 {discNumber}/{discTotal}
               </text>
             )}
-            {qrAt(cover - QR_BOX, cover - QR_BOX)}
+            {qrAt(0, 0, cover)}
           </>
         )}
       </g>

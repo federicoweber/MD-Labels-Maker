@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { ChevronLeft, ChevronRight } from 'lucide-react';
+import { Check, ChevronLeft, ChevronRight, Copy } from 'lucide-react';
 import type { LabelData } from '@/lib/types';
 import FrontLabel from '@/components/FrontLabel';
 import SpineLabel from '@/components/SpineLabel';
@@ -22,6 +22,7 @@ import { fetchFontList, loadFontForPreview } from '@/lib/fonts';
 import { fetchTracklist, fetchCovers, fetchDiscs, stripDurations } from '@/lib/tracklist';
 import { loadDiscs, saveDiscs } from '@/lib/storage';
 import { readImageFile } from '@/lib/utils';
+import { shareUrl } from '@/lib/share';
 import { downloadLabelsZip, type ZipLabel } from '@/lib/exportPng';
 import { extractPalette, bestTextColor } from '@/lib/colors';
 import {
@@ -140,6 +141,33 @@ function CountInput({
       }}
       className="w-10 border-b border-foreground/40 bg-transparent pb-0.5 text-right text-xs tabular-nums outline-none focus:border-foreground"
     />
+  );
+}
+
+/** Copies the digital-tracklist link (what the QR encodes) to the clipboard. */
+function CopyShareButton({ data }: { data: LabelData }) {
+  const [copied, setCopied] = useState(false);
+  return (
+    <button
+      type="button"
+      aria-label="Copy the tracklist page link"
+      title="Copy the tracklist page link"
+      className="text-muted-foreground hover:text-foreground"
+      onClick={() => {
+        const url = shareUrl({
+          album: data.album,
+          artist: data.showArtist ? data.artist : '',
+          tracklist: data.tracklist,
+          disc: data.discTotal > 1 ? `${data.discNumber}/${data.discTotal}` : undefined,
+        });
+        void navigator.clipboard.writeText(url).then(() => {
+          setCopied(true);
+          window.setTimeout(() => setCopied(false), 1500);
+        });
+      }}
+    >
+      {copied ? <Check className="size-3.5" /> : <Copy className="size-3.5" />}
+    </button>
   );
 }
 
@@ -812,9 +840,12 @@ export default function App() {
           )}
           {!data.doubleAlbum && (
             <div className="flex w-full items-center justify-between">
-              <Label htmlFor="show-qr" className="text-xs">
-                QR tracklist
-              </Label>
+              <div className="flex items-center gap-1.5">
+                <Label htmlFor="show-qr" className="text-xs">
+                  QR tracklist
+                </Label>
+                {data.showQr && <CopyShareButton data={data} />}
+              </div>
               <Switch
                 id="show-qr"
                 checked={data.showQr}

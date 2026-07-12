@@ -144,7 +144,7 @@ export default function FrontPreview({ data, size, update, onCover, onCover2 }: 
                 containerH={H}
                 onChange={(v) => update({ fullHeightTextY: v })}
               />
-              {data.showQr && <QrOverlay data={data} className="self-end" />}
+              {data.showQr && <QrOverlay data={data} sizeMm={size.width} className="self-end" />}
               {data.frontTracklist && <TracksOverlay data={data} update={update} />}
               {!data.doubleHideText && (
                 <div
@@ -249,8 +249,9 @@ export default function FrontPreview({ data, size, update, onCover, onCover2 }: 
           {data.showQr && (
             <QrOverlay
               data={data}
+              sizeMm={frontCoverSize(size)}
               className="absolute"
-              style={{ left: cover - 16 * S, top: cover - 16 * S }}
+              style={{ left: 0, top: 0 }}
             />
           )}
 
@@ -467,16 +468,19 @@ function TracksOverlay({
 }
 
 /**
- * The label's QR code, superimposed on the cover art like the tracks panel:
- * a 16mm box whose white backing follows the text-background opacity,
- * mirroring the SVG twin. Clicking it opens the page it encodes.
+ * The label's QR code, superimposed over the whole cover-art space: the art
+ * shows through the white backing at the text-background opacity, mirroring
+ * the SVG twin. Clicking it opens the page it encodes.
  */
 function QrOverlay({
   data,
+  sizeMm,
   className,
   style,
 }: {
   data: LabelData;
+  /** Side of the square, in mm (the cover square / the label width). */
+  sizeMm: number;
   className?: string;
   style?: React.CSSProperties;
 }) {
@@ -486,7 +490,8 @@ function QrOverlay({
     const u = shareUrl({ album: data.album, artist, tracklist: data.tracklist, disc });
     return { url: u, qr: qrPath(u) };
   }, [data.album, artist, data.tracklist, disc]);
-  const box = 16 * S;
+  const box = sizeMm * S;
+  const pad = FRONT.padding;
   return (
     <a
       href={url}
@@ -496,9 +501,13 @@ function QrOverlay({
       className={`block shrink-0 ${className ?? ''}`}
       style={{ width: box, height: box, ...style }}
     >
-      <svg viewBox="0 0 16 16" width={box} height={box} aria-hidden>
-        <rect width={16} height={16} fill={withAlpha('#ffffff', data.textBgOpacity)} />
-        <path d={qr.path} fill="#000" transform={`translate(1.5 1.5) scale(${13 / qr.count})`} />
+      <svg viewBox={`0 0 ${sizeMm} ${sizeMm}`} width={box} height={box} aria-hidden>
+        <rect width={sizeMm} height={sizeMm} fill={withAlpha('#ffffff', data.textBgOpacity)} />
+        <path
+          d={qr.path}
+          fill="#000"
+          transform={`translate(${pad} ${pad}) scale(${(sizeMm - 2 * pad) / qr.count})`}
+        />
       </svg>
     </a>
   );
