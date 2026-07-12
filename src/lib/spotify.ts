@@ -367,8 +367,10 @@ export async function getPlaylistTracks(playlistId: string): Promise<SpotifyTrac
 /** Search Spotify's catalog for albums. */
 export async function searchAlbums(q: string): Promise<SpotifyAlbum[]> {
   if (!q.trim()) return [];
+  // The search endpoint rejects limits above 10 with "Invalid limit" (400) —
+  // a tighter cap than the documented 50, verified empirically.
   const data = await request<{ albums: Paging<SpotifyAlbum> }>('/search', {
-    query: { q, type: 'album', limit: 12 },
+    query: { q, type: 'album', limit: 10 },
   });
   return (data.albums?.items ?? []).filter(Boolean);
 }

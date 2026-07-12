@@ -209,6 +209,7 @@ function AlbumPicker({
   const [query, setQuery] = useState('');
   const [results, setResults] = useState<SpotifyAlbum[]>([]);
   const [searching, setSearching] = useState(false);
+  const [failed, setFailed] = useState(false);
   const seq = useRef(0);
 
   useEffect(() => {
@@ -220,9 +221,14 @@ function AlbumPicker({
       setSearching(true);
       searchAlbums(q)
         .then((albums) => {
-          if (seq.current === id) setResults(albums);
+          if (seq.current !== id) return;
+          setResults(albums);
+          setFailed(false);
         })
-        .catch((err) => console.warn('Album search failed:', err))
+        .catch((err) => {
+          console.warn('Album search failed:', err);
+          if (seq.current === id) setFailed(true);
+        })
         .finally(() => {
           if (seq.current === id) setSearching(false);
         });
@@ -246,7 +252,13 @@ function AlbumPicker({
           <CommandInput placeholder="Search albums…" value={query} onValueChange={setQuery} />
           <CommandList>
             <CommandEmpty>
-              {searching ? 'Searching…' : query.trim() ? 'No albums found.' : 'Type to search Spotify.'}
+              {searching
+                ? 'Searching…'
+                : failed
+                  ? 'Search failed — try again.'
+                  : query.trim()
+                    ? 'No albums found.'
+                    : 'Type to search Spotify.'}
             </CommandEmpty>
             {shown.map((a) => (
               <CommandItem
