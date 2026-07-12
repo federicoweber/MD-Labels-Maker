@@ -44,10 +44,13 @@ export function QrGraphic({
   textColor: string;
   bgOpacity: number;
 }) {
-  const patch = size * 0.3;
-  const logoW = patch * 0.7;
+  const logoW = size * 0.21;
   const logoH = logoW * (LOGO_H / LOGO_W);
   const scale = logoW / LOGO_W;
+  // The knockout behind the logo traces its own silhouette: the same path
+  // drawn with a thick round-joined stroke dilates it outward by half the
+  // stroke width (~17% of the logo width) instead of clearing a square patch.
+  const knockout = 5; // path units
   return (
     <g>
       <rect x={x} y={y} width={size} height={size} fill={bgColor} fillOpacity={bgOpacity} />
@@ -56,18 +59,17 @@ export function QrGraphic({
         fill={textColor}
         transform={`translate(${x + pad} ${y + pad}) scale(${(size - 2 * pad) / qr.count})`}
       />
-      <rect
-        x={x + (size - patch) / 2}
-        y={y + (size - patch) / 2}
-        width={patch}
-        height={patch}
-        fill={bgColor}
-      />
-      <path
-        d={LOGO_PATH}
-        fill={textColor}
-        transform={`translate(${x + (size - logoW) / 2} ${y + (size - logoH) / 2}) scale(${scale})`}
-      />
+      <g transform={`translate(${x + (size - logoW) / 2} ${y + (size - logoH) / 2}) scale(${scale})`}>
+        <path
+          d={LOGO_PATH}
+          fill={bgColor}
+          stroke={bgColor}
+          strokeWidth={knockout}
+          strokeLinejoin="round"
+          strokeLinecap="round"
+        />
+        <path d={LOGO_PATH} fill={textColor} />
+      </g>
     </g>
   );
 }
