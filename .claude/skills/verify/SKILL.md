@@ -12,8 +12,14 @@ Vite + React SPA, no backend. All state lives in localStorage under the key `md-
 ## Launch
 
 ```bash
-npm run dev -- --port 5199   # http://localhost:5199
+npm run dev   # https://127.0.0.1:5173/ — HTTPS (self-signed) for Spotify OAuth
 ```
+
+The dev server serves HTTPS with a self-signed cert (@vitejs/plugin-basic-ssl),
+so Playwright needs a context with `ignoreHTTPSErrors: true` (create one via
+`page.context().browser().newContext(...)` in run_code_unsafe). For plain-HTTP
+testing, `npm run dev -- --port 5199` still works but Spotify controls need the
+.env client ID either way (they're hidden without one).
 
 Drive with Playwright MCP tools (browser_navigate / run_code_unsafe / take_screenshot).
 
