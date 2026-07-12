@@ -16,6 +16,7 @@ import {
   getAlbumTracks,
   getPlaylistTracks,
   handleRedirectCallback,
+  hasMixedArtists,
   imageToDataUrl,
   isConfigured,
   isLoggedIn,
@@ -70,7 +71,8 @@ export default function SpotifyControl({ onApply }: Props) {
       ]);
       onApply({
         album: p.name,
-        tracklist: trackLines(tracks),
+        // Mixed-artist playlists carry the artist on every track line.
+        tracklist: trackLines(tracks, hasMixedArtists(tracks)),
         ...(cover ? { coverDataUrl: cover, coverSourceUrl: coverUrl } : {}),
       });
     } catch (err) {

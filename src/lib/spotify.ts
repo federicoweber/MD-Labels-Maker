@@ -254,6 +254,7 @@ export interface SpotifyTrack {
   name: string;
   duration_ms: number;
   uri?: string;
+  artists?: { name: string }[];
 }
 
 export interface SpotifyPlaylist {
@@ -389,14 +390,23 @@ export async function getAlbumTracks(albumId: string): Promise<SpotifyTrack[]> {
   return tracks;
 }
 
-/** "Title" or "Title\tM:SS" lines, matching the app's tracklist format. */
-export function trackLines(tracks: SpotifyTrack[]): string {
+/** "Title" or "Title\tM:SS" lines, matching the app's tracklist format.
+ * With `includeArtists`, each title is prefixed with its primary artist. */
+export function trackLines(tracks: SpotifyTrack[], includeArtists = false): string {
   return tracks
     .map((t) => {
+      const artist = includeArtists ? t.artists?.[0]?.name : undefined;
+      const title = artist ? `${artist} - ${t.name}` : t.name;
       const d = fmtDuration(t.duration_ms);
-      return d ? `${t.name}\t${d}` : t.name;
+      return d ? `${title}\t${d}` : title;
     })
     .join('\n');
+}
+
+/** True when the tracks aren't all by the same primary artist. */
+export function hasMixedArtists(tracks: SpotifyTrack[]): boolean {
+  const names = new Set(tracks.map((t) => t.artists?.[0]?.name).filter(Boolean));
+  return names.size > 1;
 }
 
 /** Smallest image that's still ≥300px (or the largest available) — for covers. */
