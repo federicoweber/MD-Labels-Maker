@@ -2,7 +2,7 @@ import { forwardRef, useId } from 'react';
 import type { LabelData } from '@/lib/types';
 import { FRONT, PREVIEW_PX_PER_MM, frontCoverSize, type SizePreset } from '@/lib/dimensions';
 import { wrapText } from '@/lib/text';
-import { splitTrack } from '@/lib/tracklist';
+import { splitBoldArtist, splitTrack } from '@/lib/tracklist';
 import { qrPath, shareDataFor, shareUrl } from '@/lib/share';
 import { QrGraphic } from '@/components/QrGraphic';
 
@@ -134,15 +134,18 @@ const FrontLabel = forwardRef<SVGSVGElement, Props>(function FrontLabel(props, r
       .split('\n')
       .map((t) => t.trim())
       .filter(Boolean);
-    const rows: { lines: string[]; dur: string }[] = [];
+    const rows: { lines: string[]; dur: string; num: string; boldArtist: string | null }[] = [];
     let used = 0;
     for (let i = 0; i < items.length; i++) {
       const { title, dur } = splitTrack(items[i]);
+      const { artist: boldArtist, title: plainTitle } = splitBoldArtist(title);
+      const display = boldArtist ? `${boldArtist} ${plainTitle}` : title;
+      const num = `${i + 1}. `;
       const showDur = showTrackDuration && !!dur;
       const durW = showDur ? dur.length * trackSize * 0.62 + 1.5 : 0;
-      const lines = wrapText(`${i + 1}. ${title}`, trackFont, trackSize, maxW - durW);
+      const lines = wrapText(`${num}${display}`, trackFont, trackSize, maxW - durW);
       if (used + lines.length > maxLines) break;
-      rows.push({ lines, dur: showDur ? dur : '' });
+      rows.push({ lines, dur: showDur ? dur : '', num, boldArtist });
       used += lines.length;
     }
     if (!used) return null;
@@ -173,11 +176,23 @@ const FrontLabel = forwardRef<SVGSVGElement, Props>(function FrontLabel(props, r
                 fontSize={trackSize}
                 letterSpacing={trackSize * letterSpacing}
               >
-                {r.lines.map((line, li) => (
-                  <tspan key={li} x={x0 + padding} y={y0 + li * gap}>
-                    {line}
-                  </tspan>
-                ))}
+                {r.lines.map((line, li) => {
+                  const boldLead = `${r.num}${r.boldArtist ?? ''}`;
+                  if (li === 0 && r.boldArtist && line.startsWith(boldLead)) {
+                    return (
+                      <tspan key={li} x={x0 + padding} y={y0}>
+                        {r.num}
+                        <tspan fontWeight={700}>{r.boldArtist}</tspan>
+                        {line.slice(boldLead.length)}
+                      </tspan>
+                    );
+                  }
+                  return (
+                    <tspan key={li} x={x0 + padding} y={y0 + li * gap}>
+                      {line}
+                    </tspan>
+                  );
+                })}
               </text>
               {r.dur && (
                 <text

@@ -73,7 +73,10 @@ export default function SpotifyControl({ onApply }: Props) {
         album: p.name,
         // Mixed-artist playlists carry the artist on every track line.
         tracklist: trackLines(tracks, hasMixedArtists(tracks)),
-        ...(cover ? { coverDataUrl: cover, coverSourceUrl: coverUrl } : {}),
+        // '-': playlist mosaics don't belong on the QR page (and shouldn't
+        // trigger its cover search) — the label still shows the mosaic.
+        coverSourceUrl: '-',
+        ...(cover ? { coverDataUrl: cover } : {}),
       });
     } catch (err) {
       console.warn('Playlist import failed:', err);

@@ -391,12 +391,12 @@ export async function getAlbumTracks(albumId: string): Promise<SpotifyTrack[]> {
 }
 
 /** "Title" or "Title\tM:SS" lines, matching the app's tracklist format.
- * With `includeArtists`, each title is prefixed with its primary artist. */
+ * With `includeArtists`, each title carries a bold "**Artist**" prefix. */
 export function trackLines(tracks: SpotifyTrack[], includeArtists = false): string {
   return tracks
     .map((t) => {
       const artist = includeArtists ? t.artists?.[0]?.name : undefined;
-      const title = artist ? `${artist} - ${t.name}` : t.name;
+      const title = artist ? `**${artist}** ${t.name}` : t.name;
       const d = fmtDuration(t.duration_ms);
       return d ? `${title}\t${d}` : title;
     })

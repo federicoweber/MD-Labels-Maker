@@ -2,7 +2,9 @@
 export interface LabelData {
   coverDataUrl: string | null;
   /** Public source URL of the cover when it came from a fetch/import (encoded
-   * into the QR share link so the scanned page shows the same artwork). */
+   * into the QR share link so the scanned page shows the same artwork).
+   * The sentinel '-' means "no cover on the share page, don't search either"
+   * (playlist imports). */
   coverSourceUrl: string | null;
   album: string;
   artist: string;

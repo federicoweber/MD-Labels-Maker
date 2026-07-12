@@ -86,6 +86,15 @@ export function splitTrack(line: string): { title: string; dur: string } {
   return i >= 0 ? { title: line.slice(0, i), dur: line.slice(i + 1) } : { title: line, dur: '' };
 }
 
+/**
+ * Split an optional bold artist prefix ("**Artist** Title") from a track
+ * title. Playlist imports use it when tracks aren't all by one artist.
+ */
+export function splitBoldArtist(title: string): { artist: string | null; title: string } {
+  const m = title.match(/^\*\*(.+?)\*\*\s*(.*)$/);
+  return m ? { artist: m[1], title: m[2] } : { artist: null, title };
+}
+
 /** Drop the duration from every line of a tracklist string. */
 export function stripDurations(tracklist: string): string {
   return tracklist

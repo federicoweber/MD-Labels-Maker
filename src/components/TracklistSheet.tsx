@@ -2,7 +2,7 @@ import { forwardRef } from 'react';
 import type { LabelData } from '@/lib/types';
 import { TRACKLIST, PREVIEW_PX_PER_MM, type SizePreset } from '@/lib/dimensions';
 import { wrapText } from '@/lib/text';
-import { splitTrack } from '@/lib/tracklist';
+import { splitBoldArtist, splitTrack } from '@/lib/tracklist';
 import { qrPath, shareDataFor, shareUrl } from '@/lib/share';
 import { QrGraphic } from '@/components/QrGraphic';
 
@@ -118,16 +118,28 @@ const TracklistSheet = forwardRef<SVGSVGElement, Props>(function TracklistSheet(
     const colX = Array.from({ length: innerCols }, (_, i) => left + i * innerW);
     const colTextW = innerCols > 1 ? innerW - 2 : innerW;
 
-    // Wrap each track to its column width (reserving room for the duration on the
-    // right) and flow tracks down columns by line.
-    const placed: { x: number; y: number; lines: string[]; dur: string; durX: number }[] = [];
+    // Wrap each track to its column width (reserving room for the duration on
+    // the right) and flow tracks down columns by line. A "**Artist**" prefix
+    // (mixed-artist playlists) renders bold, so wrap on the plain text.
+    const placed: {
+      x: number;
+      y: number;
+      lines: string[];
+      dur: string;
+      durX: number;
+      num: string;
+      boldArtist: string | null;
+    }[] = [];
     let col = 0;
     let lineInCol = 0;
     for (let i = 0; i < tracks.length; i++) {
       const { title, dur } = splitTrack(tracks[i]);
+      const { artist: boldArtist, title: plainTitle } = splitBoldArtist(title);
+      const display = boldArtist ? `${boldArtist} ${plainTitle}` : title;
+      const num = `${i + 1}. `;
       const showDur = showTrackDuration && !!dur;
       const durW = showDur ? dur.length * trackSize * 0.62 + 1.5 : 0;
-      const lines = wrapText(`${i + 1}. ${title}`, trackFont, trackSize, colTextW - durW);
+      const lines = wrapText(`${num}${display}`, trackFont, trackSize, colTextW - durW);
       if (lineInCol > 0 && lineInCol + lines.length > maxLines && col < innerCols - 1) {
         col++;
         lineInCol = 0;
@@ -138,6 +150,8 @@ const TracklistSheet = forwardRef<SVGSVGElement, Props>(function TracklistSheet(
         lines,
         dur: showDur ? dur : '',
         durX: colX[col] + colTextW,
+        num,
+        boldArtist,
       });
       lineInCol += lines.length;
     }
@@ -212,11 +226,23 @@ const TracklistSheet = forwardRef<SVGSVGElement, Props>(function TracklistSheet(
               fillOpacity={trackOpacity}
               letterSpacing={trackSize * letterSpacing}
             >
-              {p.lines.map((line, li) => (
-                <tspan key={li} x={p.x} y={p.y + li * trackGap}>
-                  {line}
-                </tspan>
-              ))}
+              {p.lines.map((line, li) => {
+                const boldLead = `${p.num}${p.boldArtist ?? ''}`;
+                if (li === 0 && p.boldArtist && line.startsWith(boldLead)) {
+                  return (
+                    <tspan key={li} x={p.x} y={p.y}>
+                      {p.num}
+                      <tspan fontWeight={700}>{p.boldArtist}</tspan>
+                      {line.slice(boldLead.length)}
+                    </tspan>
+                  );
+                }
+                return (
+                  <tspan key={li} x={p.x} y={p.y + li * trackGap}>
+                    {line}
+                  </tspan>
+                );
+              })}
             </text>
             {p.dur && (
               <text

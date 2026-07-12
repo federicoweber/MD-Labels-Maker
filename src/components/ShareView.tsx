@@ -3,7 +3,7 @@ import MdMark from '@/components/MdMark';
 import { FwdMark } from '@/components/QrGraphic';
 import { decodeShare } from '@/lib/share';
 import { loadFontForPreview } from '@/lib/fonts';
-import { fetchCovers, splitTrack } from '@/lib/tracklist';
+import { fetchCovers, splitBoldArtist, splitTrack } from '@/lib/tracklist';
 
 // The app's default label palette/typography, for older QR codes that don't
 // carry style fields.
@@ -44,8 +44,10 @@ export default function ShareView({ encoded }: { encoded: string }) {
   const album = data?.album ?? '';
   const artist = data?.artist ?? '';
   const coverUrl = data?.coverUrl;
+  // '-' marks "no cover on purpose" (playlists) — don't search either.
+  const suppressCover = coverUrl === '-';
   useEffect(() => {
-    if (coverUrl || !album || !artist) return;
+    if (suppressCover || coverUrl || !album || !artist) return;
     let cancelled = false;
     fetchCovers(artist, album, 1)
       .then(({ covers }) => {
@@ -55,8 +57,8 @@ export default function ShareView({ encoded }: { encoded: string }) {
     return () => {
       cancelled = true;
     };
-  }, [coverUrl, album, artist]);
-  const cover = coverUrl ?? fetchedCover;
+  }, [suppressCover, coverUrl, album, artist]);
+  const cover = suppressCover ? null : (coverUrl ?? fetchedCover);
 
   if (!data) {
     return (
@@ -96,10 +98,19 @@ export default function ShareView({ encoded }: { encoded: string }) {
           <ol className="flex flex-col" style={{ fontFamily: `'${trackFont}', sans-serif` }}>
             {tracks.map((line, i) => {
               const { title, dur } = splitTrack(line);
+              const { artist: trackArtist, title: trackTitle } = splitBoldArtist(title);
               return (
                 <li key={i} className="flex items-baseline gap-3 border-b border-current/20 py-1.5">
                   <span className="w-5 text-right text-xs opacity-60 tabular-nums">{i + 1}</span>
-                  <span className="min-w-0 flex-1">{title}</span>
+                  <span className="min-w-0 flex-1">
+                    {trackArtist ? (
+                      <>
+                        <strong>{trackArtist}</strong> {trackTitle}
+                      </>
+                    ) : (
+                      title
+                    )}
+                  </span>
                   {dur && <span className="text-xs opacity-60 tabular-nums">{dur}</span>}
                 </li>
               );

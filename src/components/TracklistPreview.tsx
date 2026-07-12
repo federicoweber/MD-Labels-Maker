@@ -189,6 +189,21 @@ function TracklistColumn({
   );
 }
 
+/** A line's text with <b>/<strong> segments serialised back to ** markers. */
+function lineText(li: Element): string {
+  return [...li.childNodes]
+    .map((n) => {
+      const tag = (n as Element).tagName;
+      return tag === 'B' || tag === 'STRONG' ? `**${n.textContent}**` : (n.textContent ?? '');
+    })
+    .join('');
+}
+
+/** "**Artist** Title" renders its artist prefix bold inside the editor. */
+function lineHtml(l: string): string {
+  return escapeHtml(l).replace(/^\*\*(.+?)\*\*\s?/, '<b>$1</b> ') || '<br>';
+}
+
 /** ContentEditable numbered track list (one or two columns). */
 export function TrackEditor({
   value,
@@ -206,12 +221,12 @@ export function TrackEditor({
   useLayoutEffect(() => {
     const el = ref.current;
     if (!el || document.activeElement === el) return;
-    const current = [...el.querySelectorAll('li')].map((li) => li.textContent ?? '').join('\n');
+    const current = [...el.querySelectorAll('li')].map(lineText).join('\n');
     if (current !== value) {
       el.innerHTML = value
         ? value
             .split('\n')
-            .map((l) => `<li>${escapeHtml(l) || '<br>'}</li>`)
+            .map((l) => `<li>${lineHtml(l)}</li>`)
             .join('')
         : '';
     }
@@ -223,9 +238,7 @@ export function TrackEditor({
       contentEditable
       suppressContentEditableWarning
       onInput={(e) =>
-        onChange(
-          [...e.currentTarget.querySelectorAll('li')].map((li) => li.textContent ?? '').join('\n'),
-        )
+        onChange([...e.currentTarget.querySelectorAll('li')].map(lineText).join('\n'))
       }
       className="track-ol label-field min-h-0 flex-1 overflow-hidden outline-none"
       style={{
