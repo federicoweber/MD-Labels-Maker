@@ -24,6 +24,8 @@ export interface LabelData {
   fullHeight: boolean;
   /** Horizontal crop alignment of the full-height cover (0 = left edge, 0.5 = centre, 1 = right edge). */
   fullHeightAlign: number;
+  /** Vertical position of the text band on the full-height cover (0 = top, 1 = bottom). */
+  fullHeightTextY: number;
   /** Opacity (0–1) of the background behind overlaid front text. */
   textBgOpacity: number;
   /** Front/spine text colour (hex), auto-optimised for contrast. */

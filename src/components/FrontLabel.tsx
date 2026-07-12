@@ -19,6 +19,7 @@ const FrontLabel = forwardRef<SVGSVGElement, Props>(function FrontLabel(props, r
     doubleHideText,
     fullHeight,
     fullHeightAlign,
+    fullHeightTextY,
     textBgOpacity,
     album,
     album2,
@@ -117,9 +118,10 @@ const FrontLabel = forwardRef<SVGSVGElement, Props>(function FrontLabel(props, r
   };
 
   // "Tracklist on cover": numbered tracks superimposed on the art, on a
-  // translucent bgColor panel (same opacity as the text band). Bottom-anchored
-  // at `bottom`, growing upward; tracks that don't fit `maxH` are dropped.
-  const tracksPanel = (x0: number, w: number, bottom: number, maxH: number, key: string) => {
+  // translucent bgColor panel (same opacity as the text band). `buildTracks`
+  // measures (wrapping and dropping tracks that don't fit `maxH`) so callers
+  // can position the panel; `tracksBlock` renders it at `top`.
+  const buildTracks = (w: number, maxH: number) => {
     if (!frontTracklist) return null;
     const gap = trackSize * lineHeight;
     const innerPad = padding * 0.6;
@@ -141,11 +143,21 @@ const FrontLabel = forwardRef<SVGSVGElement, Props>(function FrontLabel(props, r
       used += lines.length;
     }
     if (!used) return null;
-    const top = bottom - (used * gap + 2 * innerPad);
+    return { rows, gap, innerPad, height: used * gap + 2 * innerPad };
+  };
+
+  const tracksBlock = (
+    x0: number,
+    w: number,
+    top: number,
+    t: NonNullable<ReturnType<typeof buildTracks>>,
+    key: string,
+  ) => {
+    const { rows, gap, innerPad, height } = t;
     let base = top + innerPad + trackSize * 0.85;
     return (
       <g key={key}>
-        <rect x={x0} y={top} width={w} height={bottom - top} fill={bgColor} fillOpacity={textBgOpacity} />
+        <rect x={x0} y={top} width={w} height={height} fill={bgColor} fillOpacity={textBgOpacity} />
         {rows.map((r, i) => {
           const y0 = base;
           base += r.lines.length * gap;
@@ -201,6 +213,14 @@ const FrontLabel = forwardRef<SVGSVGElement, Props>(function FrontLabel(props, r
     const lastTitleBase = base;
     const firstTitleBase = lastTitleBase - (lines.length - 1) * lh;
     const bandY = firstTitleBase - titleSize - padding * 0.4;
+    // The text block (tracks panel + band) is positioned by `fullHeightTextY`:
+    // 0 = top of the label, 1 = bottom (the geometry above assumes bottom).
+    const bandH = doubleHideText ? 0 : H - bandY;
+    const built = buildTracks(W, H - bandH);
+    const blockH = bandH + (built?.height ?? 0);
+    const textY = Math.max(0, Math.min(1, fullHeightTextY));
+    const blockTop = textY * (H - blockH);
+    const bandShift = blockTop + (built?.height ?? 0) - bandY;
     return (
       <>
         {coverDataUrl ? (
@@ -228,9 +248,9 @@ const FrontLabel = forwardRef<SVGSVGElement, Props>(function FrontLabel(props, r
             </text>
           </>
         )}
-        {tracksPanel(0, W, doubleHideText ? H : bandY, doubleHideText ? H : bandY, 'ft')}
+        {built && tracksBlock(0, W, blockTop, built, 'ft')}
         {!doubleHideText && (
-          <>
+          <g transform={`translate(0 ${bandShift})`}>
             <rect x={0} y={bandY} width={W} height={H - bandY} fill={bgColor} fillOpacity={textBgOpacity} />
             <text
               fill={textColor}
@@ -286,13 +306,14 @@ const FrontLabel = forwardRef<SVGSVGElement, Props>(function FrontLabel(props, r
                 {discNumber}/{discTotal}
               </text>
             )}
-          </>
+          </g>
         )}
       </>
     );
   };
 
   // Single-mode text geometry.
+  const singleTracks = doubleAlbum || fullHeight ? null : buildTracks(cover, cover);
   const textX = (portrait ? 0 : cover) + padding;
   const textTop = (portrait ? cover : 0) + padding;
   const textMaxWidth = (portrait ? W : W - cover) - 2 * padding;
@@ -355,7 +376,7 @@ const FrontLabel = forwardRef<SVGSVGElement, Props>(function FrontLabel(props, r
                 </text>
               </>
             )}
-            {tracksPanel(0, cover, cover, cover, 'ft')}
+            {singleTracks && tracksBlock(0, cover, cover - singleTracks.height, singleTracks, 'ft')}
 
             <text
               fill={textColor}

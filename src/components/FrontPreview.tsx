@@ -1,5 +1,12 @@
 import { useEffect, useLayoutEffect, useRef, useState } from 'react';
-import { ChevronLeft, ChevronRight, MoveHorizontal } from 'lucide-react';
+import {
+  ChevronDown,
+  ChevronLeft,
+  ChevronRight,
+  ChevronUp,
+  MoveHorizontal,
+  MoveVertical,
+} from 'lucide-react';
 import type { LabelData } from '@/lib/types';
 import { TrackEditor } from '@/components/TracklistPreview';
 import { FRONT, PREVIEW_PX_PER_MM as S, frontCoverSize, type SizePreset } from '@/lib/dimensions';
@@ -134,9 +141,18 @@ export default function FrontPreview({ data, size, update, onCover, onCover2 }: 
           )}
           {(data.frontTracklist || !data.doubleHideText) && (
             <div
-              className="absolute right-0 bottom-0 left-0 flex flex-col"
+              className="group/band absolute right-0 left-0 flex flex-col"
+              style={{
+                top: `${data.fullHeightTextY * 100}%`,
+                transform: `translateY(-${data.fullHeightTextY * 100}%)`,
+              }}
               onClick={(e) => e.stopPropagation()}
             >
+              <BandControls
+                y={data.fullHeightTextY}
+                containerH={H}
+                onChange={(v) => update({ fullHeightTextY: v })}
+              />
               {data.frontTracklist && <TracksOverlay data={data} update={update} />}
               {!data.doubleHideText && (
                 <div
@@ -345,6 +361,74 @@ export default function FrontPreview({ data, size, update, onCover, onCover2 }: 
           if (f?.type.startsWith('image/')) void readImageFile(f).then(onCover);
         }}
       />
+    </div>
+  );
+}
+
+/**
+ * Full-height mode: hover controls (on the text band) to move the band up and
+ * down the cover. The pill is a vertical drag surface; chevrons nudge. `y` is
+ * 0 at the label's top edge, 1 at the bottom.
+ */
+function BandControls({
+  y,
+  containerH,
+  onChange,
+}: {
+  y: number;
+  containerH: number;
+  onChange: (v: number) => void;
+}) {
+  const root = useRef<HTMLDivElement>(null);
+  const drag = useRef<{ y0: number; start: number; range: number } | null>(null);
+  const clamp = (v: number) => Math.max(0, Math.min(1, v));
+  const nudge = (e: React.MouseEvent, dir: number) => {
+    e.stopPropagation();
+    onChange(clamp(y + dir * 0.05));
+  };
+  const stop = (e: React.SyntheticEvent) => e.stopPropagation();
+  return (
+    <div
+      ref={root}
+      className="absolute top-1/2 right-1 flex -translate-y-1/2 cursor-ns-resize touch-none flex-col items-center rounded-full bg-black/60 px-1 py-1.5 text-white opacity-0 transition-opacity group-hover/band:opacity-100"
+      onPointerDown={(e) => {
+        if ((e.target as HTMLElement).closest('button')) return;
+        const band = root.current?.parentElement;
+        const range = containerH - (band?.offsetHeight ?? 0);
+        if (range <= 0) return;
+        drag.current = { y0: e.clientY, start: y, range };
+        e.currentTarget.setPointerCapture(e.pointerId);
+      }}
+      onPointerMove={(e) => {
+        if (!drag.current) return;
+        onChange(clamp(drag.current.start + (e.clientY - drag.current.y0) / drag.current.range));
+      }}
+      onPointerUp={() => (drag.current = null)}
+      onPointerCancel={() => (drag.current = null)}
+      onDoubleClick={(e) => {
+        e.stopPropagation();
+        if (!(e.target as HTMLElement).closest('button')) onChange(1);
+      }}
+    >
+      <button
+        type="button"
+        aria-label="Move text up"
+        onClick={(e) => nudge(e, -1)}
+        onDoubleClick={stop}
+        className="grid size-5 place-items-center rounded-full hover:bg-white/20"
+      >
+        <ChevronUp className="size-3.5" />
+      </button>
+      <MoveVertical className="size-3.5 opacity-70" aria-hidden />
+      <button
+        type="button"
+        aria-label="Move text down"
+        onClick={(e) => nudge(e, 1)}
+        onDoubleClick={stop}
+        className="grid size-5 place-items-center rounded-full hover:bg-white/20"
+      >
+        <ChevronDown className="size-3.5" />
+      </button>
     </div>
   );
 }

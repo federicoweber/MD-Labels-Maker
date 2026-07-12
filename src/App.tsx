@@ -48,6 +48,7 @@ const INITIAL: LabelData = {
   showChamfer: true,
   fullHeight: false,
   fullHeightAlign: 0.5,
+  fullHeightTextY: 1,
   textBgOpacity: 1,
   textColor: '#ece8e0',
   bgColor: '#6e6a63',
