@@ -6,6 +6,7 @@ interface Props {
   title: string;
   message?: string;
   confirmLabel?: string;
+  cancelLabel?: string;
   onConfirm: () => void;
   onCancel: () => void;
 }
@@ -16,6 +17,7 @@ export default function ConfirmModal({
   title,
   message,
   confirmLabel = 'Delete',
+  cancelLabel = 'Cancel',
   onConfirm,
   onCancel,
 }: Props) {
@@ -34,7 +36,7 @@ export default function ConfirmModal({
         {message && <p className="mt-2 text-xs text-muted-foreground">{message}</p>}
         <div className="mt-5 flex justify-end gap-2">
           <Button variant="outline" onClick={onCancel}>
-            Cancel
+            {cancelLabel}
           </Button>
           <Button onClick={onConfirm}>{confirmLabel}</Button>
         </div>

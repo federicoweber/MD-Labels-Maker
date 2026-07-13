@@ -28,7 +28,8 @@ import {
 } from '@/lib/tracklist';
 import { loadDiscs, saveDiscs } from '@/lib/storage';
 import { readImageFile } from '@/lib/utils';
-import { shareDataFor, shareUrl } from '@/lib/share';
+import { decodeDiscs, setupUrl, shareDataFor, shareUrl } from '@/lib/share';
+import { imageToDataUrl } from '@/lib/spotify';
 import { downloadLabelsZip, type ZipLabel } from '@/lib/exportPng';
 import { extractPalette, bestTextColor } from '@/lib/colors';
 import {
@@ -273,6 +274,45 @@ export default function App() {
   const [exporting, setExporting] = useState(false);
   const [deleteIndex, setDeleteIndex] = useState<number | null>(null);
   const [printOpen, setPrintOpen] = useState(false);
+
+  // A #d=… link (from "Export setup link") offers to restore that whole setup.
+  const [pendingImport, setPendingImport] = useState<Partial<LabelData>[] | null>(() => {
+    if (!window.location.hash.startsWith('#d=')) return null;
+    try {
+      return decodeDiscs(window.location.hash.slice(3));
+    } catch (err) {
+      console.warn('Setup link decode failed:', err);
+      return null;
+    }
+  });
+  useEffect(() => {
+    if (window.location.hash.startsWith('#d=')) {
+      window.history.replaceState({}, document.title, import.meta.env.BASE_URL);
+    }
+  }, []);
+
+  function applyImport() {
+    if (!pendingImport) return;
+    const imported = pendingImport.map((d) => ({ ...INITIAL, ...d }));
+    resetCoverUi(imported[0] ?? null);
+    // Block the auto cover fetch — imported covers restore from their sources.
+    lastCoverKey.current = `${imported[0]?.artist ?? ''}|${imported[0]?.album ?? ''}`.toLowerCase();
+    setDiscs(imported);
+    setActiveIndex(0);
+    setPendingImport(null);
+    // The link carries cover source URLs, not the images — re-fetch them.
+    imported.forEach((d, i) => {
+      const src = d.coverSourceUrl;
+      if (d.coverDataUrl || !src || src === '-') return;
+      imageToDataUrl(src)
+        .then((dataUrl) =>
+          setDiscs((ds) =>
+            ds.map((x, j) => (j === i && x.coverSourceUrl === src ? { ...x, coverDataUrl: dataUrl } : x)),
+          ),
+        )
+        .catch((err) => console.warn('Cover restore failed:', err));
+    });
+  }
 
   // Per-disc hidden SVG twins for export, keyed `${index}-${kind}`.
   const twinRefs = useRef<Record<string, SVGSVGElement | null>>({});
@@ -727,6 +767,7 @@ export default function App() {
         onRequestDelete={setDeleteIndex}
         onExport={onExport}
         onPrint={() => setPrintOpen(true)}
+        setupUrl={() => setupUrl(discs)}
         exporting={exporting}
       />
 
@@ -1130,6 +1171,16 @@ export default function App() {
           );
         })}
       </div>
+
+      <ConfirmModal
+        open={pendingImport !== null}
+        title="Load this setup?"
+        message={`This link contains ${pendingImport?.length ?? 0} label(s). Loading it replaces your current ${discs.length} label(s).`}
+        confirmLabel="Load"
+        cancelLabel="Don't load"
+        onConfirm={applyImport}
+        onCancel={() => setPendingImport(null)}
+      />
 
       <ConfirmModal
         open={deleteIndex !== null}

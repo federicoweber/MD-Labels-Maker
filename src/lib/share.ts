@@ -115,6 +115,32 @@ export function shareUrl(d: ShareData): string {
   return `${window.location.origin}${import.meta.env.BASE_URL}#s=${encodeShare(d)}`;
 }
 
+/**
+ * Encode the full editor state (every label) for the setup-export URL (#d=…).
+ * Cover images are inlined data URLs (potentially megabytes), so the link
+ * carries their public source URLs instead; covers re-fetch on import.
+ */
+export function encodeDiscs(discs: LabelData[]): string {
+  const slim = discs.map((d) => ({ ...d, coverDataUrl: null, coverDataUrl2: null }));
+  return toBase64Url(deflateSync(strToU8(JSON.stringify({ v: 1, discs: slim })), { level: 9 }));
+}
+
+export function decodeDiscs(encoded: string): Partial<LabelData>[] {
+  const payload = JSON.parse(strFromU8(inflateSync(fromBase64Url(encoded)))) as {
+    v: number;
+    discs: Partial<LabelData>[];
+  };
+  if (!Array.isArray(payload?.discs) || payload.discs.length === 0) {
+    throw new Error('Invalid setup payload');
+  }
+  return payload.discs;
+}
+
+/** Absolute URL that restores this whole setup when opened. */
+export function setupUrl(discs: LabelData[]): string {
+  return `${window.location.origin}${import.meta.env.BASE_URL}#d=${encodeDiscs(discs)}`;
+}
+
 export interface QrModules {
   /** Modules per side. */
   count: number;

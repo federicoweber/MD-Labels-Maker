@@ -1,4 +1,5 @@
-import { Download, Plus, Printer, X } from 'lucide-react';
+import { useState } from 'react';
+import { Check, Download, Link, Plus, Printer, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import type { LabelData } from '@/lib/types';
 
@@ -10,6 +11,8 @@ interface ControlsProps {
   onRequestDelete: (i: number) => void;
   onExport: () => void;
   onPrint: () => void;
+  /** Builds the URL that restores the whole setup (all labels). */
+  setupUrl: () => string;
   exporting: boolean;
 }
 
@@ -24,8 +27,10 @@ export default function Controls({
   onRequestDelete,
   onExport,
   onPrint,
+  setupUrl,
   exporting,
 }: ControlsProps) {
+  const [copied, setCopied] = useState(false);
   return (
     <aside className="flex w-[300px] shrink-0 flex-col gap-6 overflow-y-auto bg-background p-5">
       <header>
@@ -74,6 +79,18 @@ export default function Controls({
         </Button>
         <Button variant="outline" onClick={onPrint}>
           <Printer /> Print…
+        </Button>
+        <Button
+          variant="outline"
+          title="Copy a link that restores every label and its settings"
+          onClick={() => {
+            void navigator.clipboard.writeText(setupUrl()).then(() => {
+              setCopied(true);
+              window.setTimeout(() => setCopied(false), 1500);
+            });
+          }}
+        >
+          {copied ? <Check /> : <Link />} {copied ? 'Link copied' : 'Export setup link'}
         </Button>
       </div>
     </aside>
