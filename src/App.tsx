@@ -204,28 +204,45 @@ function CoverControl({
 }) {
   const fileInput = useRef<HTMLInputElement>(null);
   return (
-    <div className="flex items-center gap-3">
-      <Button variant="outline" className="w-fit" disabled={loading} onClick={onFetch}>
-        {loading ? 'Fetching…' : label}
-      </Button>
-      <Button variant="outline" className="w-fit" onClick={() => fileInput.current?.click()}>
-        Upload
-      </Button>
-      <div className="flex items-stretch">
-        <Button
-          variant="outline"
-          className="w-fit rounded-r-none"
-          title="Generate a cover seeded by the artist, album and tracklist"
-          onClick={onGenerate}
-        >
-          Generate
+    <div className="flex flex-col gap-2">
+      <div className="flex items-center gap-3">
+        <Button variant="outline" className="w-fit" disabled={loading} onClick={onFetch}>
+          {loading ? 'Fetching…' : label}
         </Button>
-        <div className="relative inline-flex items-center border border-l-0 border-input bg-transparent">
+        <Button variant="outline" className="w-fit" onClick={() => fileInput.current?.click()}>
+          Upload
+        </Button>
+        {options.length > 1 && (
+          <div className="flex items-center gap-1 text-xs text-muted-foreground">
+            <button
+              type="button"
+              aria-label="Previous cover"
+              onClick={() => onCycle(-1)}
+              className="grid size-6 place-items-center border border-border hover:bg-accent"
+            >
+              <ChevronLeft className="size-3.5" />
+            </button>
+            <span className="tabular-nums">
+              {index + 1}/{options.length}
+            </span>
+            <button
+              type="button"
+              aria-label="Next cover"
+              onClick={() => onCycle(1)}
+              className="grid size-6 place-items-center border border-border hover:bg-accent"
+            >
+              <ChevronRight className="size-3.5" />
+            </button>
+          </div>
+        )}
+      </div>
+      <div className="flex items-stretch">
+        <div className="relative inline-flex items-center border border-r-0 border-input bg-transparent">
           <select
             aria-label="Generator model"
             value={genModel}
             onChange={(e) => onGenModel(e.target.value as GenModel)}
-            className="h-full cursor-pointer appearance-none bg-transparent pr-6 pl-2 text-xs outline-none hover:text-foreground"
+            className="h-full cursor-pointer appearance-none bg-transparent pr-6 pl-3 text-xs outline-none hover:text-foreground"
           >
             {GEN_MODELS.map((m) => (
               <option key={m.id} value={m.id} className="text-foreground">
@@ -235,6 +252,14 @@ function CoverControl({
           </select>
           <ChevronDown className="pointer-events-none absolute right-1.5 size-3" />
         </div>
+        <Button
+          variant="outline"
+          className="w-fit rounded-l-none"
+          title="Generate a cover seeded by the artist, album and tracklist"
+          onClick={onGenerate}
+        >
+          Generate
+        </Button>
       </div>
       <input
         ref={fileInput}
@@ -247,29 +272,6 @@ function CoverControl({
           e.target.value = '';
         }}
       />
-      {options.length > 1 && (
-        <div className="flex items-center gap-1 text-xs text-muted-foreground">
-          <button
-            type="button"
-            aria-label="Previous cover"
-            onClick={() => onCycle(-1)}
-            className="grid size-6 place-items-center border border-border hover:bg-accent"
-          >
-            <ChevronLeft className="size-3.5" />
-          </button>
-          <span className="tabular-nums">
-            {index + 1}/{options.length}
-          </span>
-          <button
-            type="button"
-            aria-label="Next cover"
-            onClick={() => onCycle(1)}
-            className="grid size-6 place-items-center border border-border hover:bg-accent"
-          >
-            <ChevronRight className="size-3.5" />
-          </button>
-        </div>
-      )}
     </div>
   );
 }
