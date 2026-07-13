@@ -237,12 +237,12 @@ function CoverControl({
         )}
       </div>
       <div className="flex items-stretch gap-3">
-        <div className="relative inline-flex items-center border border-input bg-transparent">
+        <div className="notch-tr-bordered inline-flex h-9 items-center">
           <select
             aria-label="Generator model"
             value={genModel}
             onChange={(e) => onGenModel(e.target.value as GenModel)}
-            className="h-full cursor-pointer appearance-none bg-transparent pr-6 pl-3 text-xs outline-none hover:text-foreground"
+            className="h-full cursor-pointer appearance-none bg-transparent pr-8 pl-4 text-sm outline-none"
           >
             {GEN_MODELS.map((m) => (
               <option key={m.id} value={m.id} className="text-foreground">
@@ -250,7 +250,7 @@ function CoverControl({
               </option>
             ))}
           </select>
-          <ChevronDown className="pointer-events-none absolute right-1.5 size-3" />
+          <ChevronDown className="pointer-events-none absolute right-2.5 size-4" />
         </div>
         <Button
           variant="outline"
