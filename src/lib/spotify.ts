@@ -396,7 +396,7 @@ export function trackLines(tracks: SpotifyTrack[], includeArtists = false): stri
   return tracks
     .map((t) => {
       const artist = includeArtists ? t.artists?.[0]?.name : undefined;
-      const title = artist ? `**${artist}** ${t.name}` : t.name;
+      const title = artist ? `**${artist}** / ${t.name}` : t.name;
       const d = fmtDuration(t.duration_ms);
       return d ? `${title}\t${d}` : title;
     })
