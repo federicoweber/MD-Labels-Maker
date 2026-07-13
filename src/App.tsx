@@ -94,6 +94,7 @@ const INITIAL: LabelData = {
   trackOpacity: 1,
   letterSpacing: 0,
   lineHeight: 1.2,
+  titleArtistGap: 0.6,
   frontTracklist: false,
   showQr: false,
   showSpine: true,
@@ -1009,6 +1010,7 @@ export default function App() {
             onLetterSpacing={(v) => update({ letterSpacing: v })}
             lineHeight={data.lineHeight}
             onLineHeight={(v) => update({ lineHeight: v })}
+            titleGap={{ value: data.titleArtistGap, onChange: (v) => update({ titleArtistGap: v }) }}
           />
         </section>
 

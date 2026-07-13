@@ -4,8 +4,12 @@ import { PREVIEW_PX_PER_MM, type SizePreset } from '@/lib/dimensions';
 
 type Props = LabelData & { size: SizePreset };
 
+// Multi-line titles collapse to one line on the spine.
 const spineCaption = (album: string, artist: string, showAlbum: boolean, showArtist: boolean) =>
-  [showAlbum && (album || 'Album'), showArtist && (artist || 'Artist')].filter(Boolean).join(' - ');
+  [showAlbum && (album || 'Album'), showArtist && (artist || 'Artist')]
+    .filter(Boolean)
+    .join(' - ')
+    .replace(/\s+/g, ' ');
 
 /** MiniDisc spine label — a thin strip with a centred caption (two in 2× mode). */
 const SpineLabel = forwardRef<SVGSVGElement, Props>(function SpineLabel(

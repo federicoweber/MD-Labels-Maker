@@ -32,6 +32,8 @@ interface Props {
   onLetterSpacing: (v: number) => void;
   lineHeight: number;
   onLineHeight: (v: number) => void;
+  /** Gap between the title block and the artist line (front label only). */
+  titleGap?: { value: number; onChange: (v: number) => void };
 }
 
 const GRAYS = ['#000000', '#3f3f3f', '#808080', '#bfbfbf', '#ffffff'];
@@ -55,6 +57,7 @@ export default function LabelControls({
   onLetterSpacing,
   lineHeight,
   onLineHeight,
+  titleGap,
 }: Props) {
   const swatches = [...GRAYS, ...palette];
   const opacityFields = fields.filter((f) => f.opacity);
@@ -182,6 +185,18 @@ export default function LabelControls({
             format={(v) => v.toFixed(2)}
             onChange={onLineHeight}
           />
+          {titleGap && (
+            <SizeSlider
+              id="title-gap"
+              label="Artist gap"
+              value={titleGap.value}
+              min={0}
+              max={4}
+              step={0.1}
+              format={(v) => `${v.toFixed(1)}mm`}
+              onChange={titleGap.onChange}
+            />
+          )}
         </TabsContent>
       </Tabs>
     </div>

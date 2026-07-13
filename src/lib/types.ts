@@ -69,6 +69,8 @@ export interface LabelData {
   letterSpacing: number;
   /** Label text line-height multiplier. */
   lineHeight: number;
+  /** Gap between the title block and the artist line beneath it, in mm. */
+  titleArtistGap: number;
   /** Whether the spine label is included, and how many copies to print. */
   showSpine: boolean;
   spineCount: number;

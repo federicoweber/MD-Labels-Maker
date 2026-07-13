@@ -143,7 +143,7 @@ export default function FrontPreview({ data, size, update, onCover, onCover2 }: 
                   className="flex flex-col justify-end"
                   style={{
                     padding: PAD,
-                    gap: 0.2 * S,
+                    gap: data.titleArtistGap * S,
                     background: withAlpha(data.bgColor, data.textBgOpacity),
                   }}
                 >
@@ -162,19 +162,18 @@ export default function FrontPreview({ data, size, update, onCover, onCover2 }: 
                     }}
                   />
                   {data.showArtist && (
-                    <input
-                      className="label-field w-full bg-transparent p-0 outline-none"
+                    <AutoTextarea
+                      value={data.artist}
+                      placeholder="Artist"
+                      onChange={(v) => update({ artist: v })}
                       style={{
                         fontFamily: data.artistFont,
                         fontSize: data.artistSize * S,
                         color: data.textColor,
                         opacity: data.artistOpacity,
-                        lineHeight: 1.1,
+                        lineHeight: data.lineHeight,
                         letterSpacing: `${data.letterSpacing}em`,
                       }}
-                      value={data.artist}
-                      placeholder="Artist"
-                      onChange={(e) => update({ artist: e.target.value })}
                     />
                   )}
                   {(data.showYear || data.discTotal > 1) && (
@@ -248,13 +247,17 @@ export default function FrontPreview({ data, size, update, onCover, onCover2 }: 
           )}
 
           <div
-            className="absolute flex flex-col justify-start"
+            className="absolute flex flex-col justify-end"
             style={{
               top: portrait ? cover : 0,
+              bottom:
+                data.showYear || data.discTotal > 1
+                  ? PAD * 0.6 + data.yearSize * S + 1.5
+                  : PAD * 0.55,
               left: portrait ? 0 : cover,
               width: portrait ? W : W - cover,
-              padding: PAD,
-              gap: 0.6 * S,
+              padding: `${PAD}px ${PAD}px 0`,
+              gap: data.titleArtistGap * S,
             }}
           >
             <AutoTextarea
@@ -272,19 +275,18 @@ export default function FrontPreview({ data, size, update, onCover, onCover2 }: 
               }}
             />
             {data.showArtist && (
-              <input
-                className="label-field w-full bg-transparent p-0 outline-none"
+              <AutoTextarea
+                value={data.artist}
+                placeholder="Artist"
+                onChange={(v) => update({ artist: v })}
                 style={{
                   fontFamily: data.artistFont,
                   fontSize: data.artistSize * S,
                   color: data.textColor,
                   opacity: data.artistOpacity,
-                  lineHeight: 1.1,
+                  lineHeight: data.lineHeight,
                   letterSpacing: `${data.letterSpacing}em`,
                 }}
-                value={data.artist}
-                placeholder="Artist"
-                onChange={(e) => update({ artist: e.target.value })}
               />
             )}
           </div>
@@ -618,7 +620,7 @@ function OverlayText({
       className="absolute right-0 bottom-0 left-0 flex flex-col justify-end"
       style={{
         padding: pad,
-        gap: 0.2 * S,
+        gap: data.titleArtistGap * S,
         background: withAlpha(data.bgColor, data.textBgOpacity),
       }}
       onClick={(e) => e.stopPropagation()}
@@ -637,19 +639,18 @@ function OverlayText({
           letterSpacing: `${data.letterSpacing}em`,
         }}
       />
-      <input
-        className="label-field w-full bg-transparent p-0 outline-none"
+      <AutoTextarea
+        value={artist}
+        placeholder="Artist"
+        onChange={onArtist}
         style={{
           fontFamily: data.artistFont,
           fontSize: data.artistSize * DOUBLE_TEXT_SCALE * S,
           color: data.textColor,
           opacity: data.artistOpacity,
-          lineHeight: 1.1,
+          lineHeight: data.lineHeight,
           letterSpacing: `${data.letterSpacing}em`,
         }}
-        value={artist}
-        placeholder="Artist"
-        onChange={(e) => onArtist(e.target.value)}
       />
     </div>
   );

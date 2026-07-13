@@ -52,6 +52,7 @@ const FrontLabel = forwardRef<SVGSVGElement, Props>(function FrontLabel(props, r
     showChamfer,
     letterSpacing,
     lineHeight,
+    titleArtistGap,
     size,
   } = props;
   const { width: W, height: H } = size;
@@ -75,8 +76,10 @@ const FrontLabel = forwardRef<SVGSVGElement, Props>(function FrontLabel(props, r
     const maxW = W - 2 * padding;
     const lines = wrapText(alb || 'Album', titleFont, ts, maxW, 700);
     const lh = ts * lineHeight;
-    const artistBase = bottom - padding * 0.7;
-    const lastTitleBase = artistBase - as - 0.6;
+    const artistLines = wrapText(art || 'Artist', artistFont, as, maxW);
+    const artistLH = as * lineHeight;
+    const artistBase = bottom - padding * 0.7 - (artistLines.length - 1) * artistLH;
+    const lastTitleBase = artistBase - as - titleArtistGap;
     const firstTitleBase = lastTitleBase - (lines.length - 1) * lh;
     const bandY = firstTitleBase - ts - padding * 0.4;
     return (
@@ -104,15 +107,17 @@ const FrontLabel = forwardRef<SVGSVGElement, Props>(function FrontLabel(props, r
               ))}
             </text>
             <text
-              x={padding}
-              y={artistBase}
               fill={textColor}
               fillOpacity={artistOpacity}
               fontFamily={artistFont}
               fontSize={as}
               letterSpacing={as * letterSpacing}
             >
-              {art || 'Artist'}
+              {artistLines.map((line, i) => (
+                <tspan key={i} x={padding} y={artistBase + i * artistLH}>
+                  {line || ' '}
+                </tspan>
+              ))}
             </text>
           </>
         )}
@@ -226,8 +231,10 @@ const FrontLabel = forwardRef<SVGSVGElement, Props>(function FrontLabel(props, r
     let base = H - padding * 0.7;
     const metaBase = base;
     if (metaRow) base -= yearSize + 0.8;
-    const artistBase = base;
-    if (showArtist) base -= artistSize + 0.6;
+    const bandArtistLines = showArtist ? wrapText(artist || 'Artist', artistFont, artistSize, maxW) : [];
+    const bandArtistLH = artistSize * lineHeight;
+    const artistBase = base - (bandArtistLines.length - 1) * bandArtistLH;
+    if (showArtist) base = artistBase - artistSize - titleArtistGap;
     const lastTitleBase = base;
     const firstTitleBase = lastTitleBase - (lines.length - 1) * lh;
     const bandY = firstTitleBase - titleSize - padding * 0.4;
@@ -286,15 +293,17 @@ const FrontLabel = forwardRef<SVGSVGElement, Props>(function FrontLabel(props, r
             </text>
             {showArtist && (
               <text
-                x={padding}
-                y={artistBase}
                 fill={textColor}
                 fillOpacity={artistOpacity}
                 fontFamily={artistFont}
                 fontSize={artistSize}
                 letterSpacing={artistSize * letterSpacing}
               >
-                {artist || 'Artist'}
+                {bandArtistLines.map((line, i) => (
+                  <tspan key={i} x={padding} y={artistBase + i * bandArtistLH}>
+                    {line || ' '}
+                  </tspan>
+                ))}
               </text>
             )}
             {showYear && year && (
@@ -351,16 +360,23 @@ const FrontLabel = forwardRef<SVGSVGElement, Props>(function FrontLabel(props, r
       />
     );
 
-  // Single-mode text geometry.
+  // Single-mode text geometry: bottom-anchored. The artist sits at the bottom
+  // of the label (above the year/disc row when present) and the title stacks
+  // up from it, separated by the adjustable title–artist gap. Both wrap.
   const singleTracks = doubleAlbum || fullHeight ? null : buildTracks(cover, cover);
   const textX = (portrait ? 0 : cover) + padding;
-  const textTop = (portrait ? cover : 0) + padding;
   const textMaxWidth = (portrait ? W : W - cover) - 2 * padding;
   const titleLines = wrapText(album || 'Album', titleFont, titleSize, textMaxWidth, 700);
   const titleLH = titleSize * lineHeight;
-  const firstBaseline = textTop + titleSize * 0.85;
-  const lastTitleBaseline = firstBaseline + (titleLines.length - 1) * titleLH;
-  const artistBaseline = lastTitleBaseline + artistSize + 1.4;
+  const singleMetaRow = (showYear && !!year) || discTotal > 1;
+  const bottomAnchor = singleMetaRow ? H - padding - yearSize - 0.8 : H - padding * 0.7;
+  const artistLines = showArtist ? wrapText(artist || 'Artist', artistFont, artistSize, textMaxWidth) : [];
+  const artistLH = artistSize * lineHeight;
+  const artistFirstBaseline = bottomAnchor - (artistLines.length - 1) * artistLH;
+  const lastTitleBaseline = showArtist
+    ? artistFirstBaseline - artistSize - titleArtistGap
+    : bottomAnchor;
+  const firstBaseline = lastTitleBaseline - (titleLines.length - 1) * titleLH;
 
   return (
     <svg
@@ -433,15 +449,17 @@ const FrontLabel = forwardRef<SVGSVGElement, Props>(function FrontLabel(props, r
             </text>
             {showArtist && (
               <text
-                x={textX}
-                y={artistBaseline}
                 fill={textColor}
                 fillOpacity={artistOpacity}
                 fontFamily={artistFont}
                 fontSize={artistSize}
                 letterSpacing={artistSize * letterSpacing}
               >
-                {artist || 'Artist'}
+                {artistLines.map((line, i) => (
+                  <tspan key={i} x={textX} y={artistFirstBaseline + i * artistLH}>
+                    {line || ' '}
+                  </tspan>
+                ))}
               </text>
             )}
             {showYear && year && (

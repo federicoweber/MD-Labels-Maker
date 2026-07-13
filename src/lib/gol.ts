@@ -1,7 +1,6 @@
 // Generative cover: Conway's Game of Life run from a random soup seeded by the
-// artist + album combo — the same title always produces the same cover. Cells
-// render in the label's text colour on its background, with faint "heat"
-// trails where cells lived during the run.
+// artist + album combo — the same title always produces the same cover.
+// Strictly two-tone: live cells in the label's text colour on its background.
 
 /** xmur3 string hash — seeds the PRNG from the artist|album combo. */
 function xmur3(str: string): () => number {
@@ -62,13 +61,7 @@ export function generateGolCover(
   const rand = mulberry32(xmur3(`${artist}|${album}`.toLowerCase())());
   let grid = new Uint8Array(GRID * GRID);
   for (let i = 0; i < grid.length; i++) grid[i] = rand() < SOUP_DENSITY ? 1 : 0;
-
-  // Heat = how many generations each cell was alive (drawn as faint trails).
-  const heat = new Float32Array(GRID * GRID);
-  for (let g = 0; g < GENERATIONS; g++) {
-    for (let i = 0; i < grid.length; i++) if (grid[i]) heat[i] += 1;
-    grid = step(grid, GRID);
-  }
+  for (let g = 0; g < GENERATIONS; g++) grid = step(grid, GRID);
 
   const canvas = document.createElement('canvas');
   canvas.width = canvas.height = size;
@@ -79,13 +72,9 @@ export function generateGolCover(
   cx.fillStyle = textColor;
   for (let y = 0; y < GRID; y++) {
     for (let x = 0; x < GRID; x++) {
-      const i = y * GRID + x;
-      if (grid[i]) cx.globalAlpha = 1;
-      else if (heat[i] > 0) cx.globalAlpha = Math.min(0.3, (heat[i] / GENERATIONS) * 0.8);
-      else continue;
+      if (!grid[y * GRID + x]) continue;
       cx.fillRect(Math.round(x * cell), Math.round(y * cell), Math.ceil(cell), Math.ceil(cell));
     }
   }
-  cx.globalAlpha = 1;
   return canvas.toDataURL('image/png');
 }

@@ -1,8 +1,12 @@
 import type { LabelData } from '@/lib/types';
 import { PREVIEW_PX_PER_MM as S, type SizePreset } from '@/lib/dimensions';
 
+// Multi-line titles collapse to one line on the spine.
 const spineCaption = (album: string, artist: string, showAlbum: boolean, showArtist: boolean) =>
-  [showAlbum && (album || 'Album'), showArtist && (artist || 'Artist')].filter(Boolean).join(' - ');
+  [showAlbum && (album || 'Album'), showArtist && (artist || 'Artist')]
+    .filter(Boolean)
+    .join(' - ')
+    .replace(/\s+/g, ' ');
 
 /** Spine preview. One caption, or two halves in double-album mode. */
 export default function SpinePreview({ data, size }: { data: LabelData; size: SizePreset }) {

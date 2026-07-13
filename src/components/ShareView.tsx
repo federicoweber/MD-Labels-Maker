@@ -101,11 +101,17 @@ export default function ShareView({ encoded }: { encoded: string }) {
           {data.disc && (
             <p className="text-xs tracking-wide uppercase opacity-70">Disc {data.disc}</p>
           )}
-          <h1 className="text-2xl font-bold" style={{ fontFamily: `'${titleFont}', sans-serif` }}>
+          <h1
+            className="text-2xl font-bold whitespace-pre-line"
+            style={{ fontFamily: `'${titleFont}', sans-serif` }}
+          >
             {data.album || 'Untitled'}
           </h1>
           {data.artist && (
-            <p className="opacity-70" style={{ fontFamily: `'${artistFont}', sans-serif` }}>
+            <p
+              className="whitespace-pre-line opacity-70"
+              style={{ fontFamily: `'${artistFont}', sans-serif` }}
+            >
               {data.artist}
             </p>
           )}
