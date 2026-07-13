@@ -1,7 +1,7 @@
 import { forwardRef, useId } from 'react';
 import type { LabelData } from '@/lib/types';
 import { FRONT, PREVIEW_PX_PER_MM, frontCoverSize, type SizePreset } from '@/lib/dimensions';
-import { wrapText } from '@/lib/text';
+import { frontTextBlockHeight, wrapText } from '@/lib/text';
 import { splitBoldArtist, splitTrack } from '@/lib/tracklist';
 import { qrPath, shareDataFor, shareUrl } from '@/lib/share';
 import { QrGraphic } from '@/components/QrGraphic';
@@ -362,9 +362,10 @@ const FrontLabel = forwardRef<SVGSVGElement, Props>(function FrontLabel(props, r
 
   // Single-mode text geometry: bottom-anchored. The artist sits at the bottom
   // of the label (above the year/disc row when present) and the title stacks
-  // up from it, separated by the adjustable title–artist gap. Both wrap.
-  const singleTracks = doubleAlbum || fullHeight ? null : buildTracks(cover, cover);
-  const textX = (portrait ? 0 : cover) + padding;
+  // up from it, separated by the adjustable title–artist gap. Both wrap with
+  // no height cap — the text takes what it needs and the cover square (with
+  // its QR / tracks overlays) shrinks to the remaining space.
+  const hideText = doubleHideText;
   const textMaxWidth = (portrait ? W : W - cover) - 2 * padding;
   const titleLines = wrapText(album || 'Album', titleFont, titleSize, textMaxWidth, 700);
   const titleLH = titleSize * lineHeight;
@@ -377,6 +378,17 @@ const FrontLabel = forwardRef<SVGSVGElement, Props>(function FrontLabel(props, r
     ? artistFirstBaseline - artistSize - titleArtistGap
     : bottomAnchor;
   const firstBaseline = lastTitleBaseline - (titleLines.length - 1) * titleLH;
+  const textBlockH = hideText ? 0 : frontTextBlockHeight(props, textMaxWidth);
+  // The cover area keeps the full label width; only its height gives way to
+  // the text (the image is centre-cropped into it, like a CSS object-fit
+  // cover). In landscape the cover stays the left square column.
+  const coverH = portrait
+    ? Math.max(6, bottomAnchor - textBlockH - padding * 0.6)
+    : cover;
+  const coverW = portrait ? W : cover;
+  const textX = (portrait ? 0 : cover) + padding;
+  const singleTracks = doubleAlbum || fullHeight ? null : buildTracks(coverW, coverH);
+  const qrSide = Math.min(coverW, coverH);
 
   return (
     <svg
@@ -411,16 +423,16 @@ const FrontLabel = forwardRef<SVGSVGElement, Props>(function FrontLabel(props, r
                 href={coverDataUrl}
                 x={0}
                 y={0}
-                width={cover}
-                height={cover}
+                width={coverW}
+                height={coverH}
                 preserveAspectRatio="xMidYMid slice"
               />
             ) : (
               <>
-                <rect x={0} y={0} width={cover} height={cover} fill="#d8d8d8" />
+                <rect x={0} y={0} width={coverW} height={coverH} fill="#d8d8d8" />
                 <text
-                  x={cover / 2}
-                  y={cover / 2}
+                  x={coverW / 2}
+                  y={coverH / 2}
                   fill="#8a8a8a"
                   fontFamily="'Roboto Mono', monospace"
                   fontSize={2.4}
@@ -431,23 +443,25 @@ const FrontLabel = forwardRef<SVGSVGElement, Props>(function FrontLabel(props, r
                 </text>
               </>
             )}
-            {singleTracks && tracksBlock(0, cover, cover - singleTracks.height, singleTracks, 'ft')}
+            {singleTracks && tracksBlock(0, coverW, coverH - singleTracks.height, singleTracks, 'ft')}
 
-            <text
-              fill={textColor}
-              fillOpacity={titleOpacity}
-              fontFamily={titleFont}
-              fontSize={titleSize}
-              fontWeight={700}
-              letterSpacing={titleSize * letterSpacing}
-            >
-              {titleLines.map((line, i) => (
-                <tspan key={i} x={textX} y={firstBaseline + i * titleLH}>
-                  {line || ' '}
-                </tspan>
-              ))}
-            </text>
-            {showArtist && (
+            {!hideText && (
+              <text
+                fill={textColor}
+                fillOpacity={titleOpacity}
+                fontFamily={titleFont}
+                fontSize={titleSize}
+                fontWeight={700}
+                letterSpacing={titleSize * letterSpacing}
+              >
+                {titleLines.map((line, i) => (
+                  <tspan key={i} x={textX} y={firstBaseline + i * titleLH}>
+                    {line || ' '}
+                  </tspan>
+                ))}
+              </text>
+            )}
+            {!hideText && showArtist && (
               <text
                 fill={textColor}
                 fillOpacity={artistOpacity}
@@ -489,7 +503,7 @@ const FrontLabel = forwardRef<SVGSVGElement, Props>(function FrontLabel(props, r
                 {discNumber}/{discTotal}
               </text>
             )}
-            {qrAt(0, 0, cover)}
+            {qrAt((coverW - qrSide) / 2, (coverH - qrSide) / 2, qrSide)}
           </>
         )}
       </g>

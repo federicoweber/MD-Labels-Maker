@@ -11,6 +11,7 @@ import type { LabelData } from '@/lib/types';
 import { TrackEditor } from '@/components/TracklistPreview';
 import QrOverlay from '@/components/QrOverlay';
 import { FRONT, PREVIEW_PX_PER_MM as S, frontCoverSize, type SizePreset } from '@/lib/dimensions';
+import { frontTextBlockHeight } from '@/lib/text';
 import { readImageFile, withAlpha } from '@/lib/utils';
 
 interface Props {
@@ -56,9 +57,26 @@ export default function FrontPreview({ data, size, update, onCover, onCover2 }: 
 
   const W = size.width * S;
   const H = size.height * S;
-  const cover = frontCoverSize(size) * S;
   const portrait = size.height >= size.width;
   const PAD = FRONT.padding * S;
+  // The cover area keeps the full label width; only its height gives way to
+  // the (uncapped) text block — same math as the SVG twin. The image is
+  // centre-cropped into the area like a CSS object-fit cover.
+  const hideText = data.doubleHideText;
+  const fullSideMm = frontCoverSize(size);
+  const textMaxWmm = (portrait ? size.width : size.width - fullSideMm) - 2 * FRONT.padding;
+  const textBlockMm = hideText ? 0 : frontTextBlockHeight(data, textMaxWmm);
+  const metaRowMm = (data.showYear && !!data.year) || data.discTotal > 1;
+  const bottomAnchorMm = metaRowMm
+    ? size.height - FRONT.padding - data.yearSize - 0.8
+    : size.height - FRONT.padding * 0.7;
+  const coverHmm = portrait
+    ? Math.max(6, bottomAnchorMm - textBlockMm - FRONT.padding * 0.6)
+    : fullSideMm;
+  const coverWmm = portrait ? size.width : fullSideMm;
+  const cover = coverHmm * S;
+  const coverWpx = coverWmm * S;
+  const qrSideMm = Math.min(coverWmm, coverHmm);
   const chamfer = data.showChamfer ? FRONT.chamfer : 0;
   const CH = chamfer * S;
   const CLIP = `polygon(${CH}px 0, 100% 0, 100% 100%, 0 100%, 0 ${CH}px)`;
@@ -221,7 +239,7 @@ export default function FrontPreview({ data, size, update, onCover, onCover2 }: 
             src={data.coverDataUrl}
             onCover={onCover}
             pageDragging={pageDragging}
-            style={{ position: 'absolute', top: 0, left: 0, width: cover, height: cover }}
+            style={{ position: 'absolute', top: 0, left: 0, width: coverWpx, height: cover }}
           />
           {data.frontTracklist && (
             <TracksOverlay
@@ -231,7 +249,7 @@ export default function FrontPreview({ data, size, update, onCover, onCover2 }: 
                 position: 'absolute',
                 left: 0,
                 top: cover,
-                width: cover,
+                width: coverWpx,
                 transform: 'translateY(-100%)',
                 maxHeight: cover,
               }}
@@ -240,9 +258,12 @@ export default function FrontPreview({ data, size, update, onCover, onCover2 }: 
           {data.showQr && (
             <QrOverlay
               data={data}
-              sizeMm={frontCoverSize(size)}
+              sizeMm={qrSideMm}
               className="absolute"
-              style={{ left: 0, top: 0 }}
+              style={{
+                left: ((coverWmm - qrSideMm) / 2) * S,
+                top: ((coverHmm - qrSideMm) / 2) * S,
+              }}
             />
           )}
 
@@ -256,7 +277,8 @@ export default function FrontPreview({ data, size, update, onCover, onCover2 }: 
                   : PAD * 0.55,
               left: portrait ? 0 : cover,
               width: portrait ? W : W - cover,
-              padding: `${PAD}px ${PAD}px 0`,
+              // Top padding matches the twin's cover→text gap (0.6 × padding).
+              padding: `${PAD * 0.6}px ${PAD}px 0`,
               gap: data.titleArtistGap * S,
             }}
           >

@@ -30,7 +30,7 @@ import { loadDiscs, saveDiscs } from '@/lib/storage';
 import { readImageFile } from '@/lib/utils';
 import { decodeDiscs, setupUrl, shareDataFor, shareUrl } from '@/lib/share';
 import { imageToDataUrl } from '@/lib/spotify';
-import { generateGolCover } from '@/lib/gol';
+import { generateArtCover } from '@/lib/genart';
 import { downloadLabelsZip, type ZipLabel } from '@/lib/exportPng';
 import { extractPalette, bestTextColor } from '@/lib/colors';
 import {
@@ -210,7 +210,7 @@ function CoverControl({
       <Button
         variant="outline"
         className="w-fit"
-        title="Generate a Game of Life cover seeded by the artist + album"
+        title="Generate a geometric cover seeded by the artist, album and tracklist"
         onClick={onGenerate}
       >
         Generate
@@ -467,21 +467,39 @@ export default function App() {
     update({ coverDataUrl: coverOptions[next].dataUrl, coverSourceUrl: coverOptions[next].url });
   }
 
-  // Deterministic Game of Life cover, seeded by the artist + album combo. The
+  // Geometric cover seeded by artist + album + tracklist plus a fresh random
+  // salt per press — press again for a new variation. The salt is stored in
+  // coverSourceUrl (gen:<salt>) so the QR page regenerates the same one. The
   // cover already uses the label's colours, so skip the palette auto-recolour.
   function generateCover() {
-    const dataUrl = generateGolCover(data.album, data.artist, data.bgColor, data.textColor);
+    const salt = Math.random().toString(36).slice(2, 8);
+    const dataUrl = generateArtCover(
+      data.album,
+      data.artist,
+      data.tracklist,
+      salt,
+      data.bgColor,
+      data.textColor,
+    );
     setCoverOptions([]);
     setCoverIndex(0);
     lastCoverKey.current = `${data.artist}|${data.album}`.toLowerCase();
     autoColoredFor.current = [dataUrl, data.doubleAlbum ? data.coverDataUrl2 : null]
       .filter(Boolean)
       .join('|');
-    update({ coverDataUrl: dataUrl, coverSourceUrl: 'gol' });
+    update({ coverDataUrl: dataUrl, coverSourceUrl: `gen:${salt}` });
   }
 
   function generateCover2() {
-    const dataUrl = generateGolCover(data.album2, data.artist2, data.bgColor, data.textColor);
+    const salt = Math.random().toString(36).slice(2, 8);
+    const dataUrl = generateArtCover(
+      data.album2,
+      data.artist2,
+      data.tracklist2,
+      salt,
+      data.bgColor,
+      data.textColor,
+    );
     setCoverOptions2([]);
     setCoverIndex2(0);
     lastCoverKey2.current = `${data.artist2}|${data.album2}`.toLowerCase();
@@ -955,18 +973,16 @@ export default function App() {
               />
             </div>
           )}
-          {(data.doubleAlbum || data.fullHeight) && (
-            <div className="flex w-full items-center justify-between">
-              <Label htmlFor="hide-front-text" className="text-xs">
-                Hide cover text
-              </Label>
-              <Switch
-                id="hide-front-text"
-                checked={data.doubleHideText}
-                onCheckedChange={(v) => update({ doubleHideText: v })}
-              />
-            </div>
-          )}
+          <div className="flex w-full items-center justify-between">
+            <Label htmlFor="hide-front-text" className="text-xs">
+              Hide cover text
+            </Label>
+            <Switch
+              id="hide-front-text"
+              checked={data.doubleHideText}
+              onCheckedChange={(v) => update({ doubleHideText: v })}
+            />
+          </div>
           <div className="flex w-full items-center justify-between">
             <Label htmlFor="show-spine" className="text-xs">
               Spine

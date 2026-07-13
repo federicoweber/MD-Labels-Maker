@@ -1,6 +1,8 @@
 // Word-wrapping for SVG <text>, which has no automatic wrapping. Measures with
 // a canvas using the same font so the export matches the on-screen preview.
 
+import type { LabelData } from './types';
+
 let canvas: HTMLCanvasElement | null = null;
 const MEASURE_SCALE = 10; // measure in px; ratios are scale-invariant
 
@@ -8,6 +10,19 @@ const MEASURE_SCALE = 10; // measure in px; ratios are scale-invariant
  * Wrap `text` to `maxWidthMm` at the given font, honouring explicit newlines.
  * Returns at least one line.
  */
+/**
+ * Height (mm) of the front label's wrapped title + artist block. Used to size
+ * the cover area: the text takes what it needs and the cover gets the rest.
+ */
+export function frontTextBlockHeight(d: LabelData, maxWidthMm: number): number {
+  const titleLines = wrapText(d.album || 'Album', d.titleFont, d.titleSize, maxWidthMm, 700);
+  const titleH = d.titleSize + (titleLines.length - 1) * d.titleSize * d.lineHeight;
+  if (!d.showArtist) return titleH;
+  const artistLines = wrapText(d.artist || 'Artist', d.artistFont, d.artistSize, maxWidthMm);
+  const artistH = d.artistSize + (artistLines.length - 1) * d.artistSize * d.lineHeight;
+  return titleH + d.titleArtistGap + artistH;
+}
+
 export function wrapText(
   text: string,
   fontFamily: string,

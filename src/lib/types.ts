@@ -4,8 +4,8 @@ export interface LabelData {
   /** Public source URL of the cover when it came from a fetch/import (encoded
    * into the QR share link so the scanned page shows the same artwork).
    * Sentinels: '-' = "no cover on the share page, don't search either"
-   * (playlist imports); 'gol' = deterministic Game of Life cover, which the
-   * share page regenerates from the title + artist. */
+   * (playlist imports); 'gen' = deterministic geometric cover, which the
+   * share page regenerates from the artist + album + tracklist. */
   coverSourceUrl: string | null;
   album: string;
   artist: string;
