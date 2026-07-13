@@ -31,6 +31,7 @@ const SCDN_RE = /^https:\/\/i\.scdn\.co\/image\/([0-9a-f]+)$/;
 function packCoverUrl(url: string | null | undefined): string {
   if (!url) return '';
   if (url === '-') return '-'; // explicit "no cover" (playlists)
+  if (url === 'gol') return 'g'; // generated Game of Life cover (deterministic)
   const caa = url.match(CAA_RE);
   if (caa) return `c:${caa[1]}`;
   const scdn = url.match(SCDN_RE);
@@ -41,6 +42,7 @@ function packCoverUrl(url: string | null | undefined): string {
 function unpackCoverUrl(packed: string | undefined): string | undefined {
   if (!packed) return undefined;
   if (packed === '-') return '-';
+  if (packed === 'g') return 'gol';
   if (packed.startsWith('c:')) return `https://coverartarchive.org/release/${packed.slice(2)}/front-500`;
   if (packed.startsWith('s:')) return `https://i.scdn.co/image/${packed.slice(2)}`;
   return packed;

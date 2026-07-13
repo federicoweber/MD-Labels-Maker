@@ -4,6 +4,7 @@ import { FwdMark } from '@/components/QrGraphic';
 import { decodeShare } from '@/lib/share';
 import { loadFontForPreview } from '@/lib/fonts';
 import { fetchCovers, splitBoldArtist, splitTrack } from '@/lib/tracklist';
+import { generateGolCover } from '@/lib/gol';
 
 // The app's default label palette/typography, for older QR codes that don't
 // carry style fields.
@@ -44,10 +45,13 @@ export default function ShareView({ encoded }: { encoded: string }) {
   const album = data?.album ?? '';
   const artist = data?.artist ?? '';
   const coverUrl = data?.coverUrl;
-  // '-' marks "no cover on purpose" (playlists) — don't search either.
+  // '-' marks "no cover on purpose" (playlists) — don't search either. 'gol'
+  // is the deterministic Game of Life cover, regenerated here from the same
+  // title + artist seed and the label's colours.
   const suppressCover = coverUrl === '-';
+  const isGenerated = coverUrl === 'gol';
   useEffect(() => {
-    if (suppressCover || coverUrl || !album || !artist) return;
+    if (suppressCover || isGenerated || coverUrl || !album || !artist) return;
     let cancelled = false;
     fetchCovers(artist, album, 1)
       .then(({ covers }) => {
@@ -57,8 +61,21 @@ export default function ShareView({ encoded }: { encoded: string }) {
     return () => {
       cancelled = true;
     };
-  }, [suppressCover, coverUrl, album, artist]);
-  const cover = suppressCover ? null : (coverUrl ?? fetchedCover);
+  }, [suppressCover, isGenerated, coverUrl, album, artist]);
+  const generatedCover = useMemo(
+    () =>
+      isGenerated && data
+        ? generateGolCover(
+            album,
+            artist,
+            data.bgColor || FALLBACK.bgColor,
+            data.textColor || FALLBACK.textColor,
+          )
+        : null,
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [isGenerated, album, artist, data?.bgColor, data?.textColor],
+  );
+  const cover = suppressCover ? null : isGenerated ? generatedCover : (coverUrl ?? fetchedCover);
 
   if (!data) {
     return (

@@ -30,6 +30,7 @@ import { loadDiscs, saveDiscs } from '@/lib/storage';
 import { readImageFile } from '@/lib/utils';
 import { decodeDiscs, setupUrl, shareDataFor, shareUrl } from '@/lib/share';
 import { imageToDataUrl } from '@/lib/spotify';
+import { generateGolCover } from '@/lib/gol';
 import { downloadLabelsZip, type ZipLabel } from '@/lib/exportPng';
 import { extractPalette, bestTextColor } from '@/lib/colors';
 import {
@@ -181,6 +182,7 @@ function CoverControl({
   loading,
   onFetch,
   onUpload,
+  onGenerate,
   options,
   index,
   onCycle,
@@ -189,6 +191,7 @@ function CoverControl({
   loading: boolean;
   onFetch: () => void;
   onUpload: (dataUrl: string) => void;
+  onGenerate: () => void;
   /** Only the count is shown; elements are opaque here. */
   options: unknown[];
   index: number;
@@ -202,6 +205,14 @@ function CoverControl({
       </Button>
       <Button variant="outline" className="w-fit" onClick={() => fileInput.current?.click()}>
         Upload
+      </Button>
+      <Button
+        variant="outline"
+        className="w-fit"
+        title="Generate a Game of Life cover seeded by the artist + album"
+        onClick={onGenerate}
+      >
+        Generate
       </Button>
       <input
         ref={fileInput}
@@ -453,6 +464,28 @@ export default function App() {
     const next = (coverIndex + dir + coverOptions.length) % coverOptions.length;
     setCoverIndex(next);
     update({ coverDataUrl: coverOptions[next].dataUrl, coverSourceUrl: coverOptions[next].url });
+  }
+
+  // Deterministic Game of Life cover, seeded by the artist + album combo. The
+  // cover already uses the label's colours, so skip the palette auto-recolour.
+  function generateCover() {
+    const dataUrl = generateGolCover(data.album, data.artist, data.bgColor, data.textColor);
+    setCoverOptions([]);
+    setCoverIndex(0);
+    lastCoverKey.current = `${data.artist}|${data.album}`.toLowerCase();
+    autoColoredFor.current = [dataUrl, data.doubleAlbum ? data.coverDataUrl2 : null]
+      .filter(Boolean)
+      .join('|');
+    update({ coverDataUrl: dataUrl, coverSourceUrl: 'gol' });
+  }
+
+  function generateCover2() {
+    const dataUrl = generateGolCover(data.album2, data.artist2, data.bgColor, data.textColor);
+    setCoverOptions2([]);
+    setCoverIndex2(0);
+    lastCoverKey2.current = `${data.artist2}|${data.album2}`.toLowerCase();
+    autoColoredFor.current = [data.coverDataUrl, dataUrl].filter(Boolean).join('|');
+    update({ coverDataUrl2: dataUrl });
   }
 
   async function loadCovers() {
@@ -791,6 +824,7 @@ export default function App() {
                 loading={coverLoading}
                 onFetch={() => void loadCovers()}
                 onUpload={onCover}
+                onGenerate={generateCover}
                 options={coverOptions}
                 index={coverIndex}
                 onCycle={cycleCover}
@@ -800,6 +834,7 @@ export default function App() {
                 loading={coverLoading2}
                 onFetch={() => void loadCovers2()}
                 onUpload={onCover2}
+                onGenerate={generateCover2}
                 options={coverOptions2}
                 index={coverIndex2}
                 onCycle={cycleCover2}
@@ -811,6 +846,7 @@ export default function App() {
               loading={coverLoading}
               onFetch={() => void loadCovers()}
               onUpload={onCover}
+              onGenerate={generateCover}
               options={coverOptions}
               index={coverIndex}
               onCycle={cycleCover}
