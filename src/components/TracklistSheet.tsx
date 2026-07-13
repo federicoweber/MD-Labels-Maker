@@ -108,7 +108,14 @@ const TracklistSheet = forwardRef<SVGSVGElement, Props>(function TracklistSheet(
     const headerBottom = tlShowArtist ? lastArtist : tlShowAlbum ? lastTitle : padding + artistSize;
     const ruleY = hasHeader ? headerBottom + 2.5 : padding;
     const tracksTop = hasHeader ? ruleY + 4 : padding + trackSize * 0.9;
-    const maxLines = Math.max(1, Math.floor((H - tracksTop - padding) / trackGap));
+    // With the QR on (bottom-right), only the column that runs under it stops
+    // above it (lines whose ink would reach the QR top are cut); other columns
+    // keep the full height.
+    const maxFull = Math.max(1, Math.floor((H - tracksTop - padding) / trackGap));
+    const qrTop = H - padding - qrSize;
+    const maxShort = qr
+      ? Math.max(1, Math.floor((qrTop - tracksTop - 0.2 * trackSize) / trackGap) + 1)
+      : maxFull;
     const thumbSize = ruleY - padding;
 
     // Match the preview: stay one column until the list is long enough.
@@ -117,6 +124,8 @@ const TracklistSheet = forwardRef<SVGSVGElement, Props>(function TracklistSheet(
     const innerW = (right - left) / innerCols;
     const colX = Array.from({ length: innerCols }, (_, i) => left + i * innerW);
     const colTextW = innerCols > 1 ? innerW - 2 : innerW;
+    // Only the last (rightmost) column shares space with the QR corner.
+    const maxLinesFor = (c: number) => (c < innerCols - 1 ? maxFull : maxShort);
 
     // Wrap each track to its column width (reserving room for the duration on
     // the right) and flow tracks down columns by line. A "**Artist**" prefix
@@ -140,10 +149,13 @@ const TracklistSheet = forwardRef<SVGSVGElement, Props>(function TracklistSheet(
       const showDur = showTrackDuration && !!dur;
       const durW = showDur ? dur.length * trackSize * 0.62 + 1.5 : 0;
       const lines = wrapText(`${num}${display}`, trackFont, trackSize, colTextW - durW);
-      if (lineInCol > 0 && lineInCol + lines.length > maxLines && col < innerCols - 1) {
+      if (lineInCol > 0 && lineInCol + lines.length > maxLinesFor(col) && col < innerCols - 1) {
         col++;
         lineInCol = 0;
       }
+      // The last column clips instead of overflowing the sheet (or the QR).
+      if (col === innerCols - 1 && lineInCol + lines.length > maxLinesFor(col) && lineInCol > 0)
+        break;
       placed.push({
         x: colX[col],
         y: tracksTop + lineInCol * trackGap,

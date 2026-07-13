@@ -366,6 +366,34 @@ export default function App() {
     };
   }, []);
 
+  // Load every font the saved discs reference (Google fonts are injected as
+  // runtime styles that don't survive a reload) and re-render as each lands,
+  // so the SVG twins re-measure their text wrapping with the real metrics —
+  // otherwise print/export wraps with fallback-font widths.
+  const [, setFontsVersion] = useState(0);
+  useEffect(() => {
+    let cancelled = false;
+    const fonts = new Set<string>();
+    for (const d of discs) {
+      fonts.add(d.titleFont);
+      if (!d.artistAuto) fonts.add(d.artistFont);
+      fonts.add(d.trackFont);
+      if (!d.yearAuto) fonts.add(d.yearFont);
+    }
+    for (const f of fonts) {
+      loadFontForPreview(f)
+        .then(() => {
+          if (!cancelled) setFontsVersion((v) => v + 1);
+        })
+        .catch(() => {});
+    }
+    return () => {
+      cancelled = true;
+    };
+    // Startup only: later font changes already load via onFontSelect.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   function update(patch: Partial<LabelData>) {
     setData((d) => ({ ...d, ...patch }));
   }

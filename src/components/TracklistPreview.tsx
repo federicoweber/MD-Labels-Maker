@@ -2,6 +2,8 @@ import { useLayoutEffect, useRef } from 'react';
 import type { LabelData } from '@/lib/types';
 import QrOverlay from '@/components/QrOverlay';
 import { TRACKLIST, PREVIEW_PX_PER_MM as S, type SizePreset } from '@/lib/dimensions';
+import { wrapText } from '@/lib/text';
+import { qrPath, shareDataFor, shareUrl } from '@/lib/share';
 
 interface Props {
   data: LabelData;
@@ -31,15 +33,6 @@ export default function TracklistPreview({ data, size, update }: Props) {
         boxShadow: 'inset 0 0 0 1px #000',
       }}
     >
-      {data.tlShowQr && !data.doubleAlbum && (
-        <QrOverlay
-          data={data}
-          moduleMm={0.3}
-          padMm={1.2}
-          className="absolute"
-          style={{ right: TRACKLIST.padding * S, bottom: TRACKLIST.padding * S }}
-        />
-      )}
       {data.doubleAlbum ? (
         <>
           <TracklistColumn
@@ -50,6 +43,9 @@ export default function TracklistPreview({ data, size, update }: Props) {
             tracklist={data.tracklist}
             onChange={(v) => update({ tracklist: v })}
             cols={1}
+            colWmm={size.width / 2}
+            heightMm={size.height}
+            hasQr={false}
           />
           <div className="w-px self-stretch" style={{ background: data.textColor, opacity: 0.4 }} />
           <TracklistColumn
@@ -60,6 +56,9 @@ export default function TracklistPreview({ data, size, update }: Props) {
             tracklist={data.tracklist2}
             onChange={(v) => update({ tracklist2: v })}
             cols={1}
+            colWmm={size.width / 2}
+            heightMm={size.height}
+            hasQr={false}
           />
         </>
       ) : (
@@ -71,6 +70,18 @@ export default function TracklistPreview({ data, size, update }: Props) {
           tracklist={data.tracklist}
           onChange={(v) => update({ tracklist: v })}
           cols={2}
+          colWmm={size.width}
+          heightMm={size.height}
+          hasQr={data.tlShowQr}
+        />
+      )}
+      {data.tlShowQr && !data.doubleAlbum && (
+        <QrOverlay
+          data={data}
+          moduleMm={0.3}
+          padMm={1.2}
+          className="absolute z-20"
+          style={{ right: TRACKLIST.padding * S, bottom: TRACKLIST.padding * S }}
         />
       )}
     </div>
@@ -85,6 +96,9 @@ function TracklistColumn({
   tracklist,
   onChange,
   cols,
+  colWmm,
+  heightMm,
+  hasQr,
 }: {
   data: LabelData;
   album: string;
@@ -93,23 +107,74 @@ function TracklistColumn({
   tracklist: string;
   onChange: (v: string) => void;
   cols: number;
+  /** This column's width and the sheet height, in mm (the twin's geometry). */
+  colWmm: number;
+  heightMm: number;
+  hasQr: boolean;
 }) {
   const PAD = TRACKLIST.padding * S;
-  const titleY = TRACKLIST.padding + data.tlTitleSize * 0.9;
-  const artistY = titleY + data.tlArtistSize + 1;
-  const ruleY = (data.tlShowArtist ? artistY : titleY) + 2.5;
-  const thumb = (ruleY - TRACKLIST.padding) * S;
+  const pad = TRACKLIST.padding;
   const hasThumb = data.showTracklistCover && !!cover;
   const hasTextHeader = data.tlShowAlbum || data.tlShowArtist;
   const hasHeader = hasTextHeader || hasThumb || data.discTotal > 1;
+
+  // Mirror the twin's header/track geometry exactly (same wrapText measures),
+  // so the editor's height — and therefore where CSS columns split the list —
+  // matches where the print splits it.
+  const headerRightW = hasThumb
+    ? data.tlTitleSize + data.tlArtistSize + 4
+    : data.discTotal > 1
+      ? data.tlArtistSize * 2.5
+      : 0;
+  const titleW = Math.max(8, colWmm - 2 * pad - headerRightW);
+  const titleLines = data.tlShowAlbum
+    ? wrapText(album || 'Album', data.titleFont, data.tlTitleSize, titleW, 700)
+    : [];
+  const artistLines = data.tlShowArtist
+    ? wrapText(artist || 'Artist', data.artistFont, data.tlArtistSize, titleW)
+    : [];
+  const lastTitle = titleLines.length
+    ? pad + data.tlTitleSize * 0.9 + (titleLines.length - 1) * data.tlTitleSize * 1.05
+    : pad;
+  const artist0 = data.tlShowAlbum ? lastTitle + data.tlArtistSize + 1 : pad + data.tlArtistSize * 0.9;
+  const lastArtist = artistLines.length
+    ? artist0 + (artistLines.length - 1) * data.tlArtistSize * 1.2
+    : artist0;
+  const headerBottom = data.tlShowArtist ? lastArtist : data.tlShowAlbum ? lastTitle : pad + data.tlArtistSize;
+  const ruleY = hasHeader ? headerBottom + 2.5 : pad;
+  const tracksTop = hasHeader ? ruleY + 4 : pad + data.trackSize * 0.9;
+  const trackGap = data.trackSize * data.lineHeight;
+  const qrSizeMm = hasQr ? qrPath(shareUrl(shareDataFor(data))).count * 0.3 + 2.4 : 0;
+  const maxFull = Math.max(1, Math.floor((heightMm - tracksTop - pad) / trackGap));
+  const qrTop = heightMm - pad - qrSizeMm;
+  const maxShort = hasQr
+    ? Math.max(1, Math.floor((qrTop - tracksTop - 0.2 * data.trackSize) / trackGap) + 1)
+    : maxFull;
+  const thumb = (ruleY - pad) * S;
 
   // Force two columns past a track count that depends on the header height.
   const trackCount = tracklist.split('\n').filter((t) => t.trim()).length;
   const maxOneCol = hasThumb ? 11 : hasTextHeader ? 12 : 15;
   const useCols = cols >= 2 && trackCount > maxOneCol ? 2 : 1;
+  // Two columns: the left one fills the sheet (only the right shares space
+  // with the QR corner, mirroring the twin). One column: stop above the QR.
+  const maxLines = useCols > 1 ? maxFull : maxShort;
 
   return (
-    <div className="flex min-w-0 flex-1 flex-col" style={{ padding: PAD }}>
+    <div className="relative flex min-w-0 flex-1 flex-col" style={{ padding: PAD }}>
+      {hasQr && useCols > 1 && (
+        // Masks the right column's lines below the twin's cut (they don't
+        // print), covering the strip left of the QR too. Starts at the first
+        // dropped line's box top so no partial line shows.
+        <div
+          className="pointer-events-none absolute right-0 bottom-0 z-10"
+          style={{
+            left: (pad + (colWmm - 2 * pad) / 2 - 1) * S,
+            top: Math.min(qrTop, tracksTop + maxShort * trackGap - 0.85 * data.trackSize) * S,
+            background: data.bgColor,
+          }}
+        />
+      )}
       {hasHeader && (
         <div className="flex items-start justify-between gap-2">
           <div className="min-w-0">
@@ -168,7 +233,17 @@ function TracklistColumn({
         </div>
       )}
       {hasHeader && (
-        <div className="my-1 w-full" style={{ height: 1, background: data.textColor, opacity: 0.6 }} />
+        <div
+          className="absolute"
+          style={{
+            top: ruleY * S,
+            left: PAD,
+            right: PAD,
+            height: 1,
+            background: data.textColor,
+            opacity: 0.6,
+          }}
+        />
       )}
 
       <TrackEditor
@@ -182,7 +257,20 @@ function TracklistColumn({
           opacity: data.trackOpacity,
           lineHeight: data.lineHeight,
           letterSpacing: `${data.letterSpacing}em`,
-          columnGap: 1.2 * S,
+          // The twin reserves 2mm at each inner column's right edge; a 4mm CSS
+          // column gap yields the same per-column text width.
+          columnGap: 4 * S,
+          // Pinned to the twin's geometry: rows start at its tracksTop (the
+          // first baseline lands ~0.9 × trackSize below the line-box top) with
+          // the same line budget, so the column split and the stop above the
+          // QR land on the same track as the print. The extra pixel absorbs
+          // fractional line-height rounding at the boundary.
+          position: 'absolute',
+          left: PAD,
+          right: PAD,
+          top: (tracksTop - 0.9 * data.trackSize) * S,
+          height: maxLines * trackGap * S + 1,
+          flex: 'none',
         }}
       />
     </div>

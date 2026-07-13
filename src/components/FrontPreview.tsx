@@ -66,7 +66,9 @@ export default function FrontPreview({ data, size, update, onCover, onCover2 }: 
   const fullSideMm = frontCoverSize(size);
   const textMaxWmm = (portrait ? size.width : size.width - fullSideMm) - 2 * FRONT.padding;
   const textBlockMm = hideText ? 0 : frontTextBlockHeight(data, textMaxWmm);
-  const metaRowMm = (data.showYear && !!data.year) || data.discTotal > 1;
+  // Unlike the twin, an empty-but-shown year still reserves its row so the
+  // Year input has somewhere to live while you type.
+  const metaRowMm = data.showYear || data.discTotal > 1;
   const bottomAnchorMm = metaRowMm
     ? size.height - FRONT.padding - data.yearSize - 0.8
     : size.height - FRONT.padding * 0.7;
@@ -160,7 +162,18 @@ export default function FrontPreview({ data, size, update, onCover, onCover2 }: 
                 <div
                   className="flex flex-col justify-end"
                   style={{
-                    padding: PAD,
+                    // Bottom trimmed so the last baseline lands at the twin's
+                    // H − 0.7 × padding anchor (the box ends ~0.2em below it).
+                    padding: `${PAD}px ${PAD}px ${
+                      PAD * 0.7 -
+                      0.2 *
+                        ((data.showYear || data.discTotal > 1
+                          ? data.yearSize
+                          : data.showArtist
+                            ? data.artistSize
+                            : data.titleSize) *
+                          S)
+                    }px`,
                     gap: data.titleArtistGap * S,
                     background: withAlpha(data.bgColor, data.textBgOpacity),
                   }}
@@ -195,7 +208,12 @@ export default function FrontPreview({ data, size, update, onCover, onCover2 }: 
                     />
                   )}
                   {(data.showYear || data.discTotal > 1) && (
-                    <div className="flex items-baseline justify-between">
+                    <div
+                      className="flex items-baseline justify-between"
+                      // The twin's artist→meta gap is a fixed 0.8mm, not the
+                      // title–artist gap; cancel the flex gap difference.
+                      style={{ marginTop: (0.8 - data.titleArtistGap) * S }}
+                    >
                       {data.showYear ? (
                         <input
                           className="label-field bg-transparent p-0 outline-none"
@@ -205,6 +223,7 @@ export default function FrontPreview({ data, size, update, onCover, onCover2 }: 
                             fontSize: data.yearSize * S,
                             color: data.textColor,
                             opacity: data.artistOpacity,
+                            lineHeight: 1,
                           }}
                           value={data.year}
                           placeholder="Year"
@@ -267,63 +286,67 @@ export default function FrontPreview({ data, size, update, onCover, onCover2 }: 
             />
           )}
 
-          <div
-            className="absolute flex flex-col justify-end"
-            style={{
-              top: portrait ? cover : 0,
-              bottom:
-                data.showYear || data.discTotal > 1
-                  ? PAD * 0.6 + data.yearSize * S + 1.5
-                  : PAD * 0.55,
-              left: portrait ? 0 : cover,
-              width: portrait ? W : W - cover,
-              // Top padding matches the twin's cover→text gap (0.6 × padding).
-              padding: `${PAD * 0.6}px ${PAD}px 0`,
-              gap: data.titleArtistGap * S,
-            }}
-          >
-            <AutoTextarea
-              value={data.album}
-              placeholder="Album"
-              onChange={(v) => update({ album: v })}
+          {!hideText && (
+            <div
+              className="absolute flex flex-col justify-end"
               style={{
-                fontFamily: data.titleFont,
-                fontSize: data.titleSize * S,
-                fontWeight: 700,
-                color: data.textColor,
-                opacity: data.titleOpacity,
-                lineHeight: data.lineHeight,
-                letterSpacing: `${data.letterSpacing}em`,
+                top: portrait ? cover : 0,
+                // Anchor the artist's last BASELINE where the twin puts it:
+                // the trimmed box ends ~0.2em below the baseline (descent).
+                bottom:
+                  ((metaRowMm ? FRONT.padding + data.yearSize + 0.8 : FRONT.padding * 0.7) -
+                    0.2 * (data.showArtist ? data.artistSize : data.titleSize)) *
+                  S,
+                left: portrait ? 0 : cover,
+                width: portrait ? W : W - cover,
+                padding: `0 ${PAD}px`,
+                gap: data.titleArtistGap * S,
               }}
-            />
-            {data.showArtist && (
+            >
               <AutoTextarea
-                value={data.artist}
-                placeholder="Artist"
-                onChange={(v) => update({ artist: v })}
+                value={data.album}
+                placeholder="Album"
+                onChange={(v) => update({ album: v })}
                 style={{
-                  fontFamily: data.artistFont,
-                  fontSize: data.artistSize * S,
+                  fontFamily: data.titleFont,
+                  fontSize: data.titleSize * S,
+                  fontWeight: 700,
                   color: data.textColor,
-                  opacity: data.artistOpacity,
+                  opacity: data.titleOpacity,
                   lineHeight: data.lineHeight,
                   letterSpacing: `${data.letterSpacing}em`,
                 }}
               />
-            )}
-          </div>
+              {data.showArtist && (
+                <AutoTextarea
+                  value={data.artist}
+                  placeholder="Artist"
+                  onChange={(v) => update({ artist: v })}
+                  style={{
+                    fontFamily: data.artistFont,
+                    fontSize: data.artistSize * S,
+                    color: data.textColor,
+                    opacity: data.artistOpacity,
+                    lineHeight: data.lineHeight,
+                    letterSpacing: `${data.letterSpacing}em`,
+                  }}
+                />
+              )}
+            </div>
+          )}
 
           {data.showYear && (
             <input
               className="label-field absolute bg-transparent p-0 outline-none"
               style={{
                 left: (portrait ? 0 : cover) + PAD,
-                bottom: PAD * 0.6,
+                bottom: (FRONT.padding - 0.2 * data.yearSize) * S,
                 width: 70,
                 fontFamily: data.yearFont,
                 fontSize: data.yearSize * S,
                 color: data.textColor,
                 opacity: data.artistOpacity,
+                lineHeight: 1,
               }}
               value={data.year}
               placeholder="Year"
@@ -335,7 +358,7 @@ export default function FrontPreview({ data, size, update, onCover, onCover2 }: 
               className="absolute"
               style={{
                 right: PAD,
-                bottom: PAD * 0.6,
+                bottom: (FRONT.padding - 0.2 * data.yearSize) * S,
                 fontFamily: data.yearFont,
                 fontSize: data.yearSize * S,
                 color: data.textColor,
@@ -641,7 +664,8 @@ function OverlayText({
     <div
       className="absolute right-0 bottom-0 left-0 flex flex-col justify-end"
       style={{
-        padding: pad,
+        // Bottom trimmed to land the artist baseline at the twin's anchor.
+        padding: `${pad}px ${pad}px ${pad * 0.7 - 0.2 * data.artistSize * DOUBLE_TEXT_SCALE * S}px`,
         gap: data.titleArtistGap * S,
         background: withAlpha(data.bgColor, data.textBgOpacity),
       }}
@@ -678,7 +702,12 @@ function OverlayText({
   );
 }
 
-/** A transparent, auto-growing textarea that blends into the label. */
+/**
+ * A transparent, auto-growing textarea that blends into the label. The CSS
+ * half-leading above the first and below the last line is trimmed away with
+ * negative margins, so the box height equals the SVG twin's baseline math
+ * (fontSize + (n−1) × fontSize × lineHeight) and print matches the preview.
+ */
 function AutoTextarea({
   value,
   placeholder,
@@ -696,14 +725,18 @@ function AutoTextarea({
     if (!el) return;
     el.style.height = 'auto';
     el.style.height = `${el.scrollHeight}px`;
-  }, [value, style.fontSize, style.fontFamily]);
+  }, [value, style.fontSize, style.fontFamily, style.lineHeight]);
+
+  const fontPx = typeof style.fontSize === 'number' ? style.fontSize : 0;
+  const lh = typeof style.lineHeight === 'number' ? style.lineHeight : 1.2;
+  const trim = ((lh - 1) / 2) * fontPx;
 
   return (
     <textarea
       ref={ref}
       rows={1}
       className="label-field w-full resize-none overflow-hidden bg-transparent p-0 outline-none"
-      style={style}
+      style={{ ...style, marginTop: -trim, marginBottom: -trim }}
       value={value}
       placeholder={placeholder}
       onChange={(e) => onChange(e.target.value)}
