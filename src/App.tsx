@@ -242,7 +242,7 @@ function CoverControl({
             aria-label="Generator model"
             value={genModel}
             onChange={(e) => onGenModel(e.target.value as GenModel)}
-            className="h-full cursor-pointer appearance-none bg-transparent pr-8 pl-4 text-sm outline-none"
+            className="h-full cursor-pointer appearance-none bg-transparent pr-8 pl-4 text-sm font-medium outline-none"
           >
             {GEN_MODELS.map((m) => (
               <option key={m.id} value={m.id} className="text-foreground">
