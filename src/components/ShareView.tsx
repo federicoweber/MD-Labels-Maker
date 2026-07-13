@@ -4,7 +4,7 @@ import { FwdMark } from '@/components/QrGraphic';
 import { decodeShare } from '@/lib/share';
 import { loadFontForPreview } from '@/lib/fonts';
 import { fetchCovers, splitBoldArtist, splitTrack } from '@/lib/tracklist';
-import { generateArtCover } from '@/lib/genart';
+import { generateArtCover, type GenModel } from '@/lib/genart';
 
 // The app's default label palette/typography, for older QR codes that don't
 // carry style fields.
@@ -46,11 +46,14 @@ export default function ShareView({ encoded }: { encoded: string }) {
   const artist = data?.artist ?? '';
   const coverUrl = data?.coverUrl;
   // '-' marks "no cover on purpose" (playlists) — don't search either.
-  // 'gen:<salt>' is the deterministic geometric cover, regenerated here from
-  // the same artist + album + tracklist + salt seed and the label's colours.
+  // 'gen:<salt>[:<model>]' is the deterministic generative cover, regenerated
+  // here from the same artist + album + tracklist + salt seed, model, and the
+  // label's colours.
   const suppressCover = coverUrl === '-';
   const isGenerated = !!coverUrl?.startsWith('gen');
-  const genSalt = coverUrl?.startsWith('gen:') ? coverUrl.slice(4) : '';
+  const [genSalt = '', genModel = 'auto'] = coverUrl?.startsWith('gen:')
+    ? coverUrl.slice(4).split(':')
+    : [];
   useEffect(() => {
     if (suppressCover || isGenerated || coverUrl || !album || !artist) return;
     let cancelled = false;
@@ -73,10 +76,12 @@ export default function ShareView({ encoded }: { encoded: string }) {
             genSalt,
             data.bgColor || FALLBACK.bgColor,
             data.textColor || FALLBACK.textColor,
+            600,
+            genModel as GenModel,
           )
         : null,
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [isGenerated, genSalt, album, artist, data?.tracklist, data?.bgColor, data?.textColor],
+    [isGenerated, genSalt, genModel, album, artist, data?.tracklist, data?.bgColor, data?.textColor],
   );
   const cover = suppressCover ? null : isGenerated ? generatedCover : (coverUrl ?? fetchedCover);
 

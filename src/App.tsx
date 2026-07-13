@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { Check, ChevronLeft, ChevronRight, Copy } from 'lucide-react';
+import { Check, ChevronDown, ChevronLeft, ChevronRight, Copy } from 'lucide-react';
 import type { LabelData } from '@/lib/types';
 import FrontLabel from '@/components/FrontLabel';
 import SpineLabel from '@/components/SpineLabel';
@@ -30,7 +30,7 @@ import { loadDiscs, saveDiscs } from '@/lib/storage';
 import { readImageFile } from '@/lib/utils';
 import { decodeDiscs, setupUrl, shareDataFor, shareUrl } from '@/lib/share';
 import { imageToDataUrl } from '@/lib/spotify';
-import { generateArtCover } from '@/lib/genart';
+import { generateArtCover, GEN_MODELS, type GenModel } from '@/lib/genart';
 import { downloadLabelsZip, type ZipLabel } from '@/lib/exportPng';
 import { extractPalette, bestTextColor } from '@/lib/colors';
 import {
@@ -184,6 +184,8 @@ function CoverControl({
   onFetch,
   onUpload,
   onGenerate,
+  genModel,
+  onGenModel,
   options,
   index,
   onCycle,
@@ -193,6 +195,8 @@ function CoverControl({
   onFetch: () => void;
   onUpload: (dataUrl: string) => void;
   onGenerate: () => void;
+  genModel: GenModel;
+  onGenModel: (m: GenModel) => void;
   /** Only the count is shown; elements are opaque here. */
   options: unknown[];
   index: number;
@@ -207,14 +211,31 @@ function CoverControl({
       <Button variant="outline" className="w-fit" onClick={() => fileInput.current?.click()}>
         Upload
       </Button>
-      <Button
-        variant="outline"
-        className="w-fit"
-        title="Generate a geometric cover seeded by the artist, album and tracklist"
-        onClick={onGenerate}
-      >
-        Generate
-      </Button>
+      <div className="flex items-stretch">
+        <Button
+          variant="outline"
+          className="w-fit rounded-r-none"
+          title="Generate a cover seeded by the artist, album and tracklist"
+          onClick={onGenerate}
+        >
+          Generate
+        </Button>
+        <div className="relative inline-flex items-center border border-l-0 border-input bg-transparent">
+          <select
+            aria-label="Generator model"
+            value={genModel}
+            onChange={(e) => onGenModel(e.target.value as GenModel)}
+            className="h-full cursor-pointer appearance-none bg-transparent pr-6 pl-2 text-xs outline-none hover:text-foreground"
+          >
+            {GEN_MODELS.map((m) => (
+              <option key={m.id} value={m.id} className="text-foreground">
+                {m.name}
+              </option>
+            ))}
+          </select>
+          <ChevronDown className="pointer-events-none absolute right-1.5 size-3" />
+        </div>
+      </div>
       <input
         ref={fileInput}
         type="file"
@@ -286,6 +307,7 @@ export default function App() {
   const [exporting, setExporting] = useState(false);
   const [deleteIndex, setDeleteIndex] = useState<number | null>(null);
   const [printOpen, setPrintOpen] = useState(false);
+  const [genModel, setGenModel] = useState<GenModel>('auto');
 
   // A #d=… link (from "Export setup link") offers to restore that whole setup.
   const [pendingImport, setPendingImport] = useState<Partial<LabelData>[] | null>(() => {
@@ -467,10 +489,11 @@ export default function App() {
     update({ coverDataUrl: coverOptions[next].dataUrl, coverSourceUrl: coverOptions[next].url });
   }
 
-  // Geometric cover seeded by artist + album + tracklist plus a fresh random
-  // salt per press — press again for a new variation. The salt is stored in
-  // coverSourceUrl (gen:<salt>) so the QR page regenerates the same one. The
-  // cover already uses the label's colours, so skip the palette auto-recolour.
+  // Generative cover seeded by artist + album + tracklist plus a fresh random
+  // salt per press — press again for a new variation of the selected model.
+  // Salt + model are stored in coverSourceUrl (gen:<salt>[:<model>]) so the QR
+  // page regenerates the same one. The cover already uses the label's colours,
+  // so skip the palette auto-recolour.
   function generateCover() {
     const salt = Math.random().toString(36).slice(2, 8);
     const dataUrl = generateArtCover(
@@ -480,6 +503,8 @@ export default function App() {
       salt,
       data.bgColor,
       data.textColor,
+      600,
+      genModel,
     );
     setCoverOptions([]);
     setCoverIndex(0);
@@ -487,7 +512,10 @@ export default function App() {
     autoColoredFor.current = [dataUrl, data.doubleAlbum ? data.coverDataUrl2 : null]
       .filter(Boolean)
       .join('|');
-    update({ coverDataUrl: dataUrl, coverSourceUrl: `gen:${salt}` });
+    update({
+      coverDataUrl: dataUrl,
+      coverSourceUrl: genModel === 'auto' ? `gen:${salt}` : `gen:${salt}:${genModel}`,
+    });
   }
 
   function generateCover2() {
@@ -499,6 +527,8 @@ export default function App() {
       salt,
       data.bgColor,
       data.textColor,
+      600,
+      genModel,
     );
     setCoverOptions2([]);
     setCoverIndex2(0);
@@ -844,6 +874,8 @@ export default function App() {
                 onFetch={() => void loadCovers()}
                 onUpload={onCover}
                 onGenerate={generateCover}
+                genModel={genModel}
+                onGenModel={setGenModel}
                 options={coverOptions}
                 index={coverIndex}
                 onCycle={cycleCover}
@@ -854,6 +886,8 @@ export default function App() {
                 onFetch={() => void loadCovers2()}
                 onUpload={onCover2}
                 onGenerate={generateCover2}
+                genModel={genModel}
+                onGenModel={setGenModel}
                 options={coverOptions2}
                 index={coverIndex2}
                 onCycle={cycleCover2}
@@ -866,6 +900,8 @@ export default function App() {
               onFetch={() => void loadCovers()}
               onUpload={onCover}
               onGenerate={generateCover}
+              genModel={genModel}
+              onGenModel={setGenModel}
               options={coverOptions}
               index={coverIndex}
               onCycle={cycleCover}

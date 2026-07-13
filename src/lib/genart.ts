@@ -166,6 +166,39 @@ function spirograph(cx: Ctx, size: number, rand: Rand): void {
   cx.stroke();
 }
 
+/** Conway's Game of Life: a seeded soup run for a few dozen generations. */
+function gameOfLife(cx: Ctx, size: number, rand: Rand): void {
+  const n = 48;
+  const generations = 30 + Math.floor(rand() * 20);
+  let grid = new Uint8Array(n * n);
+  for (let i = 0; i < grid.length; i++) grid[i] = rand() < 0.32 ? 1 : 0;
+  const stepGol = (g: Uint8Array): Uint8Array<ArrayBuffer> => {
+    const next = new Uint8Array(n * n);
+    for (let y = 0; y < n; y++) {
+      for (let x = 0; x < n; x++) {
+        let alive = 0;
+        for (let dy = -1; dy <= 1; dy++) {
+          for (let dx = -1; dx <= 1; dx++) {
+            if (!dx && !dy) continue;
+            alive += g[((y + dy + n) % n) * n + ((x + dx + n) % n)];
+          }
+        }
+        const i = y * n + x;
+        next[i] = alive === 3 || (alive === 2 && g[i]) ? 1 : 0;
+      }
+    }
+    return next;
+  };
+  for (let g = 0; g < generations; g++) grid = stepGol(grid);
+  const cell = size / n;
+  for (let y = 0; y < n; y++) {
+    for (let x = 0; x < n; x++) {
+      if (!grid[y * n + x]) continue;
+      cx.fillRect(Math.round(x * cell), Math.round(y * cell), Math.ceil(cell), Math.ceil(cell));
+    }
+  }
+}
+
 /** Recursive quadtree subdivision, leaves drawn as circles or squares. */
 function quadtree(cx: Ctx, size: number, rand: Rand): void {
   const maxDepth = 4 + Math.floor(rand() * 2);
@@ -199,7 +232,40 @@ function quadtree(cx: Ctx, size: number, rand: Rand): void {
   divide(0, 0, size, 0);
 }
 
-const FAMILIES = [halftone, rings, polygons, stripes, spirograph, quadtree];
+/** The selectable generator models. 'auto' picks one from the seed. */
+export const GEN_MODELS = [
+  { id: 'auto', name: 'Auto' },
+  { id: 'halftone', name: 'Halftone' },
+  { id: 'rings', name: 'Rings' },
+  { id: 'polygons', name: 'Polygons' },
+  { id: 'stripes', name: 'Stripes' },
+  { id: 'spirograph', name: 'Spirograph' },
+  { id: 'quadtree', name: 'Quadtree' },
+  { id: 'gol', name: 'Game of Life' },
+] as const;
+
+export type GenModel = (typeof GEN_MODELS)[number]['id'];
+
+const FAMILY_BY_ID: Record<Exclude<GenModel, 'auto'>, (cx: Ctx, size: number, rand: Rand) => void> = {
+  halftone,
+  rings,
+  polygons,
+  stripes,
+  spirograph,
+  quadtree,
+  gol: gameOfLife,
+};
+
+// 'auto' draws from the seeded families (Game of Life only comes up when
+// picked explicitly, to keep the auto pool cohesive).
+const AUTO_POOL: Exclude<GenModel, 'auto'>[] = [
+  'halftone',
+  'rings',
+  'polygons',
+  'stripes',
+  'spirograph',
+  'quadtree',
+];
 
 /** Render the generative cover as a PNG data URL (square, `size` px).
  * `salt` varies per Generate press (and travels in the QR link) so the same
@@ -212,6 +278,7 @@ export function generateArtCover(
   bgColor: string,
   textColor: string,
   size = 600,
+  model: GenModel = 'auto',
 ): string {
   const rand = mulberry32(xmur3(`${artist}|${album}|${tracklist}`.toLowerCase() + `|${salt}`)());
   const canvas = document.createElement('canvas');
@@ -221,7 +288,7 @@ export function generateArtCover(
   cx.fillRect(0, 0, size, size);
   cx.fillStyle = textColor;
   cx.strokeStyle = textColor;
-  const family = FAMILIES[Math.floor(rand() * FAMILIES.length)];
-  family(cx, size, rand);
+  const id = model === 'auto' ? AUTO_POOL[Math.floor(rand() * AUTO_POOL.length)] : model;
+  FAMILY_BY_ID[id](cx, size, rand);
   return canvas.toDataURL('image/png');
 }
