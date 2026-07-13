@@ -236,8 +236,8 @@ function CoverControl({
           </div>
         )}
       </div>
-      <div className="flex items-stretch">
-        <div className="relative inline-flex items-center border border-r-0 border-input bg-transparent">
+      <div className="flex items-stretch gap-3">
+        <div className="relative inline-flex items-center border border-input bg-transparent">
           <select
             aria-label="Generator model"
             value={genModel}
@@ -254,7 +254,7 @@ function CoverControl({
         </div>
         <Button
           variant="outline"
-          className="w-fit rounded-l-none"
+          className="w-fit"
           title="Generate a cover seeded by the artist, album and tracklist"
           onClick={onGenerate}
         >

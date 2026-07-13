@@ -199,39 +199,6 @@ function gameOfLife(cx: Ctx, size: number, rand: Rand): void {
   }
 }
 
-/** Recursive quadtree subdivision, leaves drawn as circles or squares. */
-function quadtree(cx: Ctx, size: number, rand: Rand): void {
-  const maxDepth = 4 + Math.floor(rand() * 2);
-  const shape = pick(rand, ['circle', 'square'] as const);
-  const outline = rand() < 0.4;
-  const divide = (x: number, y: number, s: number, depth: number): void => {
-    const p = depth === 0 ? 1 : depth < maxDepth ? 0.72 - depth * 0.12 : 0;
-    if (rand() < p) {
-      const h = s / 2;
-      divide(x, y, h, depth + 1);
-      divide(x + h, y, h, depth + 1);
-      divide(x, y + h, h, depth + 1);
-      divide(x + h, y + h, h, depth + 1);
-      return;
-    }
-    const inset = s * 0.12;
-    if (shape === 'circle') {
-      cx.beginPath();
-      cx.arc(x + s / 2, y + s / 2, s / 2 - inset, 0, Math.PI * 2);
-      if (outline) {
-        cx.lineWidth = Math.max(1.5, s * 0.06);
-        cx.stroke();
-      } else cx.fill();
-    } else if (outline) {
-      cx.lineWidth = Math.max(1.5, s * 0.06);
-      cx.strokeRect(x + inset, y + inset, s - 2 * inset, s - 2 * inset);
-    } else {
-      cx.fillRect(x + inset, y + inset, s - 2 * inset, s - 2 * inset);
-    }
-  };
-  divide(0, 0, size, 0);
-}
-
 /** The selectable generator models. 'auto' picks one from the seed. */
 export const GEN_MODELS = [
   { id: 'auto', name: 'Auto' },
@@ -240,7 +207,6 @@ export const GEN_MODELS = [
   { id: 'polygons', name: 'Polygons' },
   { id: 'stripes', name: 'Stripes' },
   { id: 'spirograph', name: 'Spirograph' },
-  { id: 'quadtree', name: 'Quadtree' },
   { id: 'gol', name: 'Game of Life' },
 ] as const;
 
@@ -252,7 +218,6 @@ const FAMILY_BY_ID: Record<Exclude<GenModel, 'auto'>, (cx: Ctx, size: number, ra
   polygons,
   stripes,
   spirograph,
-  quadtree,
   gol: gameOfLife,
 };
 
@@ -264,7 +229,6 @@ const AUTO_POOL: Exclude<GenModel, 'auto'>[] = [
   'polygons',
   'stripes',
   'spirograph',
-  'quadtree',
 ];
 
 /** Render the generative cover as a PNG data URL (square, `size` px).
@@ -288,7 +252,11 @@ export function generateArtCover(
   cx.fillRect(0, 0, size, size);
   cx.fillStyle = textColor;
   cx.strokeStyle = textColor;
-  const id = model === 'auto' ? AUTO_POOL[Math.floor(rand() * AUTO_POOL.length)] : model;
+  // Unknown ids (e.g. links to a since-removed model) fall back to the pool.
+  const id =
+    model !== 'auto' && model in FAMILY_BY_ID
+      ? model
+      : AUTO_POOL[Math.floor(rand() * AUTO_POOL.length)];
   FAMILY_BY_ID[id](cx, size, rand);
   return canvas.toDataURL('image/png');
 }
