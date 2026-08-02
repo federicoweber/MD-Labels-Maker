@@ -1095,6 +1095,8 @@ export default function App() {
               }}
             />
           </div>
+          </aside>
+          <aside className="w-80 shrink-0">
           <LabelControls
             fields={frontFields}
             families={families}
