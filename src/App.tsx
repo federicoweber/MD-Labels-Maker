@@ -8,6 +8,7 @@ import FrontPreview from '@/components/FrontPreview';
 import SpinePreview from '@/components/SpinePreview';
 import TracklistPreview from '@/components/TracklistPreview';
 import SizeSelect from '@/components/SizeSelect';
+import SizeSlider from '@/components/SizeSlider';
 import SpotifyControl from '@/components/SpotifyControl';
 import LabelControls, { type TypoField } from '@/components/LabelControls';
 import Controls from '@/components/Controls';
@@ -95,6 +96,8 @@ const INITIAL: LabelData = {
   tlShowArtist: true,
   tlTitleSize: TRACKLIST.titleSize,
   tlArtistSize: TRACKLIST.artistSize,
+  tlTitleOpacity: 1,
+  tlArtistOpacity: 1,
   showTrackDuration: false,
   titleOpacity: 1,
   artistOpacity: 1,
@@ -1338,6 +1341,30 @@ export default function App() {
                     onCheckedChange={(v) => update({ tlSync: v })}
                   />
                 </div>
+                {data.tlShowAlbum && (
+                  <SizeSlider
+                    id="tl-album-opacity"
+                    label="Album opacity"
+                    value={data.tlTitleOpacity}
+                    min={0}
+                    max={1}
+                    step={0.05}
+                    format={(v) => `${Math.round(v * 100)}%`}
+                    onChange={(v) => update({ tlTitleOpacity: v })}
+                  />
+                )}
+                {data.tlShowArtist && (
+                  <SizeSlider
+                    id="tl-artist-opacity"
+                    label="Artist opacity"
+                    value={data.tlArtistOpacity}
+                    min={0}
+                    max={1}
+                    step={0.05}
+                    format={(v) => `${Math.round(v * 100)}%`}
+                    onChange={(v) => update({ tlArtistOpacity: v })}
+                  />
+                )}
               {!data.tlSync && (
                 <LabelControls
                   fields={trackFields}

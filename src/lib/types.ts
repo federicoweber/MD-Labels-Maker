@@ -103,6 +103,9 @@ export interface LabelData {
   tlShowArtist: boolean;
   tlTitleSize: number;
   tlArtistSize: number;
+  /** Tracklist header opacity, independent from the cover header. */
+  tlTitleOpacity: number;
+  tlArtistOpacity: number;
   /** Show each track's duration (right-aligned) on the tracklist sheet. */
   showTrackDuration: boolean;
   /** Album year, shown bottom-left of the front label when enabled. */

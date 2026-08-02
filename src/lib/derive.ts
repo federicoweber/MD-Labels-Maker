@@ -38,7 +38,7 @@ export function expandDiscs(discs: LabelData[]): LabelData[] {
  */
 export function tlEffFor(d: LabelData): LabelData {
   const e = effFor(d);
-  return d.tlSync
+  const synced = d.tlSync
     ? { ...e, trackFont: e.artistFont }
     : {
         ...e,
@@ -47,4 +47,9 @@ export function tlEffFor(d: LabelData): LabelData {
         letterSpacing: d.tlLetterSpacing,
         lineHeight: d.tlLineHeight,
       };
+  return {
+    ...synced,
+    titleOpacity: d.tlTitleOpacity,
+    artistOpacity: d.tlArtistOpacity,
+  };
 }
