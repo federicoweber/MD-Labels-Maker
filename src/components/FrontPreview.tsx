@@ -804,12 +804,14 @@ function AlignControls({
   };
   return (
     <div
-      className="group/artwork pointer-events-auto absolute inset-0 z-10"
+      className="group/artwork pointer-events-none absolute inset-0"
       onMouseEnter={() => onHighlight(true)}
       onMouseLeave={() => onHighlight(false)}
     >
+      {/* Hover surface stays below text; the revealed controls rise above it. */}
+      <div className="pointer-events-auto absolute inset-0 z-10" />
       {Math.abs(horizontalShift) > 0.01 && (
-        <div className="pointer-events-auto absolute top-2 left-1/2 flex -translate-x-1/2 items-center gap-1 rounded-full bg-black/70 px-2 py-1.5 text-white opacity-0 transition-opacity group-hover/artwork:opacity-100">
+        <div className="pointer-events-none absolute top-1/2 left-1/2 z-30 flex -translate-x-1/2 -translate-y-1/2 items-center gap-1 rounded-full bg-black/70 px-2 py-1.5 text-white opacity-0 transition-opacity group-hover/artwork:pointer-events-auto group-hover/artwork:opacity-100">
         <button
           type="button"
           aria-label="Align cover left"
@@ -857,7 +859,7 @@ function AlignControls({
         </div>
       )}
       {Math.abs(verticalShift) > 0.01 && (
-        <div className="pointer-events-auto absolute top-1/2 right-2 flex -translate-y-1/2 flex-col items-center gap-1 rounded-full bg-black/70 px-1.5 py-2 text-white opacity-0 transition-opacity group-hover/artwork:opacity-100">
+        <div className="pointer-events-none absolute top-1/2 right-2 z-30 flex -translate-y-1/2 flex-col items-center gap-1 rounded-full bg-black/70 px-1.5 py-2 text-white opacity-0 transition-opacity group-hover/artwork:pointer-events-auto group-hover/artwork:opacity-100">
           <button
             type="button"
             aria-label="Align cover top"
