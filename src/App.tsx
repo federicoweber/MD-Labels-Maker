@@ -446,12 +446,6 @@ export default function App() {
     setActiveIndex(na);
   }
 
-  // Reset the current disc to a blank state.
-  function clearDisc() {
-    resetCoverUi(null);
-    setData(INITIAL);
-  }
-
   // Recompute the palette + auto bg/text whenever a cover changes (sampling both
   // covers in double-album mode).
   useEffect(() => {
@@ -906,9 +900,6 @@ export default function App() {
           </div>
           <aside className="flex w-80 flex-col gap-2">
           <SizeSelect label="Cover size" value={frontSize} presets={FRONT_PRESETS} onChange={setFrontSize} />
-          <Button variant="outline" className="w-fit" onClick={clearDisc}>
-            Clear
-          </Button>
           {data.doubleAlbum ? (
             <div className="flex flex-col gap-2">
               <CoverControl
