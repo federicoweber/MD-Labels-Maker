@@ -39,6 +39,7 @@ import {
   FRONT_PRESETS,
   SPINE_PRESETS,
   TRACKLIST_PRESETS,
+  orientedFrontSize,
 } from '@/lib/dimensions';
 const DEFAULT_FONT = 'Inconsolata';
 
@@ -58,6 +59,7 @@ const INITIAL: LabelData = {
   tracklist2: '',
   doubleHideText: false,
   showChamfer: true,
+  verticalMode: false,
   fullHeight: false,
   coverPadding: 0,
   fullHeightAlign: 0.5,
@@ -678,6 +680,7 @@ export default function App() {
       const fonts = new Set<string>();
       const multi = outputs.length > 1;
       outputs.forEach((disc, i) => {
+        const outputFrontSize = orientedFrontSize(frontSize, disc.verticalMode);
         const base = [disc.artist, disc.album].map(slug).filter(Boolean).join('-') || 'minidisc';
         const discTag = disc.discTotal > 1 ? `-disc${disc.discNumber}` : '';
         const prefix = multi ? `${String(i + 1).padStart(2, '0')}-${base}${discTag}/` : '';
@@ -686,7 +689,12 @@ export default function App() {
         const spine = get('spine');
         const tracklist = get('tracklist');
         if (front)
-          labels.push({ svg: front, widthMm: frontSize.width, heightMm: frontSize.height, name: `${prefix}front.png` });
+          labels.push({
+            svg: front,
+            widthMm: outputFrontSize.width,
+            heightMm: outputFrontSize.height,
+            name: `${prefix}front.png`,
+          });
         if (disc.showSpine && spine)
           for (let c = 0; c < disc.spineCount; c++)
             labels.push({
@@ -869,6 +877,7 @@ export default function App() {
   const tlEff = tlEffFor(data);
   // Materialised per-disc label data (multi-disc entries become N) for export + twins.
   const outputs = expandDiscs(discs);
+  const activeFrontSize = orientedFrontSize(frontSize, data.verticalMode);
 
   return (
     <div className="flex h-svh overflow-hidden">
@@ -889,7 +898,7 @@ export default function App() {
           <SizeSelect label="Cover" value={frontSize} presets={FRONT_PRESETS} onChange={setFrontSize} />
           <FrontPreview
             data={eff}
-            size={frontSize}
+            size={activeFrontSize}
             update={update}
             onCover={onCover}
             onCover2={onCover2}
@@ -996,6 +1005,16 @@ export default function App() {
               id="show-chamfer"
               checked={data.showChamfer}
               onCheckedChange={(v) => update({ showChamfer: v })}
+            />
+          </div>
+          <div className="flex w-full items-center justify-between">
+            <Label htmlFor="vertical-mode" className="text-xs">
+              Vertical mode
+            </Label>
+            <Switch
+              id="vertical-mode"
+              checked={data.verticalMode}
+              onCheckedChange={(v) => update({ verticalMode: v })}
             />
           </div>
           {!data.doubleAlbum && (
@@ -1288,9 +1307,14 @@ export default function App() {
         {outputs.map((disc, i) => {
           const e = effFor(disc);
           const te = tlEffFor(disc);
+          const outputFrontSize = orientedFrontSize(frontSize, disc.verticalMode);
           return (
             <div key={i}>
-              <FrontLabel ref={(el) => void (twinRefs.current[`${i}-front`] = el)} {...e} size={frontSize} />
+              <FrontLabel
+                ref={(el) => void (twinRefs.current[`${i}-front`] = el)}
+                {...e}
+                size={outputFrontSize}
+              />
               <SpineLabel ref={(el) => void (twinRefs.current[`${i}-spine`] = el)} {...e} size={spineSize} />
               <TracklistSheet ref={(el) => void (twinRefs.current[`${i}-tracklist`] = el)} {...te} size={tracklistSize} />
             </div>

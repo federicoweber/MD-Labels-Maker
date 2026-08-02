@@ -26,6 +26,8 @@ export interface LabelData {
   doubleHideText: boolean;
   /** Cut (chamfer) the front label's top-left corner. */
   showChamfer: boolean;
+  /** Rotate the front-label layout by 90 degrees. */
+  verticalMode: boolean;
   /** Single-album mode: scale the cover to the label's full height (cropped horizontally). */
   fullHeight: boolean;
   /** Uniform padding around the square cover in standard mode, in mm. */

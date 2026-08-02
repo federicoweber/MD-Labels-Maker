@@ -63,6 +63,11 @@ export function frontCoverSize(size: SizePreset): number {
   return Math.min(size.width, size.height);
 }
 
+/** Swap the physical front-label axes for the 90-degree layout. */
+export function orientedFrontSize(size: SizePreset, verticalMode: boolean): SizePreset {
+  return verticalMode ? { width: size.height, height: size.width } : size;
+}
+
 /** Square artwork geometry for the standard front-cover layout. */
 export function standardCoverGeometry(
   size: SizePreset,
