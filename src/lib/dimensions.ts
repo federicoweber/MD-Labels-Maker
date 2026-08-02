@@ -62,3 +62,23 @@ export function mmToPx(mm: number, dpi: number = EXPORT_DPI): number {
 export function frontCoverSize(size: SizePreset): number {
   return Math.min(size.width, size.height);
 }
+
+/** Square artwork geometry for the standard front-cover layout. */
+export function standardCoverGeometry(
+  size: SizePreset,
+  availableHeight: number,
+  padding: number,
+): { x: number; y: number; side: number; zoneSide: number } {
+  const portrait = size.height >= size.width;
+  const zoneSide = portrait
+    ? Math.min(size.width, Math.max(1, availableHeight))
+    : frontCoverSize(size);
+  const inset = Math.min(Math.max(0, padding), Math.max(0, (zoneSide - 1) / 2));
+  const side = zoneSide - inset * 2;
+  return {
+    x: portrait ? (size.width - side) / 2 : inset,
+    y: inset,
+    side,
+    zoneSide,
+  };
+}

@@ -1,6 +1,12 @@
 import { forwardRef, useId } from 'react';
 import type { LabelData } from '@/lib/types';
-import { FRONT, PREVIEW_PX_PER_MM, frontCoverSize, type SizePreset } from '@/lib/dimensions';
+import {
+  FRONT,
+  PREVIEW_PX_PER_MM,
+  frontCoverSize,
+  standardCoverGeometry,
+  type SizePreset,
+} from '@/lib/dimensions';
 import { frontTextBlockHeight, wrapText } from '@/lib/text';
 import { splitBoldArtist, splitTrack } from '@/lib/tracklist';
 import { qrPath, shareDataFor, shareUrl } from '@/lib/share';
@@ -20,6 +26,7 @@ const FrontLabel = forwardRef<SVGSVGElement, Props>(function FrontLabel(props, r
     doubleAlbum,
     doubleHideText,
     fullHeight,
+    coverPadding,
     fullHeightAlign,
     fullHeightTextY,
     textBgOpacity,
@@ -379,16 +386,12 @@ const FrontLabel = forwardRef<SVGSVGElement, Props>(function FrontLabel(props, r
     : bottomAnchor;
   const firstBaseline = lastTitleBaseline - (titleLines.length - 1) * titleLH;
   const textBlockH = hideText ? 0 : frontTextBlockHeight(props, textMaxWidth);
-  // The cover area keeps the full label width; only its height gives way to
-  // the text (the image is centre-cropped into it, like a CSS object-fit
-  // cover). In landscape the cover stays the left square column.
-  const coverH = portrait
+  const availableCoverH = portrait
     ? Math.max(6, bottomAnchor - textBlockH - padding * 0.6)
     : cover;
-  const coverW = portrait ? W : cover;
+  const coverGeo = standardCoverGeometry(size, availableCoverH, coverPadding);
   const textX = (portrait ? 0 : cover) + padding;
-  const singleTracks = doubleAlbum || fullHeight ? null : buildTracks(coverW, coverH);
-  const qrSide = Math.min(coverW, coverH);
+  const singleTracks = doubleAlbum || fullHeight ? null : buildTracks(coverGeo.side, coverGeo.side);
 
   return (
     <svg
@@ -421,18 +424,24 @@ const FrontLabel = forwardRef<SVGSVGElement, Props>(function FrontLabel(props, r
             {coverDataUrl ? (
               <image
                 href={coverDataUrl}
-                x={0}
-                y={0}
-                width={coverW}
-                height={coverH}
-                preserveAspectRatio="xMidYMid slice"
+                x={coverGeo.x}
+                y={coverGeo.y}
+                width={coverGeo.side}
+                height={coverGeo.side}
+                preserveAspectRatio="xMidYMid meet"
               />
             ) : (
               <>
-                <rect x={0} y={0} width={coverW} height={coverH} fill="#d8d8d8" />
+                <rect
+                  x={coverGeo.x}
+                  y={coverGeo.y}
+                  width={coverGeo.side}
+                  height={coverGeo.side}
+                  fill="#d8d8d8"
+                />
                 <text
-                  x={coverW / 2}
-                  y={coverH / 2}
+                  x={coverGeo.x + coverGeo.side / 2}
+                  y={coverGeo.y + coverGeo.side / 2}
                   fill="#8a8a8a"
                   fontFamily="'Roboto Mono', monospace"
                   fontSize={2.4}
@@ -443,7 +452,14 @@ const FrontLabel = forwardRef<SVGSVGElement, Props>(function FrontLabel(props, r
                 </text>
               </>
             )}
-            {singleTracks && tracksBlock(0, coverW, coverH - singleTracks.height, singleTracks, 'ft')}
+            {singleTracks &&
+              tracksBlock(
+                coverGeo.x,
+                coverGeo.side,
+                coverGeo.y + coverGeo.side - singleTracks.height,
+                singleTracks,
+                'ft',
+              )}
 
             {!hideText && (
               <text
@@ -503,7 +519,7 @@ const FrontLabel = forwardRef<SVGSVGElement, Props>(function FrontLabel(props, r
                 {discNumber}/{discTotal}
               </text>
             )}
-            {qrAt((coverW - qrSide) / 2, (coverH - qrSide) / 2, qrSide)}
+            {qrAt(coverGeo.x, coverGeo.y, coverGeo.side)}
           </>
         )}
       </g>

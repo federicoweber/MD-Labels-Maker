@@ -59,6 +59,7 @@ const INITIAL: LabelData = {
   doubleHideText: false,
   showChamfer: true,
   fullHeight: false,
+  coverPadding: 0,
   fullHeightAlign: 0.5,
   fullHeightTextY: 1,
   textBgOpacity: 1,
@@ -1084,6 +1085,11 @@ export default function App() {
               data.showQr ||
               ((data.doubleAlbum || data.fullHeight) && !data.doubleHideText)
                 ? { value: data.textBgOpacity, onChange: (v) => update({ textBgOpacity: v }) }
+                : undefined
+            }
+            coverPadding={
+              !data.doubleAlbum && !data.fullHeight
+                ? { value: data.coverPadding, onChange: (v) => update({ coverPadding: v }) }
                 : undefined
             }
             textColor={data.textColor}

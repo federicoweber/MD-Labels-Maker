@@ -28,6 +28,8 @@ export interface LabelData {
   showChamfer: boolean;
   /** Single-album mode: scale the cover to the label's full height (cropped horizontally). */
   fullHeight: boolean;
+  /** Uniform padding around the square cover in standard mode, in mm. */
+  coverPadding: number;
   /** Horizontal crop alignment of the full-height cover (0 = left edge, 0.5 = centre, 1 = right edge). */
   fullHeightAlign: number;
   /** Vertical position of the text band on the full-height cover (0 = top, 1 = bottom). */

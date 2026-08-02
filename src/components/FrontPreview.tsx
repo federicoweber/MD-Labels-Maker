@@ -10,7 +10,13 @@ import {
 import type { LabelData } from '@/lib/types';
 import { TrackEditor } from '@/components/TracklistPreview';
 import QrOverlay from '@/components/QrOverlay';
-import { FRONT, PREVIEW_PX_PER_MM as S, frontCoverSize, type SizePreset } from '@/lib/dimensions';
+import {
+  FRONT,
+  PREVIEW_PX_PER_MM as S,
+  frontCoverSize,
+  standardCoverGeometry,
+  type SizePreset,
+} from '@/lib/dimensions';
 import { frontTextBlockHeight } from '@/lib/text';
 import { readImageFile, withAlpha } from '@/lib/utils';
 
@@ -59,9 +65,8 @@ export default function FrontPreview({ data, size, update, onCover, onCover2 }: 
   const H = size.height * S;
   const portrait = size.height >= size.width;
   const PAD = FRONT.padding * S;
-  // The cover area keeps the full label width; only its height gives way to
-  // the (uncapped) text block — same math as the SVG twin. The image is
-  // centre-cropped into the area like a CSS object-fit cover.
+  // The standard cover remains square and gives way to the uncapped text
+  // block. Shared geometry keeps this editable preview identical to its SVG.
   const hideText = data.doubleHideText;
   const fullSideMm = frontCoverSize(size);
   const textMaxWmm = (portrait ? size.width : size.width - fullSideMm) - 2 * FRONT.padding;
@@ -75,10 +80,9 @@ export default function FrontPreview({ data, size, update, onCover, onCover2 }: 
   const coverHmm = portrait
     ? Math.max(6, bottomAnchorMm - textBlockMm - FRONT.padding * 0.6)
     : fullSideMm;
-  const coverWmm = portrait ? size.width : fullSideMm;
-  const cover = coverHmm * S;
-  const coverWpx = coverWmm * S;
-  const qrSideMm = Math.min(coverWmm, coverHmm);
+  const coverGeo = standardCoverGeometry(size, coverHmm, data.coverPadding);
+  const cover = coverGeo.zoneSide * S;
+  const coverSidePx = coverGeo.side * S;
   const chamfer = data.showChamfer ? FRONT.chamfer : 0;
   const CH = chamfer * S;
   const CLIP = `polygon(${CH}px 0, 100% 0, 100% 100%, 0 100%, 0 ${CH}px)`;
@@ -258,7 +262,14 @@ export default function FrontPreview({ data, size, update, onCover, onCover2 }: 
             src={data.coverDataUrl}
             onCover={onCover}
             pageDragging={pageDragging}
-            style={{ position: 'absolute', top: 0, left: 0, width: coverWpx, height: cover }}
+            contain
+            style={{
+              position: 'absolute',
+              top: coverGeo.y * S,
+              left: coverGeo.x * S,
+              width: coverSidePx,
+              height: coverSidePx,
+            }}
           />
           {data.frontTracklist && (
             <TracksOverlay
@@ -266,22 +277,22 @@ export default function FrontPreview({ data, size, update, onCover, onCover2 }: 
               update={update}
               style={{
                 position: 'absolute',
-                left: 0,
-                top: cover,
-                width: coverWpx,
+                left: coverGeo.x * S,
+                top: (coverGeo.y + coverGeo.side) * S,
+                width: coverSidePx,
                 transform: 'translateY(-100%)',
-                maxHeight: cover,
+                maxHeight: coverSidePx,
               }}
             />
           )}
           {data.showQr && (
             <QrOverlay
               data={data}
-              sizeMm={qrSideMm}
+              sizeMm={coverGeo.side}
               className="absolute"
               style={{
-                left: ((coverWmm - qrSideMm) / 2) * S,
-                top: ((coverHmm - qrSideMm) / 2) * S,
+                left: coverGeo.x * S,
+                top: coverGeo.y * S,
               }}
             />
           )}

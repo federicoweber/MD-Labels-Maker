@@ -26,6 +26,8 @@ interface Props {
   onBgColor: (hex: string) => void;
   /** Opacity of the band behind overlaid text (double-album / full-height modes). */
   bgOpacity?: { value: number; onChange: (v: number) => void };
+  /** Uniform padding around the artwork in standard cover mode. */
+  coverPadding?: { value: number; onChange: (v: number) => void };
   textColor: string;
   onTextColor: (hex: string) => void;
   letterSpacing: number;
@@ -51,6 +53,7 @@ export default function LabelControls({
   bgColor,
   onBgColor,
   bgOpacity,
+  coverPadding,
   textColor,
   onTextColor,
   letterSpacing,
@@ -90,6 +93,21 @@ export default function LabelControls({
                 step={0.05}
                 format={(v) => `${Math.round(v * 100)}%`}
                 onChange={bgOpacity.onChange}
+              />
+            </>
+          )}
+          {coverPadding && (
+            <>
+              <Rule />
+              <SizeSlider
+                id="cover-padding"
+                label="Cover padding"
+                value={coverPadding.value}
+                min={0}
+                max={8}
+                step={0.25}
+                format={(v) => `${v} mm`}
+                onChange={coverPadding.onChange}
               />
             </>
           )}
