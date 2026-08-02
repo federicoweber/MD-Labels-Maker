@@ -43,7 +43,7 @@ export default function FrontPreview({ data, size, update, onCover, onCover2 }: 
   const titlePanelRef = useRef<HTMLDivElement>(null);
   const artistPanelRef = useRef<HTMLDivElement>(null);
 
-  const snapTextPanel = (panel: 'title' | 'artist', direction: 'top' | 'bottom') => {
+  const snapTextPanel = (panel: 'title' | 'artist', direction: 'top' | 'center' | 'bottom') => {
     const current = panel === 'title' ? titlePanelRef.current : artistPanelRef.current;
     const other = panel === 'title' ? artistPanelRef.current : titlePanelRef.current;
     const cover = freeCoverRef.current;
@@ -53,7 +53,9 @@ export default function FrontPreview({ data, size, update, onCover, onCover2 }: 
     const otherRect = other?.getBoundingClientRect();
     const offset = panel === 'title' ? data.fullHeightTitleOffset : data.fullHeightArtistOffset;
     let delta: number;
-    if (panel === 'title') {
+    if (direction === 'center') {
+      delta = coverRect.top + coverRect.height / 2 - (currentRect.top + currentRect.height / 2);
+    } else if (panel === 'title') {
       delta = direction === 'top'
         ? coverRect.top - currentRect.top
         : (otherRect?.top ?? coverRect.bottom) - currentRect.bottom;
@@ -222,6 +224,7 @@ export default function FrontPreview({ data, size, update, onCover, onCover2 }: 
                       maxMm={size.height}
                       onChange={(v) => update({ fullHeightTitleOffset: v })}
                       onTop={() => snapTextPanel('title', 'top')}
+                      onCenter={() => snapTextPanel('title', 'center')}
                       onBottom={() => snapTextPanel('title', 'bottom')}
                     />
                     <AutoTextarea
@@ -261,6 +264,7 @@ export default function FrontPreview({ data, size, update, onCover, onCover2 }: 
                         maxMm={size.height}
                         onChange={(v) => update({ fullHeightArtistOffset: v })}
                         onTop={() => snapTextPanel('artist', 'top')}
+                        onCenter={() => snapTextPanel('artist', 'center')}
                         onBottom={() => snapTextPanel('artist', 'bottom')}
                       />
                       {data.showArtist && (
@@ -477,12 +481,14 @@ function TextBlockControls({
   maxMm,
   onChange,
   onTop,
+  onCenter,
   onBottom,
 }: {
   offset: number;
   maxMm: number;
   onChange: (v: number) => void;
   onTop: () => void;
+  onCenter: () => void;
   onBottom: () => void;
 }) {
   const drag = useRef<{ y: number; offset: number } | null>(null);
@@ -502,6 +508,14 @@ function TextBlockControls({
         onClick={(e) => snap(e, onTop)}
       >
         <ChevronUp className="size-4" />
+      </button>
+      <button
+        type="button"
+        aria-label="Center block vertically"
+        className="grid size-6 place-items-center rounded-full hover:bg-white/20"
+        onClick={(e) => snap(e, onCenter)}
+      >
+        <MoveVertical className="size-4" />
       </button>
       <button
         type="button"
