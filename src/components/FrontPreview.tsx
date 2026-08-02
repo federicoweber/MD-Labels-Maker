@@ -489,22 +489,24 @@ export default function FrontPreview({ data, size, update, onCover, onCover2 }: 
         </>
       )}
 
-      {/* Border tracing the chamfered outline */}
-      <svg
-        className="pointer-events-none absolute inset-0"
-        style={{ width: W, height: H }}
-        viewBox={`0 0 ${size.width} ${size.height}`}
-        preserveAspectRatio="none"
-        aria-hidden
-      >
-        <path
-          d={`M ${chamfer},0 H ${size.width} V ${size.height} H 0 V ${chamfer} Z`}
-          fill="none"
-          stroke="#000"
-          strokeWidth={2}
-          vectorEffect="non-scaling-stroke"
-        />
-      </svg>
+      {/* Free-layout artwork is full bleed; an outline reads as an image border. */}
+      {!data.fullHeight && (
+        <svg
+          className="pointer-events-none absolute inset-0"
+          style={{ width: W, height: H }}
+          viewBox={`0 0 ${size.width} ${size.height}`}
+          preserveAspectRatio="none"
+          aria-hidden
+        >
+          <path
+            d={`M ${chamfer},0 H ${size.width} V ${size.height} H 0 V ${chamfer} Z`}
+            fill="none"
+            stroke="#000"
+            strokeWidth={2}
+            vectorEffect="non-scaling-stroke"
+          />
+        </svg>
+      )}
 
     </div>
   );
