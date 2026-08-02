@@ -32,6 +32,17 @@ interface Props {
 /** Album/artist sit smaller when overlaid on covers in double mode. */
 const DOUBLE_TEXT_SCALE = 0.72;
 
+function alignmentHighlight(hex: string): string {
+  const raw = hex.replace('#', '');
+  const value = raw.length === 3 ? raw.split('').map((c) => c + c).join('') : raw;
+  const n = Number.parseInt(value, 16);
+  const r = (n >> 16) & 255;
+  const g = (n >> 8) & 255;
+  const b = n & 255;
+  const luminance = (0.2126 * r + 0.7152 * g + 0.0722 * b) / 255;
+  return luminance < 0.5 ? 'rgba(255,255,255,0.16)' : 'rgba(0,0,0,0.14)';
+}
+
 /**
  * Editable front-label preview. In single mode the cover sits on top with a
  * text band below; in double-album mode two stacked covers each carry their own
@@ -39,6 +50,9 @@ const DOUBLE_TEXT_SCALE = 0.72;
  */
 export default function FrontPreview({ data, size, update, onCover, onCover2 }: Props) {
   const [pageDragging, setPageDragging] = useState(false);
+  const [alignmentHighlightTarget, setAlignmentHighlightTarget] = useState<
+    'cover' | 'title' | 'artist' | null
+  >(null);
   const freeCoverRef = useRef<HTMLDivElement>(null);
   const titlePanelRef = useRef<HTMLDivElement>(null);
   const artistPanelRef = useRef<HTMLDivElement>(null);
@@ -178,11 +192,18 @@ export default function FrontPreview({ data, size, update, onCover, onCover2 }: 
           }}
           style={{ position: 'absolute', top: 0, left: 0, width: W, height: H }}
         >
+          {alignmentHighlightTarget === 'cover' && (
+            <div
+              className="pointer-events-none absolute inset-0 z-[1]"
+              style={{ background: alignmentHighlight(data.bgColor) }}
+            />
+          )}
           {data.coverDataUrl && Math.max(W, H) * freeScale !== W && (
             <AlignControls
               align={data.fullHeightAlign}
               maxShift={Math.max(W, H) * freeScale - W}
               onChange={(v) => update({ fullHeightAlign: v })}
+              onHighlight={(active) => setAlignmentHighlightTarget(active ? 'cover' : null)}
             />
           )}
           {(data.frontTracklist || data.showQr || !data.doubleHideText) && (
@@ -219,6 +240,12 @@ export default function FrontPreview({ data, size, update, onCover, onCover2 }: 
                       transform: `translateY(${data.fullHeightTitleOffset * S}px)`,
                     }}
                   >
+                    {alignmentHighlightTarget === 'title' && (
+                      <div
+                        className="pointer-events-none absolute inset-0 z-10"
+                        style={{ background: alignmentHighlight(data.bgColor) }}
+                      />
+                    )}
                     <TextBlockControls
                       offset={data.fullHeightTitleOffset}
                       maxMm={size.height}
@@ -226,6 +253,7 @@ export default function FrontPreview({ data, size, update, onCover, onCover2 }: 
                       onTop={() => snapTextPanel('title', 'top')}
                       onCenter={() => snapTextPanel('title', 'center')}
                       onBottom={() => snapTextPanel('title', 'bottom')}
+                      onHighlight={(active) => setAlignmentHighlightTarget(active ? 'title' : null)}
                     />
                     <AutoTextarea
                       value={data.album}
@@ -259,6 +287,12 @@ export default function FrontPreview({ data, size, update, onCover, onCover2 }: 
                         transform: `translateY(${data.fullHeightArtistOffset * S}px)`,
                       }}
                     >
+                      {alignmentHighlightTarget === 'artist' && (
+                        <div
+                          className="pointer-events-none absolute inset-0 z-10"
+                          style={{ background: alignmentHighlight(data.bgColor) }}
+                        />
+                      )}
                       <TextBlockControls
                         offset={data.fullHeightArtistOffset}
                         maxMm={size.height}
@@ -266,6 +300,7 @@ export default function FrontPreview({ data, size, update, onCover, onCover2 }: 
                         onTop={() => snapTextPanel('artist', 'top')}
                         onCenter={() => snapTextPanel('artist', 'center')}
                         onBottom={() => snapTextPanel('artist', 'bottom')}
+                        onHighlight={(active) => setAlignmentHighlightTarget(active ? 'artist' : null)}
                       />
                       {data.showArtist && (
                         <AutoTextarea
@@ -483,6 +518,7 @@ function TextBlockControls({
   onTop,
   onCenter,
   onBottom,
+  onHighlight,
 }: {
   offset: number;
   maxMm: number;
@@ -490,6 +526,7 @@ function TextBlockControls({
   onTop: () => void;
   onCenter: () => void;
   onBottom: () => void;
+  onHighlight: (active: boolean) => void;
 }) {
   const drag = useRef<{ y: number; offset: number } | null>(null);
   const clamp = (v: number) => Math.max(-maxMm, Math.min(maxMm, v));
@@ -500,6 +537,8 @@ function TextBlockControls({
   return (
     <div
       className="absolute top-1/2 right-1 z-20 flex -translate-y-1/2 touch-none items-center gap-1 rounded-full bg-black/70 px-2 py-1.5 text-white opacity-0 transition-opacity group-hover/block:opacity-100"
+      onMouseEnter={() => onHighlight(true)}
+      onMouseLeave={() => onHighlight(false)}
     >
       <button
         type="button"
@@ -734,12 +773,14 @@ function AlignControls({
   align,
   maxShift,
   onChange,
+  onHighlight,
 }: {
   /** 0 = show the cover's left edge … 1 = its right edge. */
   align: number;
   /** Signed horizontal overflow; negative when the scaled cover is narrower. */
   maxShift: number;
   onChange: (v: number) => void;
+  onHighlight: (active: boolean) => void;
 }) {
   const drag = useRef<{ x: number; align: number } | null>(null);
   const moved = useRef(false);
@@ -751,7 +792,11 @@ function AlignControls({
   return (
     <div className="pointer-events-none absolute inset-0">
       {/* Sits at the top (with a z-lift) so the movable text band can't bury it. */}
-      <div className="pointer-events-auto absolute top-1.5 left-1/2 z-10 flex -translate-x-1/2 items-center gap-1 rounded-full bg-black/70 px-2 py-1.5 text-white opacity-0 transition-opacity group-hover:opacity-100">
+      <div
+        className="pointer-events-auto absolute top-1.5 left-1/2 z-10 flex -translate-x-1/2 items-center gap-1 rounded-full bg-black/70 px-2 py-1.5 text-white opacity-0 transition-opacity group-hover:opacity-100"
+        onMouseEnter={() => onHighlight(true)}
+        onMouseLeave={() => onHighlight(false)}
+      >
         <button
           type="button"
           aria-label="Align cover left"
