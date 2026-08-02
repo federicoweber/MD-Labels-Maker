@@ -24,17 +24,16 @@ const PAPERS: Record<string, [number, number]> = {
   Legal: [215.9, 355.6],
   A3: [297, 420],
 };
-const MARGIN = 5; // mm — small printable margin (keeps 6 fronts on one row)
-const GAP = 0; // labels sit flush; one cut serves both neighbours
+const MARGIN = 5; // mm — room for the external cutter guides
+const GAP = 5; // mm — clear cutting space between every label
+const GUIDE_LENGTH = 3; // mm
+const GUIDE_OFFSET = 1; // mm away from the packed label grid
 
 interface Item {
   key: string;
   w: number;
   h: number;
   node: ReactNode;
-  /** Opaque label — give the cell a black backing so sub-pixel edges never
-   * show the page white. (Front stays transparent for its chamfer corner.) */
-  dark?: boolean;
 }
 
 interface Row {
@@ -59,44 +58,17 @@ function buildRows(items: Item[], contentW: number): Row[] {
     const sorted = [...groups.get(h)!].sort((a, b) => b.w - a.w);
     const bins: { items: Item[]; w: number }[] = [];
     for (const it of sorted) {
-      let bin = bins.find((b) => b.w + it.w <= contentW + 0.01);
+      let bin = bins.find((b) => b.w + (b.items.length ? GAP : 0) + it.w <= contentW + 0.01);
       if (!bin) {
         bin = { items: [], w: 0 };
         bins.push(bin);
       }
       bin.items.push(it);
-      bin.w += it.w + GAP;
+      bin.w += (bin.items.length > 1 ? GAP : 0) + it.w;
     }
     for (const bin of bins) rows.push({ items: bin.items, h });
   }
   return rows;
-}
-
-/** Group consecutive same-height rows into blocks. */
-function groupBlocks(rows: Row[]): Row[][] {
-  const blocks: Row[][] = [];
-  for (const row of rows) {
-    const last = blocks[blocks.length - 1];
-    if (last && last[0].h === row.h) last.push(row);
-    else blocks.push([row]);
-  }
-  return blocks;
-}
-
-/**
- * Split a page's rows into table groups. A uniform-width block (all cells the
- * same width, e.g. spines, or fronts/tracklists alone) becomes one multi-row
- * table with clean collapsed borders. A mixed-width block (fronts packed with
- * tracklists) renders each row as its own table — table columns wouldn't align.
- */
-function tablesFor(rows: Row[]): Row[][] {
-  const tables: Row[][] = [];
-  for (const block of groupBlocks(rows)) {
-    const widths = new Set(block.flatMap((r) => r.items.map((it) => Math.round(it.w * 10) / 10)));
-    if (widths.size <= 1) tables.push(block);
-    else for (const row of block) tables.push([row]);
-  }
-  return tables;
 }
 
 /** Pack whole rows onto pages without splitting a row across a page. */
@@ -105,16 +77,74 @@ function paginate(rows: Row[], contentH: number): Row[][] {
   let page: Row[] = [];
   let y = 0;
   for (const row of rows) {
-    if (page.length && y + row.h > contentH + 0.01) {
+    const nextY = y + (page.length ? GAP : 0) + row.h;
+    if (page.length && nextY > contentH + 0.01) {
       pages.push(page);
       page = [];
       y = 0;
     }
     page.push(row);
-    y += row.h + GAP;
+    y += (page.length > 1 ? GAP : 0) + row.h;
   }
   if (page.length) pages.push(page);
   return pages;
+}
+
+function pageGeometry(rows: Row[]) {
+  const xCuts = new Set<number>();
+  const yCuts = new Set<number>();
+  let gridW = 0;
+  let y = 0;
+  for (const row of rows) {
+    yCuts.add(y);
+    let x = 0;
+    for (const item of row.items) {
+      xCuts.add(x);
+      xCuts.add(x + item.w);
+      x += item.w + GAP;
+    }
+    gridW = Math.max(gridW, Math.max(0, x - GAP));
+    y += row.h;
+    yCuts.add(y);
+    y += GAP;
+  }
+  return {
+    gridW,
+    gridH: Math.max(0, y - GAP),
+    xCuts: [...xCuts].sort((a, b) => a - b),
+    yCuts: [...yCuts].sort((a, b) => a - b),
+  };
+}
+
+function TrimGuides({ rows, paperW, paperH }: { rows: Row[]; paperW: number; paperH: number }) {
+  const { gridW, gridH, xCuts, yCuts } = pageGeometry(rows);
+  const top = MARGIN;
+  const left = MARGIN;
+  const bottom = top + gridH;
+  const right = left + gridW;
+  return (
+    <svg
+      aria-hidden
+      className="pointer-events-none absolute inset-0"
+      viewBox={`0 0 ${paperW} ${paperH}`}
+      preserveAspectRatio="none"
+    >
+      <g stroke="#000" strokeWidth={0.2}>
+        {xCuts.map((x) => (
+          <g key={`x-${x}`}>
+            <line x1={left + x} y1={top - GUIDE_OFFSET - GUIDE_LENGTH} x2={left + x} y2={top - GUIDE_OFFSET} />
+            <line x1={left + x} y1={bottom + GUIDE_OFFSET} x2={left + x} y2={bottom + GUIDE_OFFSET + GUIDE_LENGTH} />
+          </g>
+        ))}
+        {yCuts.map((cutY) => (
+          <g key={`y-${cutY}`}>
+            <line x1={left - GUIDE_OFFSET - GUIDE_LENGTH} y1={top + cutY} x2={left - GUIDE_OFFSET} y2={top + cutY} />
+            <line x1={right + GUIDE_OFFSET} y1={top + cutY} x2={right + GUIDE_OFFSET + GUIDE_LENGTH} y2={top + cutY} />
+          </g>
+        ))}
+      </g>
+    </svg>
+  );
 }
 
 export default function PrintView({
@@ -139,11 +169,11 @@ export default function PrintView({
     });
     if (disc.showSpine) {
       for (let c = 0; c < disc.spineCount; c++) {
-        items.push({ key: `${i}-spine-${c}`, w: spineSize.width, h: spineSize.height, dark: true, node: <SpineLabel {...e} size={spineSize} /> });
+        items.push({ key: `${i}-spine-${c}`, w: spineSize.width, h: spineSize.height, node: <SpineLabel {...e} size={spineSize} /> });
       }
     }
     if (disc.showTracklist) {
-      items.push({ key: `${i}-tl`, w: tracklistSize.width, h: tracklistSize.height, dark: true, node: <TracklistSheet {...te} size={tracklistSize} /> });
+      items.push({ key: `${i}-tl`, w: tracklistSize.width, h: tracklistSize.height, node: <TracklistSheet {...te} size={tracklistSize} /> });
     }
   });
   const rows = buildRows(items, pw - 2 * MARGIN);
@@ -176,7 +206,7 @@ export default function PrintView({
           <Button variant="outline" onClick={onClose}>
             <X /> Close
           </Button>
-          <Button onClick={() => window.print()}>
+          <Button onClick={() => void document.fonts.ready.then(() => window.print())}>
             <Printer /> Print
           </Button>
         </div>
@@ -186,36 +216,26 @@ export default function PrintView({
         {pages.map((pg, pi) => (
           <div
             key={pi}
-            className="print-page bg-white"
-            style={{ width: `${pw}mm`, height: `${ph}mm`, padding: `${MARGIN}mm` }}
+            className="print-page relative bg-white"
+            style={{ width: `${pw}mm`, height: `${ph}mm` }}
           >
-            <div className="flex flex-col items-start">
-              {tablesFor(pg).map((rows, ti) => (
-                <table
-                  key={ti}
-                  className="print-table"
-                  style={{ marginTop: ti ? '-1px' : undefined }}
-                >
-                  <tbody>
-                    {rows.map((row, ri) => (
-                      <tr key={ri}>
-                        {row.items.map((it) => (
-                          <td
-                            key={it.key}
-                            className="print-cell"
-                            style={{
-                              width: `${it.w}mm`,
-                              height: `${it.h}mm`,
-                              background: it.dark ? '#000' : undefined,
-                            }}
-                          >
-                            {it.node}
-                          </td>
-                        ))}
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
+            <TrimGuides rows={pg} paperW={pw} paperH={ph} />
+            <div
+              className="absolute flex flex-col items-start"
+              style={{ top: `${MARGIN}mm`, left: `${MARGIN}mm`, gap: `${GAP}mm` }}
+            >
+              {pg.map((row, ri) => (
+                <div key={ri} className="flex items-start" style={{ gap: `${GAP}mm` }}>
+                  {row.items.map((it) => (
+                    <div
+                      key={it.key}
+                      className="print-cell shrink-0"
+                      style={{ width: `${it.w}mm`, height: `${it.h}mm` }}
+                    >
+                      {it.node}
+                    </div>
+                  ))}
+                </div>
               ))}
             </div>
           </div>

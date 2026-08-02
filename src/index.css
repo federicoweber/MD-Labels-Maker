@@ -110,15 +110,10 @@
   box-shadow: none;
 }
 
-/* Print layout: a table per height-group; collapsed black cut lines; each
-   .print-cell (td) holds a label SVG at true mm size. */
-.print-table {
-  border-collapse: collapse;
-}
+/* Print layout: labels sit at true millimetre size with cutter space between
+   them. Trim guides are drawn outside the packed grid, not around each label. */
 .print-cell {
-  padding: 0;
   line-height: 0;
-  border: 1px solid #000;
 }
 .print-cell > svg {
   display: block;
@@ -138,6 +133,8 @@
     position: static !important;
     overflow: visible !important;
     background: none !important;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
   }
   .print-pages {
     display: block !important;
@@ -237,4 +234,3 @@
   color: currentColor;
   opacity: 0.45;
 }
-
