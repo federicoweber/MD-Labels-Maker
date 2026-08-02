@@ -893,7 +893,7 @@ export default function App() {
         exporting={exporting}
       />
 
-      <main className="flex flex-1 flex-col items-start gap-16 overflow-auto bg-background p-12 pt-5">
+      <main className="flex flex-1 flex-col items-start gap-32 overflow-auto bg-background p-12 pt-5">
         <section className="flex w-full flex-wrap items-stretch gap-x-12 gap-y-8">
           <div className="flex shrink-0 flex-col gap-2">
             <SizeSelect label="Cover" value={frontSize} presets={FRONT_PRESETS} onChange={setFrontSize} />
