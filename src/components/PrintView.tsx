@@ -25,8 +25,8 @@ const PAPERS: Record<string, [number, number]> = {
   A3: [297, 420],
 };
 const MARGIN = 5; // mm — room for the external cutter guides
-const GAP = 3; // mm — clear cutting space between every label
-const GUIDE_LENGTH = 1.1; // mm — fits two neighbouring guides in a 3mm gutter
+const GAP = 5; // mm — clear cutting space between every label
+const GUIDE_LENGTH = 1.1; // mm — compact per-label cutter guide
 const GUIDE_OFFSET = 0.4; // mm away from each label edge
 
 interface Item {
