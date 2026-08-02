@@ -91,7 +91,7 @@ const INITIAL: LabelData = {
   artistSize: FRONT.artistSize,
   showArtist: true,
   trackSize: TRACKLIST.trackSize,
-  showTracklistCover: false,
+  showTracklistCover: true,
   tlShowQr: false,
   tlShowAlbum: true,
   tlShowArtist: true,
