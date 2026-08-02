@@ -92,3 +92,18 @@ export function standardCoverGeometry(
     zoneSide,
   };
 }
+
+/** Square artwork geometry shared by free-layout preview and print output. */
+export function freeLayoutCoverGeometry(
+  size: SizePreset,
+  scale: number,
+  horizontalAlign: number,
+  verticalAlign: number,
+): { x: number; y: number; side: number } {
+  const side = Math.max(size.width, size.height) * Math.min(1, Math.max(0.5, scale));
+  return {
+    x: (size.width - side) * horizontalAlign,
+    y: (size.height - side) * verticalAlign,
+    side,
+  };
+}

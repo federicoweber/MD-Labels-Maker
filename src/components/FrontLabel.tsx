@@ -3,6 +3,7 @@ import type { LabelData } from '@/lib/types';
 import {
   FRONT,
   PREVIEW_PX_PER_MM,
+  freeLayoutCoverGeometry,
   frontCoverSize,
   orientedFrontSize,
   standardCoverGeometry,
@@ -243,7 +244,12 @@ const FrontLabel = forwardRef<SVGSVGElement, Props>(function FrontLabel(props, r
   // cropped horizontally; `fullHeightAlign` pans the crop (0 = left … 1 =
   // right). Text overlays the bottom on a band, like double mode but full size.
   const fullHeightBlock = () => {
-    const side = Math.max(W, H) * Math.min(1, Math.max(0.5, fullHeightScale));
+    const freeCoverGeo = freeLayoutCoverGeometry(
+      layoutSize,
+      fullHeightScale,
+      fullHeightAlign,
+      fullHeightVerticalAlign,
+    );
     const maxW = W - 2 * padding;
     const lines = wrapText(album || 'Album', titleFont, titleSize, maxW, 700);
     const lh = titleSize * lineHeight;
@@ -275,10 +281,10 @@ const FrontLabel = forwardRef<SVGSVGElement, Props>(function FrontLabel(props, r
         {coverDataUrl ? (
           <image
             href={coverDataUrl}
-            x={(W - side) * fullHeightAlign}
-            y={(H - side) * fullHeightVerticalAlign}
-            width={side}
-            height={side}
+            x={freeCoverGeo.x}
+            y={freeCoverGeo.y}
+            width={freeCoverGeo.side}
+            height={freeCoverGeo.side}
             preserveAspectRatio="xMidYMid slice"
           />
         ) : (

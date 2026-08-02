@@ -14,6 +14,7 @@ import QrOverlay from '@/components/QrOverlay';
 import {
   FRONT,
   PREVIEW_PX_PER_MM as S,
+  freeLayoutCoverGeometry,
   frontCoverSize,
   standardCoverGeometry,
   type SizePreset,
@@ -108,6 +109,12 @@ export default function FrontPreview({ data, size, update, onCover, onCover2 }: 
   const W = size.width * S;
   const H = size.height * S;
   const freeScale = Math.min(1, Math.max(0.5, data.fullHeightScale));
+  const freeCoverGeo = freeLayoutCoverGeometry(
+    size,
+    freeScale,
+    data.fullHeightAlign,
+    data.fullHeightVerticalAlign,
+  );
   const portrait = size.height >= size.width;
   const PAD = FRONT.padding * S;
   // The standard cover remains square and gives way to the uncapped text
@@ -182,14 +189,23 @@ export default function FrontPreview({ data, size, update, onCover, onCover2 }: 
           src={data.coverDataUrl}
           onCover={onCover}
           pageDragging={pageDragging}
-          imgStyle={{
-            position: 'absolute',
-            width: Math.max(W, H) * freeScale,
-            height: Math.max(W, H) * freeScale,
-            maxWidth: 'none',
-            left: (W - Math.max(W, H) * freeScale) * data.fullHeightAlign,
-            top: (H - Math.max(W, H) * freeScale) * data.fullHeightVerticalAlign,
-          }}
+          imageNode={data.coverDataUrl ? (
+            <svg
+              className="absolute inset-0 size-full"
+              viewBox={`0 0 ${W} ${H}`}
+              preserveAspectRatio="none"
+              aria-hidden
+            >
+              <image
+                href={data.coverDataUrl}
+                x={freeCoverGeo.x * S}
+                y={freeCoverGeo.y * S}
+                width={freeCoverGeo.side * S}
+                height={freeCoverGeo.side * S}
+                preserveAspectRatio="xMidYMid slice"
+              />
+            </svg>
+          ) : undefined}
           style={{ position: 'absolute', top: 0, left: 0, width: W, height: H }}
         >
           {alignmentHighlightTarget === 'cover' && (
@@ -199,12 +215,12 @@ export default function FrontPreview({ data, size, update, onCover, onCover2 }: 
             />
           )}
           {data.coverDataUrl &&
-            (Math.max(W, H) * freeScale !== W || Math.max(W, H) * freeScale !== H) && (
+            (freeCoverGeo.side * S !== W || freeCoverGeo.side * S !== H) && (
             <AlignControls
               horizontal={data.fullHeightAlign}
               vertical={data.fullHeightVerticalAlign}
-              horizontalShift={Math.max(W, H) * freeScale - W}
-              verticalShift={Math.max(W, H) * freeScale - H}
+              horizontalShift={freeCoverGeo.side * S - W}
+              verticalShift={freeCoverGeo.side * S - H}
               onHorizontalChange={(v) => update({ fullHeightAlign: v })}
               onVerticalChange={(v) => update({ fullHeightVerticalAlign: v })}
               onHighlight={(active) => setAlignmentHighlightTarget(active ? 'cover' : null)}
@@ -716,6 +732,7 @@ function CoverSlot({
   pageDragging,
   style,
   imgStyle,
+  imageNode,
   contain,
   rootRef,
   children,
@@ -725,6 +742,7 @@ function CoverSlot({
   pageDragging: boolean;
   style: React.CSSProperties;
   imgStyle?: React.CSSProperties;
+  imageNode?: React.ReactNode;
   contain?: boolean;
   rootRef?: React.RefObject<HTMLDivElement | null>;
   children?: React.ReactNode;
@@ -741,7 +759,8 @@ function CoverSlot({
         if (f?.type.startsWith('image/')) void readImageFile(f).then(onCover);
       }}
     >
-      {src && (
+      {src && imageNode}
+      {src && !imageNode && (
         <img
           src={src}
           alt=""
