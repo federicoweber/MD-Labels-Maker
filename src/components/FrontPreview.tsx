@@ -208,7 +208,7 @@ export default function FrontPreview({ data, size, update, onCover, onCover2 }: 
           )}
           {(data.frontTracklist || data.showQr || !data.doubleHideText) && (
             <div
-              className="group/band absolute right-0 left-0 flex flex-col"
+              className="group/band absolute right-0 left-0 z-20 flex flex-col"
               style={{
                 top: `${data.fullHeightTextY * 100}%`,
                 transform: `translateY(-${data.fullHeightTextY * 100}%)`,
@@ -765,9 +765,9 @@ function CoverSlot({
 }
 
 /**
- * Full-height mode: hover controls to fine-tune the cover's horizontal crop.
- * The hover pill snaps the crop left/centre/right and exposes a dedicated
- * six-dot handle for dragging the image horizontally.
+ * Free-layout mode: controls centred on the artwork fine-tune its horizontal
+ * crop. This layer sits below the text panels, so hovering text never reveals
+ * or captures the artwork controls.
  */
 function AlignControls({
   align,
@@ -790,10 +790,9 @@ function AlignControls({
     onChange(clamp(v));
   };
   return (
-    <div className="pointer-events-none absolute inset-0">
-      {/* Sits at the top (with a z-lift) so the movable text band can't bury it. */}
+    <div className="group/artwork pointer-events-auto absolute inset-0 z-10">
       <div
-        className="pointer-events-auto absolute top-1.5 left-1/2 z-10 flex -translate-x-1/2 items-center gap-1 rounded-full bg-black/70 px-2 py-1.5 text-white opacity-0 transition-opacity group-hover:opacity-100"
+        className="pointer-events-auto absolute top-1/2 left-1/2 flex -translate-x-1/2 -translate-y-1/2 items-center gap-1 rounded-full bg-black/70 px-2 py-1.5 text-white opacity-0 transition-opacity group-hover/artwork:opacity-100"
         onMouseEnter={() => onHighlight(true)}
         onMouseLeave={() => onHighlight(false)}
       >
