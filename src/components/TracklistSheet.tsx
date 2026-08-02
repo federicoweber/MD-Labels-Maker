@@ -124,7 +124,7 @@ const TracklistSheet = forwardRef<SVGSVGElement, Props>(function TracklistSheet(
     const innerW = (right - left) / innerCols;
     const colX = Array.from({ length: innerCols }, (_, i) => left + i * innerW);
     const colTextW = innerCols > 1 ? innerW - 2 : innerW;
-    const numberWidth = Math.max(trackSize * 2.5, `${tracks.length}.`.length * trackSize * 0.62);
+    const numberWidth = `${tracks.length}.`.length * trackSize * 0.62;
     const durationChars = showTrackDuration
       ? Math.max(0, ...tracks.map((track) => splitTrack(track).dur.length))
       : 0;

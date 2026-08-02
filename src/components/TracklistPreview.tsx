@@ -275,7 +275,7 @@ function TracklistColumn({
           top: (tracksTop - 0.9 * data.trackSize) * S,
           height: maxLines * trackGap * S + 1,
           flex: 'none',
-          '--track-num-width': `${Math.max(2.5, String(trackCount).length + 1.4)}em`,
+          '--track-num-width': `${(`${trackCount}.`.length * 0.62).toFixed(2)}em`,
           '--track-duration-width': durationChars ? `${durationChars * 0.62 + 0.6}em` : '0em',
         } as React.CSSProperties & Record<`--${string}`, string | number>}
       />
