@@ -312,6 +312,7 @@ export default function App() {
   const [tracklistLoading, setTracklistLoading] = useState(false);
   const [exporting, setExporting] = useState(false);
   const [deleteIndex, setDeleteIndex] = useState<number | null>(null);
+  const [clearAllOpen, setClearAllOpen] = useState(false);
   const [printOpen, setPrintOpen] = useState(false);
   const [genModel, setGenModel] = useState<GenModel>('auto');
 
@@ -883,6 +884,7 @@ export default function App() {
         onRequestDelete={setDeleteIndex}
         onExport={onExport}
         onPrint={() => setPrintOpen(true)}
+        onClearAll={() => setClearAllOpen(true)}
         setupUrl={() => setupUrl(discs)}
         exporting={exporting}
       />
@@ -1384,6 +1386,20 @@ export default function App() {
         }
         onConfirm={() => deleteIndex !== null && deleteDisc(deleteIndex)}
         onCancel={() => setDeleteIndex(null)}
+      />
+
+      <ConfirmModal
+        open={clearAllOpen}
+        title="Clear all labels?"
+        message={`This will remove all ${discs.length} label${discs.length === 1 ? '' : 's'} and start with a blank label.`}
+        confirmLabel="Clear all"
+        onConfirm={() => {
+          resetCoverUi(null);
+          setDiscs([INITIAL]);
+          setActiveIndex(0);
+          setClearAllOpen(false);
+        }}
+        onCancel={() => setClearAllOpen(false)}
       />
 
       {printOpen && (

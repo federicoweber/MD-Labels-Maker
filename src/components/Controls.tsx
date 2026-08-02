@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Check, Download, Link, Plus, Printer, X } from 'lucide-react';
+import { Check, Download, Link, Plus, Printer, Trash2, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import type { LabelData } from '@/lib/types';
 
@@ -11,6 +11,7 @@ interface ControlsProps {
   onRequestDelete: (i: number) => void;
   onExport: () => void;
   onPrint: () => void;
+  onClearAll: () => void;
   /** Builds the URL that restores the whole setup (all labels). */
   setupUrl: () => string;
   exporting: boolean;
@@ -27,6 +28,7 @@ export default function Controls({
   onRequestDelete,
   onExport,
   onPrint,
+  onClearAll,
   setupUrl,
   exporting,
 }: ControlsProps) {
@@ -91,6 +93,9 @@ export default function Controls({
           }}
         >
           {copied ? <Check /> : <Link />} {copied ? 'Link copied' : 'Export setup link'}
+        </Button>
+        <Button variant="outline" onClick={onClearAll}>
+          <Trash2 /> Clear all labels
         </Button>
       </div>
     </aside>
