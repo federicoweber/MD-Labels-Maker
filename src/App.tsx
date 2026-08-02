@@ -39,6 +39,7 @@ import {
   FRONT_PRESETS,
   SPINE_PRESETS,
   TRACKLIST_PRESETS,
+  PREVIEW_PX_PER_MM,
   orientedFrontSize,
 } from '@/lib/dimensions';
 const DEFAULT_FONT = 'Inconsolata';
@@ -680,7 +681,6 @@ export default function App() {
       const fonts = new Set<string>();
       const multi = outputs.length > 1;
       outputs.forEach((disc, i) => {
-        const outputFrontSize = orientedFrontSize(frontSize, disc.verticalMode);
         const base = [disc.artist, disc.album].map(slug).filter(Boolean).join('-') || 'minidisc';
         const discTag = disc.discTotal > 1 ? `-disc${disc.discNumber}` : '';
         const prefix = multi ? `${String(i + 1).padStart(2, '0')}-${base}${discTag}/` : '';
@@ -691,8 +691,8 @@ export default function App() {
         if (front)
           labels.push({
             svg: front,
-            widthMm: outputFrontSize.width,
-            heightMm: outputFrontSize.height,
+            widthMm: frontSize.width,
+            heightMm: frontSize.height,
             name: `${prefix}front.png`,
           });
         if (disc.showSpine && spine)
@@ -877,7 +877,7 @@ export default function App() {
   const tlEff = tlEffFor(data);
   // Materialised per-disc label data (multi-disc entries become N) for export + twins.
   const outputs = expandDiscs(discs);
-  const activeFrontSize = orientedFrontSize(frontSize, data.verticalMode);
+  const layoutFrontSize = orientedFrontSize(frontSize, data.verticalMode);
 
   return (
     <div className="flex h-svh overflow-hidden">
@@ -896,13 +896,31 @@ export default function App() {
       <main className="flex flex-1 flex-wrap content-start items-start gap-36 overflow-auto bg-background p-12 pt-5">
         <section className="flex flex-col gap-2">
           <SizeSelect label="Cover" value={frontSize} presets={FRONT_PRESETS} onChange={setFrontSize} />
-          <FrontPreview
-            data={eff}
-            size={activeFrontSize}
-            update={update}
-            onCover={onCover}
-            onCover2={onCover2}
-          />
+          <div
+            style={{
+              width: frontSize.width * PREVIEW_PX_PER_MM,
+              height: frontSize.height * PREVIEW_PX_PER_MM,
+            }}
+          >
+            <div
+              style={
+                data.verticalMode
+                  ? {
+                      transform: `translateX(${frontSize.width * PREVIEW_PX_PER_MM}px) rotate(90deg)`,
+                      transformOrigin: '0 0',
+                    }
+                  : undefined
+              }
+            >
+              <FrontPreview
+                data={eff}
+                size={layoutFrontSize}
+                update={update}
+                onCover={onCover}
+                onCover2={onCover2}
+              />
+            </div>
+          </div>
           <Button variant="outline" className="w-fit" onClick={clearDisc}>
             Clear
           </Button>
@@ -1307,13 +1325,12 @@ export default function App() {
         {outputs.map((disc, i) => {
           const e = effFor(disc);
           const te = tlEffFor(disc);
-          const outputFrontSize = orientedFrontSize(frontSize, disc.verticalMode);
           return (
             <div key={i}>
               <FrontLabel
                 ref={(el) => void (twinRefs.current[`${i}-front`] = el)}
                 {...e}
-                size={outputFrontSize}
+                size={frontSize}
               />
               <SpineLabel ref={(el) => void (twinRefs.current[`${i}-spine`] = el)} {...e} size={spineSize} />
               <TracklistSheet ref={(el) => void (twinRefs.current[`${i}-tracklist`] = el)} {...te} size={tracklistSize} />

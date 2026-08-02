@@ -2,7 +2,7 @@ import { useState, type ReactNode } from 'react';
 import { createPortal } from 'react-dom';
 import { Printer, X } from 'lucide-react';
 import type { LabelData } from '@/lib/types';
-import { orientedFrontSize, type SizePreset } from '@/lib/dimensions';
+import type { SizePreset } from '@/lib/dimensions';
 import { effFor, tlEffFor, expandDiscs } from '@/lib/derive';
 import { Button } from '@/components/ui/button';
 import FrontLabel from './FrontLabel';
@@ -131,12 +131,11 @@ export default function PrintView({
   expandDiscs(discs).forEach((disc, i) => {
     const e = effFor(disc);
     const te = tlEffFor(disc);
-    const outputFrontSize = orientedFrontSize(frontSize, disc.verticalMode);
     items.push({
       key: `${i}-front`,
-      w: outputFrontSize.width,
-      h: outputFrontSize.height,
-      node: <FrontLabel {...e} size={outputFrontSize} />,
+      w: frontSize.width,
+      h: frontSize.height,
+      node: <FrontLabel {...e} size={frontSize} />,
     });
     if (disc.showSpine) {
       for (let c = 0; c < disc.spineCount; c++) {

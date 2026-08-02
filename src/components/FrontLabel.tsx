@@ -4,6 +4,7 @@ import {
   FRONT,
   PREVIEW_PX_PER_MM,
   frontCoverSize,
+  orientedFrontSize,
   standardCoverGeometry,
   type SizePreset,
 } from '@/lib/dimensions';
@@ -26,6 +27,7 @@ const FrontLabel = forwardRef<SVGSVGElement, Props>(function FrontLabel(props, r
     doubleAlbum,
     doubleHideText,
     fullHeight,
+    verticalMode,
     coverPadding,
     fullHeightAlign,
     fullHeightTextY,
@@ -62,8 +64,11 @@ const FrontLabel = forwardRef<SVGSVGElement, Props>(function FrontLabel(props, r
     titleArtistGap,
     size,
   } = props;
-  const { width: W, height: H } = size;
-  const cover = frontCoverSize(size);
+  const physicalW = size.width;
+  const physicalH = size.height;
+  const layoutSize = orientedFrontSize(size, verticalMode);
+  const { width: W, height: H } = layoutSize;
+  const cover = frontCoverSize(layoutSize);
   const portrait = H >= W;
   const { padding } = FRONT;
   const chamfer = showChamfer ? FRONT.chamfer : 0;
@@ -389,7 +394,7 @@ const FrontLabel = forwardRef<SVGSVGElement, Props>(function FrontLabel(props, r
   const availableCoverH = portrait
     ? Math.max(6, bottomAnchor - textBlockH - padding * 0.6)
     : cover;
-  const coverGeo = standardCoverGeometry(size, availableCoverH, coverPadding);
+  const coverGeo = standardCoverGeometry(layoutSize, availableCoverH, coverPadding);
   const textX = (portrait ? 0 : cover) + padding;
   const singleTracks = doubleAlbum || fullHeight ? null : buildTracks(coverGeo.side, coverGeo.side);
 
@@ -397,9 +402,9 @@ const FrontLabel = forwardRef<SVGSVGElement, Props>(function FrontLabel(props, r
     <svg
       ref={ref}
       xmlns="http://www.w3.org/2000/svg"
-      viewBox={`0 0 ${W} ${H}`}
-      width={W * PREVIEW_PX_PER_MM}
-      height={H * PREVIEW_PX_PER_MM}
+      viewBox={`0 0 ${physicalW} ${physicalH}`}
+      width={physicalW * PREVIEW_PX_PER_MM}
+      height={physicalH * PREVIEW_PX_PER_MM}
       preserveAspectRatio="none"
       style={{ display: 'block' }}
     >
@@ -409,6 +414,7 @@ const FrontLabel = forwardRef<SVGSVGElement, Props>(function FrontLabel(props, r
         </clipPath>
       </defs>
 
+      <g transform={verticalMode ? `translate(${physicalW} 0) rotate(90)` : undefined}>
       <g clipPath={`url(#${clipId})`}>
         <rect x={0} y={0} width={W} height={H} fill={bgColor} />
 
@@ -522,6 +528,7 @@ const FrontLabel = forwardRef<SVGSVGElement, Props>(function FrontLabel(props, r
             {qrAt(coverGeo.x, coverGeo.y, coverGeo.side)}
           </>
         )}
+      </g>
       </g>
     </svg>
   );
