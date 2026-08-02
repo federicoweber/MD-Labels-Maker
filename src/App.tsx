@@ -66,6 +66,7 @@ const INITIAL: LabelData = {
   fullHeightScale: 1,
   coverPadding: 0,
   fullHeightAlign: 0.5,
+  fullHeightVerticalAlign: 0.5,
   fullHeightTextY: 1,
   fullHeightTitleOffset: 0,
   fullHeightArtistOffset: 0,

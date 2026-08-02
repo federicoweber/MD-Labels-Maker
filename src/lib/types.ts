@@ -36,6 +36,8 @@ export interface LabelData {
   coverPadding: number;
   /** Horizontal crop alignment of the full-height cover (0 = left edge, 0.5 = centre, 1 = right edge). */
   fullHeightAlign: number;
+  /** Vertical crop alignment of the free-layout cover (0 = top, 0.5 = centre, 1 = bottom). */
+  fullHeightVerticalAlign: number;
   /** Vertical position of the text band on the full-height cover (0 = top, 1 = bottom). */
   fullHeightTextY: number;
   /** Independent vertical fine adjustments for free-layout text blocks, in mm. */

@@ -188,7 +188,7 @@ export default function FrontPreview({ data, size, update, onCover, onCover2 }: 
             height: Math.max(W, H) * freeScale,
             maxWidth: 'none',
             left: (W - Math.max(W, H) * freeScale) * data.fullHeightAlign,
-            top: (H - Math.max(W, H) * freeScale) / 2,
+            top: (H - Math.max(W, H) * freeScale) * data.fullHeightVerticalAlign,
           }}
           style={{ position: 'absolute', top: 0, left: 0, width: W, height: H }}
         >
@@ -198,11 +198,15 @@ export default function FrontPreview({ data, size, update, onCover, onCover2 }: 
               style={{ background: alignmentHighlight(data.bgColor) }}
             />
           )}
-          {data.coverDataUrl && Math.max(W, H) * freeScale !== W && (
+          {data.coverDataUrl &&
+            (Math.max(W, H) * freeScale !== W || Math.max(W, H) * freeScale !== H) && (
             <AlignControls
-              align={data.fullHeightAlign}
-              maxShift={Math.max(W, H) * freeScale - W}
-              onChange={(v) => update({ fullHeightAlign: v })}
+              horizontal={data.fullHeightAlign}
+              vertical={data.fullHeightVerticalAlign}
+              horizontalShift={Math.max(W, H) * freeScale - W}
+              verticalShift={Math.max(W, H) * freeScale - H}
+              onHorizontalChange={(v) => update({ fullHeightAlign: v })}
+              onVerticalChange={(v) => update({ fullHeightVerticalAlign: v })}
               onHighlight={(active) => setAlignmentHighlightTarget(active ? 'cover' : null)}
             />
           )}
@@ -770,41 +774,46 @@ function CoverSlot({
 }
 
 /**
- * Free-layout mode: controls centred on the artwork fine-tune its horizontal
- * crop. This layer sits below the text panels, so hovering text never reveals
- * or captures the artwork controls.
+ * Free-layout mode: independent horizontal and vertical alignment controls.
+ * This layer sits below the text panels, so hovering text never reveals or
+ * captures the artwork controls.
  */
 function AlignControls({
-  align,
-  maxShift,
-  onChange,
+  horizontal,
+  vertical,
+  horizontalShift,
+  verticalShift,
+  onHorizontalChange,
+  onVerticalChange,
   onHighlight,
 }: {
-  /** 0 = show the cover's left edge … 1 = its right edge. */
-  align: number;
-  /** Signed horizontal overflow; negative when the scaled cover is narrower. */
-  maxShift: number;
-  onChange: (v: number) => void;
+  horizontal: number;
+  vertical: number;
+  horizontalShift: number;
+  verticalShift: number;
+  onHorizontalChange: (v: number) => void;
+  onVerticalChange: (v: number) => void;
   onHighlight: (active: boolean) => void;
 }) {
-  const drag = useRef<{ x: number; align: number } | null>(null);
-  const moved = useRef(false);
+  const horizontalDrag = useRef<{ x: number; align: number } | null>(null);
+  const verticalDrag = useRef<{ y: number; align: number } | null>(null);
   const clamp = (v: number) => Math.max(0, Math.min(1, v));
-  const set = (e: React.MouseEvent, v: number) => {
+  const set = (e: React.MouseEvent, change: (v: number) => void, v: number) => {
     e.stopPropagation();
-    onChange(clamp(v));
+    change(clamp(v));
   };
   return (
-    <div className="group/artwork pointer-events-auto absolute inset-0 z-10">
-      <div
-        className="pointer-events-auto absolute top-1/2 left-1/2 flex -translate-x-1/2 -translate-y-1/2 items-center gap-1 rounded-full bg-black/70 px-2 py-1.5 text-white opacity-0 transition-opacity group-hover/artwork:opacity-100"
-        onMouseEnter={() => onHighlight(true)}
-        onMouseLeave={() => onHighlight(false)}
-      >
+    <div
+      className="group/artwork pointer-events-auto absolute inset-0 z-10"
+      onMouseEnter={() => onHighlight(true)}
+      onMouseLeave={() => onHighlight(false)}
+    >
+      {Math.abs(horizontalShift) > 0.01 && (
+        <div className="pointer-events-auto absolute top-2 left-1/2 flex -translate-x-1/2 items-center gap-1 rounded-full bg-black/70 px-2 py-1.5 text-white opacity-0 transition-opacity group-hover/artwork:opacity-100">
         <button
           type="button"
           aria-label="Align cover left"
-          onClick={(e) => set(e, 0)}
+          onClick={(e) => set(e, onHorizontalChange, 0)}
           className="grid size-5 place-items-center rounded-full hover:bg-white/20"
         >
           <ChevronLeft className="size-3.5" />
@@ -812,7 +821,7 @@ function AlignControls({
         <button
           type="button"
           aria-label="Centre cover"
-          onClick={(e) => set(e, 0.5)}
+          onClick={(e) => set(e, onHorizontalChange, 0.5)}
           className="grid size-5 place-items-center rounded-full hover:bg-white/20"
         >
           <MoveHorizontal className="size-3.5" />
@@ -820,7 +829,7 @@ function AlignControls({
         <button
           type="button"
           aria-label="Align cover right"
-          onClick={(e) => set(e, 1)}
+          onClick={(e) => set(e, onHorizontalChange, 1)}
           className="grid size-5 place-items-center rounded-full hover:bg-white/20"
         >
           <ChevronRight className="size-3.5" />
@@ -830,24 +839,71 @@ function AlignControls({
           aria-label="Drag cover horizontally"
           className="grid size-7 cursor-ew-resize touch-none place-items-center rounded-full bg-white/15 hover:bg-white/25"
           onPointerDown={(e) => {
-            drag.current = { x: e.clientX, align };
-            moved.current = false;
+            horizontalDrag.current = { x: e.clientX, align: horizontal };
             e.currentTarget.setPointerCapture(e.pointerId);
             e.stopPropagation();
           }}
           onPointerMove={(e) => {
-            if (!drag.current) return;
-            const dx = e.clientX - drag.current.x;
-            if (Math.abs(dx) > 3) moved.current = true;
-            if (moved.current) onChange(clamp(drag.current.align - dx / maxShift));
+            if (!horizontalDrag.current) return;
+            const dx = e.clientX - horizontalDrag.current.x;
+            onHorizontalChange(clamp(horizontalDrag.current.align - dx / horizontalShift));
           }}
-          onPointerUp={() => (drag.current = null)}
-          onPointerCancel={() => (drag.current = null)}
-          title="Drag to align the cover"
+          onPointerUp={() => (horizontalDrag.current = null)}
+          onPointerCancel={() => (horizontalDrag.current = null)}
+          title="Drag cover left or right"
         >
           <GripVertical className="size-4" />
         </button>
-      </div>
+        </div>
+      )}
+      {Math.abs(verticalShift) > 0.01 && (
+        <div className="pointer-events-auto absolute top-1/2 right-2 flex -translate-y-1/2 flex-col items-center gap-1 rounded-full bg-black/70 px-1.5 py-2 text-white opacity-0 transition-opacity group-hover/artwork:opacity-100">
+          <button
+            type="button"
+            aria-label="Align cover top"
+            onClick={(e) => set(e, onVerticalChange, 0)}
+            className="grid size-5 place-items-center rounded-full hover:bg-white/20"
+          >
+            <ChevronUp className="size-3.5" />
+          </button>
+          <button
+            type="button"
+            aria-label="Centre cover vertically"
+            onClick={(e) => set(e, onVerticalChange, 0.5)}
+            className="grid size-5 place-items-center rounded-full hover:bg-white/20"
+          >
+            <MoveVertical className="size-3.5" />
+          </button>
+          <button
+            type="button"
+            aria-label="Align cover bottom"
+            onClick={(e) => set(e, onVerticalChange, 1)}
+            className="grid size-5 place-items-center rounded-full hover:bg-white/20"
+          >
+            <ChevronDown className="size-3.5" />
+          </button>
+          <button
+          type="button"
+          aria-label="Drag cover vertically"
+          className="grid size-7 cursor-ns-resize touch-none place-items-center rounded-full bg-white/15 hover:bg-white/25"
+          onPointerDown={(e) => {
+            verticalDrag.current = { y: e.clientY, align: vertical };
+            e.currentTarget.setPointerCapture(e.pointerId);
+            e.stopPropagation();
+          }}
+          onPointerMove={(e) => {
+            if (!verticalDrag.current) return;
+            const dy = e.clientY - verticalDrag.current.y;
+            onVerticalChange(clamp(verticalDrag.current.align - dy / verticalShift));
+          }}
+          onPointerUp={() => (verticalDrag.current = null)}
+          onPointerCancel={() => (verticalDrag.current = null)}
+          title="Drag cover up or down"
+          >
+            <GripVertical className="size-4" />
+          </button>
+        </div>
+      )}
     </div>
   );
 }

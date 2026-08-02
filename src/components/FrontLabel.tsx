@@ -31,6 +31,7 @@ const FrontLabel = forwardRef<SVGSVGElement, Props>(function FrontLabel(props, r
     verticalMode,
     coverPadding,
     fullHeightAlign,
+    fullHeightVerticalAlign,
     fullHeightTextY,
     fullHeightTitleOffset,
     fullHeightArtistOffset,
@@ -275,7 +276,7 @@ const FrontLabel = forwardRef<SVGSVGElement, Props>(function FrontLabel(props, r
           <image
             href={coverDataUrl}
             x={(W - side) * fullHeightAlign}
-            y={(H - side) / 2}
+            y={(H - side) * fullHeightVerticalAlign}
             width={side}
             height={side}
             preserveAspectRatio="xMidYMid slice"
