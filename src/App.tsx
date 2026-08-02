@@ -66,6 +66,8 @@ const INITIAL: LabelData = {
   coverPadding: 0,
   fullHeightAlign: 0.5,
   fullHeightTextY: 1,
+  fullHeightTitleOffset: 0,
+  fullHeightArtistOffset: 0,
   textBgOpacity: 1,
   textColor: '#ece8e0',
   bgColor: '#6e6a63',

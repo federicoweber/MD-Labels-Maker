@@ -32,6 +32,8 @@ const FrontLabel = forwardRef<SVGSVGElement, Props>(function FrontLabel(props, r
     coverPadding,
     fullHeightAlign,
     fullHeightTextY,
+    fullHeightTitleOffset,
+    fullHeightArtistOffset,
     textBgOpacity,
     album,
     album2,
@@ -114,7 +116,11 @@ const FrontLabel = forwardRef<SVGSVGElement, Props>(function FrontLabel(props, r
               letterSpacing={ts * letterSpacing}
             >
               {lines.map((line, i) => (
-                <tspan key={i} x={padding} y={lastTitleBase - (lines.length - 1 - i) * lh}>
+                <tspan
+                  key={i}
+                  x={padding}
+                  y={lastTitleBase - (lines.length - 1 - i) * lh + fullHeightTitleOffset}
+                >
                   {line || ' '}
                 </tspan>
               ))}
@@ -313,7 +319,7 @@ const FrontLabel = forwardRef<SVGSVGElement, Props>(function FrontLabel(props, r
                 letterSpacing={artistSize * letterSpacing}
               >
                 {bandArtistLines.map((line, i) => (
-                  <tspan key={i} x={padding} y={artistBase + i * bandArtistLH}>
+                  <tspan key={i} x={padding} y={artistBase + i * bandArtistLH + fullHeightArtistOffset}>
                     {line || ' '}
                   </tspan>
                 ))}
@@ -322,7 +328,7 @@ const FrontLabel = forwardRef<SVGSVGElement, Props>(function FrontLabel(props, r
             {showYear && year && (
               <text
                 x={padding}
-                y={metaBase}
+                y={metaBase + fullHeightArtistOffset}
                 fill={textColor}
                 fillOpacity={artistOpacity}
                 fontFamily={yearFont}
@@ -335,7 +341,7 @@ const FrontLabel = forwardRef<SVGSVGElement, Props>(function FrontLabel(props, r
             {discTotal > 1 && (
               <text
                 x={W - padding}
-                y={metaBase}
+                y={metaBase + fullHeightArtistOffset}
                 fill={textColor}
                 fillOpacity={artistOpacity}
                 fontFamily={yearFont}

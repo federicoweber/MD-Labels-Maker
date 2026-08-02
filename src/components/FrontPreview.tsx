@@ -190,41 +190,59 @@ export default function FrontPreview({ data, size, update, onCover, onCover2 }: 
                     background: withAlpha(data.bgColor, data.textBgOpacity),
                   }}
                 >
-                  <AutoTextarea
-                    value={data.album}
-                    placeholder="Album"
-                    onChange={(v) => update({ album: v })}
-                    style={{
-                      fontFamily: data.titleFont,
-                      fontSize: data.titleSize * S,
-                      fontWeight: 700,
-                      color: data.textColor,
-                      opacity: data.titleOpacity,
-                      lineHeight: data.lineHeight,
-                      letterSpacing: `${data.letterSpacing}em`,
-                    }}
-                  />
-                  {data.showArtist && (
+                  <div
+                    className="group/block relative"
+                    style={{ transform: `translateY(${data.fullHeightTitleOffset * S}px)` }}
+                  >
+                    <TextBlockControls
+                      offset={data.fullHeightTitleOffset}
+                      maxMm={size.height}
+                      onChange={(v) => update({ fullHeightTitleOffset: v })}
+                    />
                     <AutoTextarea
-                      value={data.artist}
-                      placeholder="Artist"
-                      onChange={(v) => update({ artist: v })}
+                      value={data.album}
+                      placeholder="Album"
+                      onChange={(v) => update({ album: v })}
                       style={{
-                        fontFamily: data.artistFont,
-                        fontSize: data.artistSize * S,
+                        fontFamily: data.titleFont,
+                        fontSize: data.titleSize * S,
+                        fontWeight: 700,
                         color: data.textColor,
-                        opacity: data.artistOpacity,
+                        opacity: data.titleOpacity,
                         lineHeight: data.lineHeight,
                         letterSpacing: `${data.letterSpacing}em`,
                       }}
                     />
-                  )}
+                  </div>
+                  {(data.showArtist || data.showYear || data.discTotal > 1) && (
+                    <div
+                      className="group/block relative flex flex-col"
+                      style={{ transform: `translateY(${data.fullHeightArtistOffset * S}px)` }}
+                    >
+                      <TextBlockControls
+                        offset={data.fullHeightArtistOffset}
+                        maxMm={size.height}
+                        onChange={(v) => update({ fullHeightArtistOffset: v })}
+                      />
+                      {data.showArtist && (
+                        <AutoTextarea
+                          value={data.artist}
+                          placeholder="Artist"
+                          onChange={(v) => update({ artist: v })}
+                          style={{
+                            fontFamily: data.artistFont,
+                            fontSize: data.artistSize * S,
+                            color: data.textColor,
+                            opacity: data.artistOpacity,
+                            lineHeight: data.lineHeight,
+                            letterSpacing: `${data.letterSpacing}em`,
+                          }}
+                        />
+                      )}
                   {(data.showYear || data.discTotal > 1) && (
                     <div
                       className="flex items-baseline justify-between"
-                      // The twin's artist→meta gap is a fixed 0.8mm, not the
-                      // title–artist gap; cancel the flex gap difference.
-                      style={{ marginTop: (0.8 - data.titleArtistGap) * S }}
+                      style={{ marginTop: 0.8 * S }}
                     >
                       {data.showYear ? (
                         <input
@@ -257,6 +275,8 @@ export default function FrontPreview({ data, size, update, onCover, onCover2 }: 
                           {data.discNumber}/{data.discTotal}
                         </span>
                       )}
+                    </div>
+                  )}
                     </div>
                   )}
                 </div>
@@ -408,6 +428,52 @@ export default function FrontPreview({ data, size, update, onCover, onCover2 }: 
         />
       </svg>
 
+    </div>
+  );
+}
+
+/** Hover drag handle for independently nudging a free-layout text block. */
+function TextBlockControls({
+  offset,
+  maxMm,
+  onChange,
+}: {
+  offset: number;
+  maxMm: number;
+  onChange: (v: number) => void;
+}) {
+  const drag = useRef<{ y: number; offset: number } | null>(null);
+  const clamp = (v: number) => Math.max(-maxMm, Math.min(maxMm, v));
+  const set = (e: React.MouseEvent, value: number) => {
+    e.stopPropagation();
+    onChange(clamp(value));
+  };
+  return (
+    <div
+      className="absolute top-1/2 right-0 z-20 flex -translate-y-1/2 cursor-ns-resize touch-none items-center rounded-full bg-black/60 px-1 py-0.5 text-white opacity-0 transition-opacity group-hover/block:opacity-100"
+      onPointerDown={(e) => {
+        if ((e.target as HTMLElement).closest('button')) return;
+        drag.current = { y: e.clientY, offset };
+        e.currentTarget.setPointerCapture(e.pointerId);
+        e.stopPropagation();
+      }}
+      onPointerMove={(e) => {
+        if (!drag.current) return;
+        onChange(clamp(drag.current.offset + (e.clientY - drag.current.y) / S));
+      }}
+      onPointerUp={() => (drag.current = null)}
+      onPointerCancel={() => (drag.current = null)}
+      title="Drag to move this text block"
+    >
+      <button type="button" aria-label="Move block up" onClick={(e) => set(e, offset - 1)}>
+        <ChevronUp className="size-3" />
+      </button>
+      <button type="button" aria-label="Reset block position" onClick={(e) => set(e, 0)}>
+        <MoveVertical className="size-3" />
+      </button>
+      <button type="button" aria-label="Move block down" onClick={(e) => set(e, offset + 1)}>
+        <ChevronDown className="size-3" />
+      </button>
     </div>
   );
 }
