@@ -1137,7 +1137,7 @@ export default function App() {
             aria-hidden
             className="pointer-events-none absolute right-0 bottom-0 text-5xl leading-[1.05] font-bold uppercase"
             style={{
-              color: 'color-mix(in srgb, var(--background) 90%, black 10%)',
+              color: 'color-mix(in srgb, var(--background) 95%, white 5%)',
               fontFamily: 'var(--font-display)',
             }}
           >
@@ -1184,7 +1184,7 @@ export default function App() {
                 aria-hidden
                 className="pointer-events-none absolute right-0 bottom-0 text-5xl leading-[1.05] font-bold uppercase"
                 style={{
-                  color: 'color-mix(in srgb, var(--background) 90%, black 10%)',
+                  color: 'color-mix(in srgb, var(--background) 95%, white 5%)',
                   fontFamily: 'var(--font-display)',
                 }}
               >
@@ -1339,7 +1339,7 @@ export default function App() {
                 aria-hidden
                 className="pointer-events-none absolute right-0 bottom-0 text-5xl leading-[1.05] font-bold uppercase"
                 style={{
-                  color: 'color-mix(in srgb, var(--background) 90%, black 10%)',
+                  color: 'color-mix(in srgb, var(--background) 95%, white 5%)',
                   fontFamily: 'var(--font-display)',
                 }}
               >
