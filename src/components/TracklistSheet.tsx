@@ -124,6 +124,16 @@ const TracklistSheet = forwardRef<SVGSVGElement, Props>(function TracklistSheet(
     const innerW = (right - left) / innerCols;
     const colX = Array.from({ length: innerCols }, (_, i) => left + i * innerW);
     const colTextW = innerCols > 1 ? innerW - 2 : innerW;
+    const numberWidth = Math.max(trackSize * 2.5, `${tracks.length}.`.length * trackSize * 0.62);
+    const durationChars = showTrackDuration
+      ? Math.max(0, ...tracks.map((track) => splitTrack(track).dur.length))
+      : 0;
+    const durationWidth = durationChars ? durationChars * trackSize * 0.62 : 0;
+    const cellGap = trackSize * 0.6;
+    const titleWidth = Math.max(
+      trackSize * 2,
+      colTextW - numberWidth - cellGap - (durationWidth ? durationWidth + cellGap : 0),
+    );
     // Only the last (rightmost) column shares space with the QR corner.
     const maxLinesFor = (c: number) => (c < innerCols - 1 ? maxFull : maxShort);
 
@@ -132,6 +142,7 @@ const TracklistSheet = forwardRef<SVGSVGElement, Props>(function TracklistSheet(
     // (mixed-artist playlists) renders bold, so wrap on the plain text.
     const placed: {
       x: number;
+      numX: number;
       y: number;
       lines: string[];
       dur: string;
@@ -145,10 +156,9 @@ const TracklistSheet = forwardRef<SVGSVGElement, Props>(function TracklistSheet(
       const { title, dur } = splitTrack(tracks[i]);
       const { artist: boldArtist, title: plainTitle } = splitBoldArtist(title);
       const display = boldArtist ? `${boldArtist} ${plainTitle}` : title;
-      const num = `${i + 1}. `;
+      const num = `${i + 1}.`;
       const showDur = showTrackDuration && !!dur;
-      const durW = showDur ? dur.length * trackSize * 0.62 + 1.5 : 0;
-      const lines = wrapText(`${num}${display}`, trackFont, trackSize, colTextW - durW);
+      const lines = wrapText(display, trackFont, trackSize, titleWidth);
       if (lineInCol > 0 && lineInCol + lines.length > maxLinesFor(col) && col < innerCols - 1) {
         col++;
         lineInCol = 0;
@@ -157,7 +167,8 @@ const TracklistSheet = forwardRef<SVGSVGElement, Props>(function TracklistSheet(
       if (col === innerCols - 1 && lineInCol + lines.length > maxLinesFor(col) && lineInCol > 0)
         break;
       placed.push({
-        x: colX[col],
+        x: colX[col] + numberWidth + cellGap,
+        numX: colX[col] + numberWidth,
         y: tracksTop + lineInCol * trackGap,
         lines,
         dur: showDur ? dur : '',
@@ -232,6 +243,18 @@ const TracklistSheet = forwardRef<SVGSVGElement, Props>(function TracklistSheet(
         {placed.map((p, i) => (
           <g key={i}>
             <text
+              x={p.numX}
+              y={p.y}
+              fill={textColor}
+              fontFamily={trackFont}
+              fontSize={trackSize}
+              fillOpacity={trackOpacity}
+              letterSpacing={trackSize * letterSpacing}
+              textAnchor="end"
+            >
+              {p.num}
+            </text>
+            <text
               fill={textColor}
               fontFamily={trackFont}
               fontSize={trackSize}
@@ -239,13 +262,11 @@ const TracklistSheet = forwardRef<SVGSVGElement, Props>(function TracklistSheet(
               letterSpacing={trackSize * letterSpacing}
             >
               {p.lines.map((line, li) => {
-                const boldLead = `${p.num}${p.boldArtist ?? ''}`;
-                if (li === 0 && p.boldArtist && line.startsWith(boldLead)) {
+                if (li === 0 && p.boldArtist && line.startsWith(p.boldArtist)) {
                   return (
                     <tspan key={li} x={p.x} y={p.y}>
-                      {p.num}
                       <tspan fontWeight={700}>{p.boldArtist}</tspan>
-                      {line.slice(boldLead.length)}
+                      {line.slice(p.boldArtist.length)}
                     </tspan>
                   );
                 }

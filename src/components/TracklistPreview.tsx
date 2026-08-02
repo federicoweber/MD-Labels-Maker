@@ -4,6 +4,7 @@ import QrOverlay from '@/components/QrOverlay';
 import { TRACKLIST, PREVIEW_PX_PER_MM as S, type SizePreset } from '@/lib/dimensions';
 import { wrapText } from '@/lib/text';
 import { qrPath, shareDataFor, shareUrl } from '@/lib/share';
+import { splitTrack } from '@/lib/tracklist';
 
 interface Props {
   data: LabelData;
@@ -154,6 +155,9 @@ function TracklistColumn({
 
   // Force two columns past a track count that depends on the header height.
   const trackCount = tracklist.split('\n').filter((t) => t.trim()).length;
+  const durationChars = data.showTrackDuration
+    ? Math.max(0, ...tracklist.split('\n').map((t) => splitTrack(t).dur.length))
+    : 0;
   const maxOneCol = hasThumb ? 11 : hasTextHeader ? 12 : 15;
   const useCols = cols >= 2 && trackCount > maxOneCol ? 2 : 1;
   // Two columns: the left one fills the sheet (only the right shares space
@@ -271,15 +275,17 @@ function TracklistColumn({
           top: (tracksTop - 0.9 * data.trackSize) * S,
           height: maxLines * trackGap * S + 1,
           flex: 'none',
-        }}
+          '--track-num-width': `${Math.max(2.5, String(trackCount).length + 1.4)}em`,
+          '--track-duration-width': durationChars ? `${durationChars * 0.62 + 0.6}em` : '0em',
+        } as React.CSSProperties & Record<`--${string}`, string | number>}
       />
     </div>
   );
 }
 
 /** A line's text with <b>/<strong> segments serialised back to ** markers. */
-function lineText(li: Element): string {
-  return [...li.childNodes]
+function formattedText(el: Element): string {
+  return [...el.childNodes]
     .map((n) => {
       const tag = (n as Element).tagName;
       return tag === 'B' || tag === 'STRONG' ? `**${n.textContent}**` : (n.textContent ?? '');
@@ -287,9 +293,18 @@ function lineText(li: Element): string {
     .join('');
 }
 
+function lineText(li: Element): string {
+  const title = li.querySelector('.track-title');
+  const duration = li.querySelector('.track-duration')?.textContent?.trim() ?? '';
+  const text = title ? formattedText(title) : formattedText(li);
+  return duration ? `${text}\t${duration}` : text;
+}
+
 /** "**Artist** Title" renders its artist prefix bold inside the editor. */
 function lineHtml(l: string): string {
-  return escapeHtml(l).replace(/^\*\*(.+?)\*\*\s?/, '<b>$1</b> ') || '<br>';
+  const { title, dur } = splitTrack(l);
+  const titleHtml = escapeHtml(title).replace(/^\*\*(.+?)\*\*\s?/, '<b>$1</b> ') || '<br>';
+  return `<span class="track-title">${titleHtml}</span><span class="track-duration">${escapeHtml(dur)}</span>`;
 }
 
 /** ContentEditable numbered track list (one or two columns). */
@@ -332,8 +347,6 @@ export function TrackEditor({
       style={{
         columns: cols,
         columnFill: 'auto',
-        listStyleType: 'decimal',
-        listStylePosition: 'inside',
         margin: 0,
         padding: 0,
         ...style,
