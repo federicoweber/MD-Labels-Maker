@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Check, Download, Link, Plus, Printer, Trash2, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import MdLogo from '@/components/MdLogo';
 import type { LabelData } from '@/lib/types';
 
 interface ControlsProps {
@@ -98,6 +99,8 @@ export default function Controls({
           <Trash2 /> Clear all labels
         </Button>
       </div>
+
+      <MdLogo className="mt-auto shrink-0" />
     </aside>
   );
 }

@@ -14,7 +14,6 @@ import LabelControls, { type TypoField } from '@/components/LabelControls';
 import Controls from '@/components/Controls';
 import ConfirmModal from '@/components/ConfirmModal';
 import PrintView from '@/components/PrintView';
-import MdLogo from '@/components/MdLogo';
 import { effFor, tlEffFor, expandDiscs } from '@/lib/derive';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
@@ -1397,8 +1396,6 @@ export default function App() {
             </section>
         </>
       </main>
-
-      <MdLogo className="fixed bottom-5 left-[320px] z-10" />
 
       {/* Hidden SVG twins for every disc — the precise vector source for export. */}
       <div aria-hidden className="pointer-events-none fixed top-0 -left-[99999px] opacity-0">
