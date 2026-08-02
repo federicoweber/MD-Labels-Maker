@@ -893,8 +893,8 @@ export default function App() {
         exporting={exporting}
       />
 
-      <main className="flex flex-1 flex-col items-start gap-32 overflow-auto bg-background p-12 pt-5">
-        <section className="flex w-full flex-wrap items-stretch gap-x-12 gap-y-8">
+      <main className="flex flex-1 flex-col items-start gap-16 overflow-auto bg-background p-12 pt-5">
+        <section className="flex w-full flex-wrap items-start gap-x-24 gap-y-8">
           <div className="flex shrink-0 flex-col gap-2">
             <SizeSelect label="Cover" value={frontSize} presets={FRONT_PRESETS} onChange={setFrontSize} />
             <FrontPreview
@@ -905,7 +905,7 @@ export default function App() {
               onCover2={onCover2}
             />
           </div>
-          <aside className="flex w-[23rem] flex-col gap-2 border-l border-border pl-12">
+          <aside className="flex w-80 flex-col gap-2">
           <Button variant="outline" className="w-fit" onClick={clearDisc}>
             Clear
           </Button>
@@ -1096,7 +1096,7 @@ export default function App() {
             />
           </div>
           </aside>
-          <aside className="w-[23rem] shrink-0 border-l border-border pl-12">
+          <aside className="w-80 shrink-0">
           <LabelControls
             fields={frontFields}
             families={families}
@@ -1137,7 +1137,7 @@ export default function App() {
 
         <>
           {data.showSpine && (
-            <section className="flex w-full flex-wrap items-start gap-8">
+            <section className="flex w-full flex-wrap items-start gap-8 border-t border-border pt-16">
               <div className="flex shrink-0 flex-col gap-2">
                 <SizeSelect label="Spine" value={spineSize} presets={SPINE_PRESETS} onChange={setSpineSize} />
                 <SpinePreview data={eff} size={spineSize} />
@@ -1174,7 +1174,7 @@ export default function App() {
           )}
 
           {data.showTracklist && (
-            <section className="flex w-full flex-wrap items-start gap-8">
+            <section className="flex w-full flex-wrap items-start gap-8 border-t border-border pt-16">
               <div className="flex shrink-0 flex-col gap-2">
                 <SizeSelect
                   label="Tracklist"
