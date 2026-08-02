@@ -113,7 +113,9 @@ const TracklistSheet = forwardRef<SVGSVGElement, Props>(function TracklistSheet(
     const artistBase = artistLines.map((_, i) => artist0 + i * artistLineGap);
     const lastArtist = artistBase[artistBase.length - 1] ?? artist0;
     const headerBottom = tlShowArtist ? lastArtist : tlShowAlbum ? lastTitle : padding + artistSize;
-    const ruleY = hasHeader ? headerBottom + 2.5 : padding;
+    const headerRuleY = hasHeader ? headerBottom + 2.5 : padding;
+    const thumbSize = hasThumb ? headerRuleY - padding : 0;
+    const ruleY = headerRuleY + (hasThumb ? 2 : 0);
     const tracksTop = hasHeader ? ruleY + 4 : padding + trackSize * 0.9;
     // With the QR on (bottom-right), only the column that runs under it stops
     // above it (lines whose ink would reach the QR top are cut); other columns
@@ -123,8 +125,6 @@ const TracklistSheet = forwardRef<SVGSVGElement, Props>(function TracklistSheet(
     const maxShort = qr
       ? Math.max(1, Math.floor((qrTop - tracksTop - 0.2 * trackSize) / trackGap) + 1)
       : maxFull;
-    const thumbSize = ruleY - padding;
-
     const innerCols = maxCols >= 2 ? 2 : 1;
     const innerW = (right - left) / innerCols;
     const colX = Array.from({ length: innerCols }, (_, i) => left + i * innerW);

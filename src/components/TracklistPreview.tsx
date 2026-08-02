@@ -148,7 +148,9 @@ function TracklistColumn({
     ? artist0 + (artistLines.length - 1) * data.tlArtistSize * 1.2
     : artist0;
   const headerBottom = data.tlShowArtist ? lastArtist : data.tlShowAlbum ? lastTitle : pad + data.tlArtistSize;
-  const ruleY = hasHeader ? headerBottom + 2.5 : pad;
+  const headerRuleY = hasHeader ? headerBottom + 2.5 : pad;
+  const thumbSize = hasThumb ? headerRuleY - pad : 0;
+  const ruleY = headerRuleY + (hasThumb ? 2 : 0);
   const tracksTop = hasHeader ? ruleY + 4 : pad + data.trackSize * 0.9;
   const trackGap = data.trackSize * data.lineHeight;
   const qrSizeMm = hasQr ? qrPath(shareUrl(shareDataFor(data))).count * 0.3 + 2.4 : 0;
@@ -157,7 +159,7 @@ function TracklistColumn({
   const maxShort = hasQr
     ? Math.max(1, Math.floor((qrTop - tracksTop - 0.2 * data.trackSize) / trackGap) + 1)
     : maxFull;
-  const thumb = (ruleY - pad) * S;
+  const thumb = thumbSize * S;
 
   const trackCount = tracklist.split('\n').filter((t) => t.trim()).length;
   const durationChars = data.showTrackDuration
