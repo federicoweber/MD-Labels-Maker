@@ -727,9 +727,8 @@ function CoverSlot({
 
 /**
  * Full-height mode: hover controls to fine-tune the cover's horizontal crop.
- * The whole cover becomes a drag surface (the image follows the pointer); the
- * hover pill's chevrons snap the crop to the cover's left/right edge and its
- * centre button recentres.
+ * The hover pill snaps the crop left/centre/right and exposes a dedicated
+ * six-dot handle for dragging the image horizontally.
  */
 function AlignControls({
   align,
@@ -750,26 +749,9 @@ function AlignControls({
     onChange(clamp(v));
   };
   return (
-    <div
-      className="absolute inset-0 cursor-ew-resize touch-none"
-      onPointerDown={(e) => {
-        // Capturing here would steal the pill buttons' clicks — let them be.
-        if ((e.target as HTMLElement).closest('button')) return;
-        drag.current = { x: e.clientX, align };
-        moved.current = false;
-        e.currentTarget.setPointerCapture(e.pointerId);
-      }}
-      onPointerMove={(e) => {
-        if (!drag.current) return;
-        const dx = e.clientX - drag.current.x;
-        if (Math.abs(dx) > 3) moved.current = true;
-        if (moved.current) onChange(clamp(drag.current.align - dx / maxShift));
-      }}
-      onPointerUp={() => (drag.current = null)}
-      onPointerCancel={() => (drag.current = null)}
-    >
+    <div className="pointer-events-none absolute inset-0">
       {/* Sits at the top (with a z-lift) so the movable text band can't bury it. */}
-      <div className="absolute top-1.5 left-1/2 z-10 flex -translate-x-1/2 items-center gap-0.5 rounded-full bg-black/60 px-1.5 py-1 text-white opacity-0 transition-opacity group-hover:opacity-100">
+      <div className="pointer-events-auto absolute top-1.5 left-1/2 z-10 flex -translate-x-1/2 items-center gap-1 rounded-full bg-black/70 px-2 py-1.5 text-white opacity-0 transition-opacity group-hover:opacity-100">
         <button
           type="button"
           aria-label="Align cover left"
@@ -793,6 +775,28 @@ function AlignControls({
           className="grid size-5 place-items-center rounded-full hover:bg-white/20"
         >
           <ChevronRight className="size-3.5" />
+        </button>
+        <button
+          type="button"
+          aria-label="Drag cover horizontally"
+          className="grid size-7 cursor-ew-resize touch-none place-items-center rounded-full bg-white/15 hover:bg-white/25"
+          onPointerDown={(e) => {
+            drag.current = { x: e.clientX, align };
+            moved.current = false;
+            e.currentTarget.setPointerCapture(e.pointerId);
+            e.stopPropagation();
+          }}
+          onPointerMove={(e) => {
+            if (!drag.current) return;
+            const dx = e.clientX - drag.current.x;
+            if (Math.abs(dx) > 3) moved.current = true;
+            if (moved.current) onChange(clamp(drag.current.align - dx / maxShift));
+          }}
+          onPointerUp={() => (drag.current = null)}
+          onPointerCancel={() => (drag.current = null)}
+          title="Drag to align the cover"
+        >
+          <GripVertical className="size-4" />
         </button>
       </div>
     </div>
