@@ -893,8 +893,8 @@ export default function App() {
         exporting={exporting}
       />
 
-      <main className="flex flex-1 flex-col items-start gap-16 overflow-auto bg-background p-12 pt-5">
-        <section className="flex w-full flex-wrap items-start gap-x-[clamp(6rem,8vw,9rem)] gap-y-8">
+      <main className="flex flex-1 flex-col items-start gap-24 overflow-auto bg-background p-12 pt-5">
+        <section className="relative flex w-full flex-wrap items-start gap-x-[clamp(6rem,8vw,9rem)] gap-y-8 pb-20">
           <div className="flex shrink-0 flex-col gap-2">
             <SizeSelect label="Cover" value={frontSize} presets={FRONT_PRESETS} onChange={setFrontSize} />
             <FrontPreview
@@ -1133,11 +1133,18 @@ export default function App() {
             titleGap={{ value: data.titleArtistGap, onChange: (v) => update({ titleArtistGap: v }) }}
           />
           </aside>
+          <h2
+            aria-hidden
+            className="pointer-events-none absolute right-0 bottom-0 font-[var(--font-display)] text-5xl leading-[1.05] font-bold uppercase"
+            style={{ color: 'color-mix(in srgb, var(--background) 80%, white 20%)' }}
+          >
+            Cover
+          </h2>
         </section>
 
         <>
           {data.showSpine && (
-            <section className="flex w-full flex-wrap items-start gap-8 border-t border-border pt-16">
+            <section className="relative flex w-full flex-wrap items-start gap-8 border-t border-border pt-24 pb-20">
               <div className="flex shrink-0 flex-col gap-2">
                 <SizeSelect label="Spine" value={spineSize} presets={SPINE_PRESETS} onChange={setSpineSize} />
                 <SpinePreview data={eff} size={spineSize} />
@@ -1170,11 +1177,18 @@ export default function App() {
                 />
               </div>
               </aside>
+              <h2
+                aria-hidden
+                className="pointer-events-none absolute right-0 bottom-0 font-[var(--font-display)] text-5xl leading-[1.05] font-bold uppercase"
+                style={{ color: 'color-mix(in srgb, var(--background) 80%, white 20%)' }}
+              >
+                Spine
+              </h2>
             </section>
           )}
 
           {data.showTracklist && (
-            <section className="flex w-full flex-wrap items-start gap-8 border-t border-border pt-16">
+            <section className="relative flex w-full flex-wrap items-start gap-8 border-t border-border pt-24 pb-20">
               <div className="flex shrink-0 flex-col gap-2">
                 <SizeSelect
                   label="Tracklist"
@@ -1315,6 +1329,13 @@ export default function App() {
                 />
               )}
               </aside>
+              <h2
+                aria-hidden
+                className="pointer-events-none absolute right-0 bottom-0 font-[var(--font-display)] text-5xl leading-[1.05] font-bold uppercase"
+                style={{ color: 'color-mix(in srgb, var(--background) 80%, white 20%)' }}
+              >
+                Tracklist
+              </h2>
             </section>
           )}
         </>
