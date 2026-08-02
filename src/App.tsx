@@ -1135,8 +1135,11 @@ export default function App() {
           </aside>
           <h2
             aria-hidden
-            className="pointer-events-none absolute right-0 bottom-0 font-[var(--font-display)] text-5xl leading-[1.05] font-bold uppercase"
-            style={{ color: 'color-mix(in srgb, var(--background) 80%, white 20%)' }}
+            className="pointer-events-none absolute right-0 bottom-0 text-5xl leading-[1.05] font-bold uppercase"
+            style={{
+              color: 'color-mix(in srgb, var(--background) 80%, white 20%)',
+              fontFamily: 'var(--font-display)',
+            }}
           >
             Cover
           </h2>
@@ -1179,8 +1182,11 @@ export default function App() {
               </aside>
               <h2
                 aria-hidden
-                className="pointer-events-none absolute right-0 bottom-0 font-[var(--font-display)] text-5xl leading-[1.05] font-bold uppercase"
-                style={{ color: 'color-mix(in srgb, var(--background) 80%, white 20%)' }}
+                className="pointer-events-none absolute right-0 bottom-0 text-5xl leading-[1.05] font-bold uppercase"
+                style={{
+                  color: 'color-mix(in srgb, var(--background) 80%, white 20%)',
+                  fontFamily: 'var(--font-display)',
+                }}
               >
                 Spine
               </h2>
@@ -1331,8 +1337,11 @@ export default function App() {
               </aside>
               <h2
                 aria-hidden
-                className="pointer-events-none absolute right-0 bottom-0 font-[var(--font-display)] text-5xl leading-[1.05] font-bold uppercase"
-                style={{ color: 'color-mix(in srgb, var(--background) 80%, white 20%)' }}
+                className="pointer-events-none absolute right-0 bottom-0 text-5xl leading-[1.05] font-bold uppercase"
+                style={{
+                  color: 'color-mix(in srgb, var(--background) 80%, white 20%)',
+                  fontFamily: 'var(--font-display)',
+                }}
               >
                 Tracklist
               </h2>
