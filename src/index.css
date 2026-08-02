@@ -115,7 +115,7 @@
 .print-cell {
   line-height: 0;
 }
-.print-cell > svg {
+.print-cell > svg:not(.trim-guides) {
   display: block;
   width: 100%;
   height: 100%;

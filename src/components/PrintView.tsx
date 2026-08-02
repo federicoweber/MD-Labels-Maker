@@ -25,9 +25,9 @@ const PAPERS: Record<string, [number, number]> = {
   A3: [297, 420],
 };
 const MARGIN = 5; // mm — room for the external cutter guides
-const GAP = 5; // mm — clear cutting space between every label
-const GUIDE_LENGTH = 3; // mm
-const GUIDE_OFFSET = 1; // mm away from the packed label grid
+const GAP = 3; // mm — clear cutting space between every label
+const GUIDE_LENGTH = 1.1; // mm — fits two neighbouring guides in a 3mm gutter
+const GUIDE_OFFSET = 0.4; // mm away from each label edge
 
 interface Item {
   key: string;
@@ -90,58 +90,25 @@ function paginate(rows: Row[], contentH: number): Row[][] {
   return pages;
 }
 
-function pageGeometry(rows: Row[]) {
-  const xCuts = new Set<number>();
-  const yCuts = new Set<number>();
-  let gridW = 0;
-  let y = 0;
-  for (const row of rows) {
-    yCuts.add(y);
-    let x = 0;
-    for (const item of row.items) {
-      xCuts.add(x);
-      xCuts.add(x + item.w);
-      x += item.w + GAP;
-    }
-    gridW = Math.max(gridW, Math.max(0, x - GAP));
-    y += row.h;
-    yCuts.add(y);
-    y += GAP;
-  }
-  return {
-    gridW,
-    gridH: Math.max(0, y - GAP),
-    xCuts: [...xCuts].sort((a, b) => a - b),
-    yCuts: [...yCuts].sort((a, b) => a - b),
-  };
-}
-
-function TrimGuides({ rows, paperW, paperH }: { rows: Row[]; paperW: number; paperH: number }) {
-  const { gridW, gridH, xCuts, yCuts } = pageGeometry(rows);
-  const top = MARGIN;
-  const left = MARGIN;
-  const bottom = top + gridH;
-  const right = left + gridW;
+function ItemTrimGuides({ width, height }: { width: number; height: number }) {
+  const near = GUIDE_OFFSET;
+  const far = GUIDE_OFFSET + GUIDE_LENGTH;
   return (
     <svg
       aria-hidden
-      className="pointer-events-none absolute inset-0"
-      viewBox={`0 0 ${paperW} ${paperH}`}
+      className="trim-guides pointer-events-none absolute inset-0 size-full overflow-visible"
+      viewBox={`0 0 ${width} ${height}`}
       preserveAspectRatio="none"
     >
       <g stroke="#000" strokeWidth={0.2}>
-        {xCuts.map((x) => (
-          <g key={`x-${x}`}>
-            <line x1={left + x} y1={top - GUIDE_OFFSET - GUIDE_LENGTH} x2={left + x} y2={top - GUIDE_OFFSET} />
-            <line x1={left + x} y1={bottom + GUIDE_OFFSET} x2={left + x} y2={bottom + GUIDE_OFFSET + GUIDE_LENGTH} />
-          </g>
-        ))}
-        {yCuts.map((cutY) => (
-          <g key={`y-${cutY}`}>
-            <line x1={left - GUIDE_OFFSET - GUIDE_LENGTH} y1={top + cutY} x2={left - GUIDE_OFFSET} y2={top + cutY} />
-            <line x1={right + GUIDE_OFFSET} y1={top + cutY} x2={right + GUIDE_OFFSET + GUIDE_LENGTH} y2={top + cutY} />
-          </g>
-        ))}
+        <line x1={0} y1={-far} x2={0} y2={-near} />
+        <line x1={width} y1={-far} x2={width} y2={-near} />
+        <line x1={0} y1={height + near} x2={0} y2={height + far} />
+        <line x1={width} y1={height + near} x2={width} y2={height + far} />
+        <line x1={-far} y1={0} x2={-near} y2={0} />
+        <line x1={-far} y1={height} x2={-near} y2={height} />
+        <line x1={width + near} y1={0} x2={width + far} y2={0} />
+        <line x1={width + near} y1={height} x2={width + far} y2={height} />
       </g>
     </svg>
   );
@@ -219,7 +186,6 @@ export default function PrintView({
             className="print-page relative bg-white"
             style={{ width: `${pw}mm`, height: `${ph}mm` }}
           >
-            <TrimGuides rows={pg} paperW={pw} paperH={ph} />
             <div
               className="absolute flex flex-col items-start"
               style={{ top: `${MARGIN}mm`, left: `${MARGIN}mm`, gap: `${GAP}mm` }}
@@ -229,9 +195,10 @@ export default function PrintView({
                   {row.items.map((it) => (
                     <div
                       key={it.key}
-                      className="print-cell shrink-0"
+                      className="print-cell relative shrink-0"
                       style={{ width: `${it.w}mm`, height: `${it.h}mm` }}
                     >
+                      <ItemTrimGuides width={it.w} height={it.h} />
                       {it.node}
                     </div>
                   ))}
