@@ -136,13 +136,17 @@ export default function FrontPreview({ data, size, update, onCover, onCover2 }: 
           src={data.coverDataUrl}
           onCover={onCover}
           pageDragging={pageDragging}
-          imgStyle={{ objectPosition: `${data.fullHeightAlign * 100}% 50%` }}
+          imgStyle={{
+            objectPosition: `${data.fullHeightAlign * 100}% 50%`,
+            transform: `scale(${data.fullHeightScale})`,
+            transformOrigin: `${data.fullHeightAlign * 100}% 50%`,
+          }}
           style={{ position: 'absolute', top: 0, left: 0, width: W, height: H }}
         >
-          {data.coverDataUrl && H > W && (
+          {data.coverDataUrl && Math.max(W, H) * data.fullHeightScale > W && (
             <AlignControls
               align={data.fullHeightAlign}
-              maxShift={H - W}
+              maxShift={Math.max(W, H) * data.fullHeightScale - W}
               onChange={(v) => update({ fullHeightAlign: v })}
             />
           )}

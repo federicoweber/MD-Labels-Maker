@@ -61,6 +61,7 @@ const INITIAL: LabelData = {
   showChamfer: true,
   verticalMode: false,
   fullHeight: false,
+  fullHeightScale: 1,
   coverPadding: 0,
   fullHeightAlign: 0.5,
   fullHeightTextY: 1,
@@ -1019,7 +1020,7 @@ export default function App() {
           {!data.doubleAlbum && (
             <div className="flex w-full items-center justify-between">
               <Label htmlFor="full-height" className="text-xs">
-                Full-height cover
+                Free layout
               </Label>
               <Switch
                 id="full-height"
@@ -1103,6 +1104,11 @@ export default function App() {
               data.showQr ||
               ((data.doubleAlbum || data.fullHeight) && !data.doubleHideText)
                 ? { value: data.textBgOpacity, onChange: (v) => update({ textBgOpacity: v }) }
+                : undefined
+            }
+            imageScale={
+              data.fullHeight
+                ? { value: data.fullHeightScale, onChange: (v) => update({ fullHeightScale: v }) }
                 : undefined
             }
             coverPadding={

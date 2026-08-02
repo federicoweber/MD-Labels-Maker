@@ -26,6 +26,8 @@ interface Props {
   onBgColor: (hex: string) => void;
   /** Opacity of the band behind overlaid text (double-album / full-height modes). */
   bgOpacity?: { value: number; onChange: (v: number) => void };
+  /** Cover zoom in free-layout mode. */
+  imageScale?: { value: number; onChange: (v: number) => void };
   /** Uniform padding around the artwork in standard cover mode. */
   coverPadding?: { value: number; onChange: (v: number) => void };
   textColor: string;
@@ -53,6 +55,7 @@ export default function LabelControls({
   bgColor,
   onBgColor,
   bgOpacity,
+  imageScale,
   coverPadding,
   textColor,
   onTextColor,
@@ -93,6 +96,21 @@ export default function LabelControls({
                 step={0.05}
                 format={(v) => `${Math.round(v * 100)}%`}
                 onChange={bgOpacity.onChange}
+              />
+            </>
+          )}
+          {imageScale && (
+            <>
+              <Rule />
+              <SizeSlider
+                id="free-layout-image-scale"
+                label="Image scale"
+                value={imageScale.value}
+                min={1}
+                max={3}
+                step={0.05}
+                format={(v) => `${Math.round(v * 100)}%`}
+                onChange={imageScale.onChange}
               />
             </>
           )}
