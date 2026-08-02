@@ -894,7 +894,7 @@ export default function App() {
       />
 
       <main className="flex flex-1 flex-col items-start gap-16 overflow-auto bg-background p-12 pt-5">
-        <section className="flex w-full flex-wrap items-start gap-x-24 gap-y-8">
+        <section className="flex w-full flex-wrap items-start justify-between gap-x-[clamp(8rem,10vw,16rem)] gap-y-8">
           <div className="flex shrink-0 flex-col gap-2">
             <SizeSelect label="Cover" value={frontSize} presets={FRONT_PRESETS} onChange={setFrontSize} />
             <FrontPreview
