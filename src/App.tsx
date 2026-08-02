@@ -60,7 +60,7 @@ const INITIAL: LabelData = {
   artist2: '',
   tracklist2: '',
   doubleHideText: false,
-  showChamfer: true,
+  showChamfer: false,
   verticalMode: false,
   fullHeight: false,
   fullHeightScale: 1,
