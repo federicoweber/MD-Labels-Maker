@@ -39,7 +39,6 @@ import {
   FRONT_PRESETS,
   SPINE_PRESETS,
   TRACKLIST_PRESETS,
-  PREVIEW_PX_PER_MM,
   orientedFrontSize,
 } from '@/lib/dimensions';
 const DEFAULT_FONT = 'Inconsolata';
@@ -896,31 +895,13 @@ export default function App() {
       <main className="flex flex-1 flex-wrap content-start items-start gap-36 overflow-auto bg-background p-12 pt-5">
         <section className="flex flex-col gap-2">
           <SizeSelect label="Cover" value={frontSize} presets={FRONT_PRESETS} onChange={setFrontSize} />
-          <div
-            style={{
-              width: frontSize.width * PREVIEW_PX_PER_MM,
-              height: frontSize.height * PREVIEW_PX_PER_MM,
-            }}
-          >
-            <div
-              style={
-                data.verticalMode
-                  ? {
-                      transform: `translateX(${frontSize.width * PREVIEW_PX_PER_MM}px) rotate(90deg)`,
-                      transformOrigin: '0 0',
-                    }
-                  : undefined
-              }
-            >
-              <FrontPreview
-                data={eff}
-                size={layoutFrontSize}
-                update={update}
-                onCover={onCover}
-                onCover2={onCover2}
-              />
-            </div>
-          </div>
+          <FrontPreview
+            data={eff}
+            size={layoutFrontSize}
+            update={update}
+            onCover={onCover}
+            onCover2={onCover2}
+          />
           <Button variant="outline" className="w-fit" onClick={clearDisc}>
             Clear
           </Button>
