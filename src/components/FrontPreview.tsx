@@ -163,36 +163,29 @@ export default function FrontPreview({ data, size, update, onCover, onCover2 }: 
               }}
               onClick={(e) => e.stopPropagation()}
             >
-              <BandControls
-                y={data.fullHeightTextY}
-                containerH={H}
-                onChange={(v) => update({ fullHeightTextY: v })}
-              />
+              {(data.showQr || data.frontTracklist) && (
+                <BandControls
+                  y={data.fullHeightTextY}
+                  containerH={H}
+                  onChange={(v) => update({ fullHeightTextY: v })}
+                />
+              )}
               {data.showQr && <QrOverlay data={data} sizeMm={size.width} className="self-end" />}
               {data.frontTracklist && <TracksOverlay data={data} update={update} />}
               {!data.doubleHideText && (
                 <div
                   className="flex flex-col justify-end"
                   style={{
-                    // Bottom trimmed so the last baseline lands at the twin's
-                    // H − 0.7 × padding anchor (the box ends ~0.2em below it).
-                    padding: `${PAD}px ${PAD}px ${
-                      PAD * 0.7 -
-                      0.2 *
-                        ((data.showYear || data.discTotal > 1
-                          ? data.yearSize
-                          : data.showArtist
-                            ? data.artistSize
-                            : data.titleSize) *
-                          S)
-                    }px`,
                     gap: data.titleArtistGap * S,
-                    background: withAlpha(data.bgColor, data.textBgOpacity),
                   }}
                 >
                   <div
                     className="group/block relative"
-                    style={{ transform: `translateY(${data.fullHeightTitleOffset * S}px)` }}
+                    style={{
+                      padding: `${PAD * 0.4}px ${PAD}px`,
+                      background: withAlpha(data.bgColor, data.textBgOpacity),
+                      transform: `translateY(${data.fullHeightTitleOffset * S}px)`,
+                    }}
                   >
                     <TextBlockControls
                       offset={data.fullHeightTitleOffset}
@@ -217,7 +210,18 @@ export default function FrontPreview({ data, size, update, onCover, onCover2 }: 
                   {(data.showArtist || data.showYear || data.discTotal > 1) && (
                     <div
                       className="group/block relative flex flex-col"
-                      style={{ transform: `translateY(${data.fullHeightArtistOffset * S}px)` }}
+                      style={{
+                        padding: `${PAD * 0.4}px ${PAD}px ${
+                          PAD * 0.7 -
+                          0.2 *
+                            ((data.showYear || data.discTotal > 1
+                              ? data.yearSize
+                              : data.artistSize) *
+                              S)
+                        }px`,
+                        background: withAlpha(data.bgColor, data.textBgOpacity),
+                        transform: `translateY(${data.fullHeightArtistOffset * S}px)`,
+                      }}
                     >
                       <TextBlockControls
                         offset={data.fullHeightArtistOffset}

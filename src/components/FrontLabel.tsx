@@ -119,7 +119,7 @@ const FrontLabel = forwardRef<SVGSVGElement, Props>(function FrontLabel(props, r
                 <tspan
                   key={i}
                   x={padding}
-                  y={lastTitleBase - (lines.length - 1 - i) * lh + fullHeightTitleOffset}
+                  y={lastTitleBase - (lines.length - 1 - i) * lh}
                 >
                   {line || ' '}
                 </tspan>
@@ -265,6 +265,10 @@ const FrontLabel = forwardRef<SVGSVGElement, Props>(function FrontLabel(props, r
     const textY = Math.max(0, Math.min(1, fullHeightTextY));
     const blockTop = textY * (H - blockH);
     const bandShift = blockTop + (built?.height ?? 0) - bandY;
+    const titlePanelBottom = lastTitleBase + titleSize * 0.3 + padding * 0.4;
+    const artistPanelTop = showArtist
+      ? artistBase - artistSize - padding * 0.4
+      : metaBase - yearSize - padding * 0.4;
     return (
       <>
         {coverDataUrl ? (
@@ -294,8 +298,16 @@ const FrontLabel = forwardRef<SVGSVGElement, Props>(function FrontLabel(props, r
         )}
         {built && tracksBlock(0, W, blockTop, built, 'ft')}
         {!doubleHideText && (
-          <g transform={`translate(0 ${bandShift})`}>
-            <rect x={0} y={bandY} width={W} height={H - bandY} fill={bgColor} fillOpacity={textBgOpacity} />
+          <>
+          <g transform={`translate(0 ${bandShift + fullHeightTitleOffset})`}>
+            <rect
+              x={0}
+              y={bandY}
+              width={W}
+              height={titlePanelBottom - bandY}
+              fill={bgColor}
+              fillOpacity={textBgOpacity}
+            />
             <text
               fill={textColor}
               fillOpacity={titleOpacity}
@@ -310,6 +322,17 @@ const FrontLabel = forwardRef<SVGSVGElement, Props>(function FrontLabel(props, r
                 </tspan>
               ))}
             </text>
+          </g>
+          {(showArtist || showYear || discTotal > 1) && (
+          <g transform={`translate(0 ${bandShift + fullHeightArtistOffset})`}>
+            <rect
+              x={0}
+              y={artistPanelTop}
+              width={W}
+              height={H - artistPanelTop}
+              fill={bgColor}
+              fillOpacity={textBgOpacity}
+            />
             {showArtist && (
               <text
                 fill={textColor}
@@ -319,7 +342,7 @@ const FrontLabel = forwardRef<SVGSVGElement, Props>(function FrontLabel(props, r
                 letterSpacing={artistSize * letterSpacing}
               >
                 {bandArtistLines.map((line, i) => (
-                  <tspan key={i} x={padding} y={artistBase + i * bandArtistLH + fullHeightArtistOffset}>
+                  <tspan key={i} x={padding} y={artistBase + i * bandArtistLH}>
                     {line || ' '}
                   </tspan>
                 ))}
@@ -328,7 +351,7 @@ const FrontLabel = forwardRef<SVGSVGElement, Props>(function FrontLabel(props, r
             {showYear && year && (
               <text
                 x={padding}
-                y={metaBase + fullHeightArtistOffset}
+                y={metaBase}
                 fill={textColor}
                 fillOpacity={artistOpacity}
                 fontFamily={yearFont}
@@ -341,7 +364,7 @@ const FrontLabel = forwardRef<SVGSVGElement, Props>(function FrontLabel(props, r
             {discTotal > 1 && (
               <text
                 x={W - padding}
-                y={metaBase + fullHeightArtistOffset}
+                y={metaBase}
                 fill={textColor}
                 fillOpacity={artistOpacity}
                 fontFamily={yearFont}
@@ -353,6 +376,8 @@ const FrontLabel = forwardRef<SVGSVGElement, Props>(function FrontLabel(props, r
               </text>
             )}
           </g>
+          )}
+          </>
         )}
         {qrAt(0, Math.max(0, blockTop - W), W)}
       </>
