@@ -208,7 +208,7 @@ export default function FrontPreview({ data, size, update, onCover, onCover2 }: 
           )}
           {(data.frontTracklist || data.showQr || !data.doubleHideText) && (
             <div
-              className="group/band absolute right-0 left-0 z-20 flex flex-col"
+              className="group/band pointer-events-none absolute right-0 left-0 z-20 flex flex-col"
               style={{
                 top: `${data.fullHeightTextY * 100}%`,
                 transform: `translateY(-${data.fullHeightTextY * 100}%)`,
@@ -222,7 +222,9 @@ export default function FrontPreview({ data, size, update, onCover, onCover2 }: 
                   onChange={(v) => update({ fullHeightTextY: v })}
                 />
               )}
-              {data.showQr && <QrOverlay data={data} sizeMm={size.width} className="self-end" />}
+              {data.showQr && (
+                <QrOverlay data={data} sizeMm={size.width} className="pointer-events-auto self-end" />
+              )}
               {data.frontTracklist && <TracksOverlay data={data} update={update} />}
               {!data.doubleHideText && (
                 <div
@@ -233,7 +235,7 @@ export default function FrontPreview({ data, size, update, onCover, onCover2 }: 
                 >
                   <div
                     ref={titlePanelRef}
-                    className="group/block relative"
+                    className="group/block pointer-events-auto relative"
                     style={{
                       padding: `${PAD * 0.4}px ${PAD}px`,
                       background: withAlpha(data.bgColor, data.textBgOpacity),
@@ -273,7 +275,7 @@ export default function FrontPreview({ data, size, update, onCover, onCover2 }: 
                   {(data.showArtist || data.showYear || data.discTotal > 1) && (
                     <div
                       ref={artistPanelRef}
-                      className="group/block relative flex flex-col"
+                      className="group/block pointer-events-auto relative flex flex-col"
                       style={{
                         padding: `${PAD * 0.4}px ${PAD}px ${
                           PAD * 0.7 -
@@ -615,7 +617,7 @@ function BandControls({
   return (
     <div
       ref={root}
-      className="absolute top-1/2 left-1 flex -translate-y-1/2 cursor-ns-resize touch-none flex-col items-center rounded-full bg-black/60 px-1 py-1.5 text-white opacity-0 transition-opacity group-hover/band:opacity-100"
+      className="pointer-events-auto absolute top-1/2 left-1 flex -translate-y-1/2 cursor-ns-resize touch-none flex-col items-center rounded-full bg-black/60 px-1 py-1.5 text-white opacity-0 transition-opacity group-hover/band:opacity-100"
       onPointerDown={(e) => {
         if ((e.target as HTMLElement).closest('button')) return;
         const band = root.current?.parentElement;
@@ -676,6 +678,7 @@ function TracksOverlay({
 }) {
   return (
     <div
+      className="pointer-events-auto"
       style={{
         padding: `${FRONT.padding * 0.6 * S}px ${FRONT.padding * S}px`,
         background: withAlpha(data.bgColor, data.textBgOpacity),
