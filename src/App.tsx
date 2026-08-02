@@ -114,7 +114,7 @@ const INITIAL: LabelData = {
   spineCount: 1,
   spineShowAlbum: true,
   spineShowArtist: true,
-  showTracklist: false,
+  showTracklist: true,
   tracklist: '',
 };
 
