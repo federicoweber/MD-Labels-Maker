@@ -893,16 +893,19 @@ export default function App() {
         exporting={exporting}
       />
 
-      <main className="flex flex-1 flex-wrap content-start items-start gap-36 overflow-auto bg-background p-12 pt-5">
-        <section className="flex flex-col gap-2">
-          <SizeSelect label="Cover" value={frontSize} presets={FRONT_PRESETS} onChange={setFrontSize} />
-          <FrontPreview
-            data={eff}
-            size={layoutFrontSize}
-            update={update}
-            onCover={onCover}
-            onCover2={onCover2}
-          />
+      <main className="flex flex-1 flex-col items-start gap-16 overflow-auto bg-background p-12 pt-5">
+        <section className="flex w-full flex-wrap items-start gap-8">
+          <div className="flex shrink-0 flex-col gap-2">
+            <SizeSelect label="Cover" value={frontSize} presets={FRONT_PRESETS} onChange={setFrontSize} />
+            <FrontPreview
+              data={eff}
+              size={layoutFrontSize}
+              update={update}
+              onCover={onCover}
+              onCover2={onCover2}
+            />
+          </div>
+          <aside className="flex w-80 flex-col gap-2">
           <Button variant="outline" className="w-fit" onClick={clearDisc}>
             Clear
           </Button>
@@ -1127,13 +1130,17 @@ export default function App() {
             onLineHeight={(v) => update({ lineHeight: v })}
             titleGap={{ value: data.titleArtistGap, onChange: (v) => update({ titleArtistGap: v }) }}
           />
+          </aside>
         </section>
 
-        <div className="flex flex-col gap-12">
+        <>
           {data.showSpine && (
-            <section className="flex flex-col gap-2">
-              <SizeSelect label="Spine" value={spineSize} presets={SPINE_PRESETS} onChange={setSpineSize} />
-              <SpinePreview data={eff} size={spineSize} />
+            <section className="flex w-full flex-wrap items-start gap-8">
+              <div className="flex shrink-0 flex-col gap-2">
+                <SizeSelect label="Spine" value={spineSize} presets={SPINE_PRESETS} onChange={setSpineSize} />
+                <SpinePreview data={eff} size={spineSize} />
+              </div>
+              <aside className="flex w-80 flex-col gap-2">
               <div className="flex w-80 items-center justify-between">
                 <Label htmlFor="spine-count" className="text-xs">
                   Copies
@@ -1160,34 +1167,37 @@ export default function App() {
                   onCheckedChange={(v) => update({ spineShowArtist: v })}
                 />
               </div>
+              </aside>
             </section>
           )}
 
           {data.showTracklist && (
-            <section className="flex flex-col gap-2">
-              <SizeSelect
-                label="Tracklist"
-                value={tracklistSize}
-                presets={TRACKLIST_PRESETS}
-                onChange={setTracklistSize}
-              />
-              {data.multiDisc ? (
-                <div className="flex flex-col gap-3">
-                  {Array.from({ length: data.discTotal }, (_, i) => (
-                    <TracklistPreview
-                      key={i}
-                      data={{ ...tlEff, discNumber: i + 1, tracklist: data.discTracklists[i] ?? '' }}
-                      size={tracklistSize}
-                      update={(patch) =>
-                        'tracklist' in patch ? setDiscTracklist(i, patch.tracklist ?? '') : update(patch)
-                      }
-                    />
-                  ))}
-                </div>
-              ) : (
-                <TracklistPreview data={tlEff} size={tracklistSize} update={update} />
-              )}
-              <div className="flex flex-col gap-2">
+            <section className="flex w-full flex-wrap items-start gap-8">
+              <div className="flex shrink-0 flex-col gap-2">
+                <SizeSelect
+                  label="Tracklist"
+                  value={tracklistSize}
+                  presets={TRACKLIST_PRESETS}
+                  onChange={setTracklistSize}
+                />
+                {data.multiDisc ? (
+                  <div className="flex flex-col gap-3">
+                    {Array.from({ length: data.discTotal }, (_, i) => (
+                      <TracklistPreview
+                        key={i}
+                        data={{ ...tlEff, discNumber: i + 1, tracklist: data.discTracklists[i] ?? '' }}
+                        size={tracklistSize}
+                        update={(patch) =>
+                          'tracklist' in patch ? setDiscTracklist(i, patch.tracklist ?? '') : update(patch)
+                        }
+                      />
+                    ))}
+                  </div>
+                ) : (
+                  <TracklistPreview data={tlEff} size={tracklistSize} update={update} />
+                )}
+              </div>
+              <aside className="flex w-80 flex-col gap-2">
                 <div className="flex flex-wrap gap-2">
                   <Button
                     variant="outline"
@@ -1286,7 +1296,6 @@ export default function App() {
                     onCheckedChange={(v) => update({ tlSync: v })}
                   />
                 </div>
-              </div>
               {!data.tlSync && (
                 <LabelControls
                   fields={trackFields}
@@ -1303,9 +1312,10 @@ export default function App() {
                   onLineHeight={(v) => update({ tlLineHeight: v })}
                 />
               )}
+              </aside>
             </section>
           )}
-        </div>
+        </>
       </main>
 
       <MdLogo className="fixed right-5 bottom-5 z-10" />
