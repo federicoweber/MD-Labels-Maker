@@ -63,6 +63,7 @@ export default function FrontPreview({ data, size, update, onCover, onCover2 }: 
 
   const W = size.width * S;
   const H = size.height * S;
+  const freeScale = Math.min(1, Math.max(0.5, data.fullHeightScale));
   const portrait = size.height >= size.width;
   const PAD = FRONT.padding * S;
   // The standard cover remains square and gives way to the uncapped text
@@ -137,16 +138,19 @@ export default function FrontPreview({ data, size, update, onCover, onCover2 }: 
           onCover={onCover}
           pageDragging={pageDragging}
           imgStyle={{
-            objectPosition: `${data.fullHeightAlign * 100}% 50%`,
-            transform: `scale(${data.fullHeightScale})`,
-            transformOrigin: `${data.fullHeightAlign * 100}% 50%`,
+            position: 'absolute',
+            width: Math.max(W, H) * freeScale,
+            height: Math.max(W, H) * freeScale,
+            maxWidth: 'none',
+            left: (W - Math.max(W, H) * freeScale) * data.fullHeightAlign,
+            top: (H - Math.max(W, H) * freeScale) / 2,
           }}
           style={{ position: 'absolute', top: 0, left: 0, width: W, height: H }}
         >
-          {data.coverDataUrl && Math.max(W, H) * data.fullHeightScale > W && (
+          {data.coverDataUrl && Math.max(W, H) * freeScale !== W && (
             <AlignControls
               align={data.fullHeightAlign}
-              maxShift={Math.max(W, H) * data.fullHeightScale - W}
+              maxShift={Math.max(W, H) * freeScale - W}
               onChange={(v) => update({ fullHeightAlign: v })}
             />
           )}
@@ -595,7 +599,7 @@ function AlignControls({
 }: {
   /** 0 = show the cover's left edge … 1 = its right edge. */
   align: number;
-  /** How much wider the full-height cover is than the label, in px. */
+  /** Signed horizontal overflow; negative when the scaled cover is narrower. */
   maxShift: number;
   onChange: (v: number) => void;
 }) {

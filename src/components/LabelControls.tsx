@@ -106,8 +106,8 @@ export default function LabelControls({
                 id="free-layout-image-scale"
                 label="Image scale"
                 value={imageScale.value}
-                min={1}
-                max={3}
+                min={0.5}
+                max={1}
                 step={0.05}
                 format={(v) => `${Math.round(v * 100)}%`}
                 onChange={imageScale.onChange}

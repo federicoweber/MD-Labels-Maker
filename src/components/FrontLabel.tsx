@@ -236,7 +236,7 @@ const FrontLabel = forwardRef<SVGSVGElement, Props>(function FrontLabel(props, r
   // cropped horizontally; `fullHeightAlign` pans the crop (0 = left … 1 =
   // right). Text overlays the bottom on a band, like double mode but full size.
   const fullHeightBlock = () => {
-    const side = Math.max(W, H) * fullHeightScale;
+    const side = Math.max(W, H) * Math.min(1, Math.max(0.5, fullHeightScale));
     const maxW = W - 2 * padding;
     const lines = wrapText(album || 'Album', titleFont, titleSize, maxW, 700);
     const lh = titleSize * lineHeight;

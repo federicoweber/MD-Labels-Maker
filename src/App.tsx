@@ -1108,7 +1108,10 @@ export default function App() {
             }
             imageScale={
               data.fullHeight
-                ? { value: data.fullHeightScale, onChange: (v) => update({ fullHeightScale: v }) }
+                ? {
+                    value: Math.min(1, Math.max(0.5, data.fullHeightScale)),
+                    onChange: (v) => update({ fullHeightScale: v }),
+                  }
                 : undefined
             }
             coverPadding={
