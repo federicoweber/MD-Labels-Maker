@@ -896,7 +896,6 @@ export default function App() {
       <main className="flex flex-1 flex-col items-start gap-24 overflow-auto bg-background p-12 pt-5">
         <section className="relative flex w-full flex-wrap items-start gap-x-[clamp(6rem,8vw,9rem)] gap-y-8 pb-20">
           <div className="flex shrink-0 flex-col gap-2">
-            <SizeSelect label="Cover" value={frontSize} presets={FRONT_PRESETS} onChange={setFrontSize} />
             <FrontPreview
               data={eff}
               size={layoutFrontSize}
@@ -906,6 +905,7 @@ export default function App() {
             />
           </div>
           <aside className="flex w-80 flex-col gap-2">
+          <SizeSelect label="Cover size" value={frontSize} presets={FRONT_PRESETS} onChange={setFrontSize} />
           <Button variant="outline" className="w-fit" onClick={clearDisc}>
             Clear
           </Button>
@@ -1149,10 +1149,10 @@ export default function App() {
           {data.showSpine && (
             <section className="relative flex w-full flex-wrap items-start gap-8 border-t border-border pt-24 pb-20">
               <div className="flex shrink-0 flex-col gap-2">
-                <SizeSelect label="Spine" value={spineSize} presets={SPINE_PRESETS} onChange={setSpineSize} />
                 <SpinePreview data={eff} size={spineSize} />
               </div>
               <aside className="flex w-80 flex-col gap-2">
+              <SizeSelect label="Spine size" value={spineSize} presets={SPINE_PRESETS} onChange={setSpineSize} />
               <div className="flex w-80 items-center justify-between">
                 <Label htmlFor="spine-count" className="text-xs">
                   Copies
@@ -1196,12 +1196,6 @@ export default function App() {
           {data.showTracklist && (
             <section className="relative flex w-full flex-wrap items-start gap-8 border-t border-border pt-24 pb-20">
               <div className="flex shrink-0 flex-col gap-2">
-                <SizeSelect
-                  label="Tracklist"
-                  value={tracklistSize}
-                  presets={TRACKLIST_PRESETS}
-                  onChange={setTracklistSize}
-                />
                 {data.multiDisc ? (
                   <div className="flex flex-col gap-3">
                     {Array.from({ length: data.discTotal }, (_, i) => (
@@ -1220,6 +1214,12 @@ export default function App() {
                 )}
               </div>
               <aside className="flex w-80 flex-col gap-2">
+                <SizeSelect
+                  label="Tracklist size"
+                  value={tracklistSize}
+                  presets={TRACKLIST_PRESETS}
+                  onChange={setTracklistSize}
+                />
                 <div className="flex flex-wrap gap-2">
                   <Button
                     variant="outline"
