@@ -94,6 +94,10 @@ export interface LabelData {
   showQr: boolean;
   /** Whether the optional jewel-case tracklist sheet is shown. */
   showTracklist: boolean;
+  /** Rotate the tracklist sheet to portrait orientation for longer lists. */
+  tlVerticalMode: boolean;
+  /** Lay tracks out in two explicit columns rather than one. */
+  tlDoubleColumns: boolean;
   /** Tracklist text, one track per line (for the optional jewel-case sheet). */
   tracklist: string;
   /** Show a miniature cover next to the tracklist header. */

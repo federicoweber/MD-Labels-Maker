@@ -1,7 +1,12 @@
 import { useLayoutEffect, useRef } from 'react';
 import type { LabelData } from '@/lib/types';
 import QrOverlay from '@/components/QrOverlay';
-import { TRACKLIST, PREVIEW_PX_PER_MM as S, type SizePreset } from '@/lib/dimensions';
+import {
+  TRACKLIST,
+  PREVIEW_PX_PER_MM as S,
+  orientedTracklistSize,
+  type SizePreset,
+} from '@/lib/dimensions';
 import { wrapText } from '@/lib/text';
 import { qrPath, shareDataFor, shareUrl } from '@/lib/share';
 import { splitTrack } from '@/lib/tracklist';
@@ -21,8 +26,9 @@ const escapeHtml = (s: string) =>
  * numbered, editable track list (mirrors the SVG export).
  */
 export default function TracklistPreview({ data, size, update }: Props) {
-  const W = size.width * S;
-  const H = size.height * S;
+  const layoutSize = orientedTracklistSize(size, data.tlVerticalMode);
+  const W = layoutSize.width * S;
+  const H = layoutSize.height * S;
   return (
     <div
       className="relative flex"
@@ -44,8 +50,8 @@ export default function TracklistPreview({ data, size, update }: Props) {
             tracklist={data.tracklist}
             onChange={(v) => update({ tracklist: v })}
             cols={1}
-            colWmm={size.width / 2}
-            heightMm={size.height}
+            colWmm={layoutSize.width / 2}
+            heightMm={layoutSize.height}
             hasQr={false}
           />
           <div className="w-px self-stretch" style={{ background: data.textColor, opacity: 0.4 }} />
@@ -57,8 +63,8 @@ export default function TracklistPreview({ data, size, update }: Props) {
             tracklist={data.tracklist2}
             onChange={(v) => update({ tracklist2: v })}
             cols={1}
-            colWmm={size.width / 2}
-            heightMm={size.height}
+            colWmm={layoutSize.width / 2}
+            heightMm={layoutSize.height}
             hasQr={false}
           />
         </>
@@ -70,9 +76,9 @@ export default function TracklistPreview({ data, size, update }: Props) {
           cover={data.coverDataUrl}
           tracklist={data.tracklist}
           onChange={(v) => update({ tracklist: v })}
-          cols={2}
-          colWmm={size.width}
-          heightMm={size.height}
+          cols={data.tlDoubleColumns ? 2 : 1}
+          colWmm={layoutSize.width}
+          heightMm={layoutSize.height}
           hasQr={data.tlShowQr}
         />
       )}
@@ -153,17 +159,11 @@ function TracklistColumn({
     : maxFull;
   const thumb = (ruleY - pad) * S;
 
-  // Force two columns past a track count that depends on the header height.
   const trackCount = tracklist.split('\n').filter((t) => t.trim()).length;
   const durationChars = data.showTrackDuration
     ? Math.max(0, ...tracklist.split('\n').map((t) => splitTrack(t).dur.length))
     : 0;
-  const maxOneCol = hasThumb ? 11 : hasTextHeader ? 12 : 15;
-  const useCols = cols >= 2 && trackCount > maxOneCol ? 2 : 1;
-  // Two columns: the left one fills the sheet (only the right shares space
-  // with the QR corner, mirroring the twin). One column: stop above the QR.
-  const maxLines = useCols > 1 ? maxFull : maxShort;
-
+  const useCols = cols >= 2 ? 2 : 1;
   return (
     <div className="relative flex min-w-0 flex-1 flex-col" style={{ padding: PAD }}>
       {hasQr && useCols > 1 && (
@@ -273,7 +273,9 @@ function TracklistColumn({
           left: PAD,
           right: PAD,
           top: (tracksTop - 0.9 * data.trackSize) * S,
-          height: maxLines * trackGap * S + 1,
+          // End at the same physical inset used by the top/left/right edges;
+          // overflow clipping still prevents a partial final row.
+          height: (heightMm - pad - (tracksTop - 0.9 * data.trackSize)) * S,
           flex: 'none',
           '--track-num-width': `${(`${trackCount}.`.length * 0.62).toFixed(2)}em`,
           '--track-duration-width': durationChars ? `${durationChars * 0.62 + 0.6}em` : '0em',

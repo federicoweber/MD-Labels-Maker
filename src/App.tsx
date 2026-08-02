@@ -41,6 +41,7 @@ import {
   TRACKLIST_PRESETS,
   PREVIEW_PX_PER_MM,
   orientedFrontSize,
+  orientedTracklistSize,
 } from '@/lib/dimensions';
 const DEFAULT_FONT = 'Inconsolata';
 
@@ -107,6 +108,8 @@ const INITIAL: LabelData = {
   titleArtistGap: 0.6,
   frontTracklist: false,
   showQr: false,
+  tlVerticalMode: false,
+  tlDoubleColumns: false,
   showSpine: true,
   spineCount: 1,
   spineShowAlbum: true,
@@ -707,6 +710,7 @@ export default function App() {
         const front = get('front');
         const spine = get('spine');
         const tracklist = get('tracklist');
+        const tracklistLayout = orientedTracklistSize(tracklistSize, disc.tlVerticalMode);
         if (front)
           labels.push({
             svg: front,
@@ -723,7 +727,12 @@ export default function App() {
               name: `${prefix}spine${disc.spineCount > 1 ? `-${c + 1}` : ''}.png`,
             });
         if (disc.showTracklist && tracklist)
-          labels.push({ svg: tracklist, widthMm: tracklistSize.width, heightMm: tracklistSize.height, name: `${prefix}tracklist.png` });
+          labels.push({
+            svg: tracklist,
+            widthMm: tracklistLayout.width,
+            heightMm: tracklistLayout.height,
+            name: `${prefix}tracklist.png`,
+          });
         fonts.add(disc.titleFont);
         fonts.add(disc.artistAuto ? disc.titleFont : disc.artistFont);
         fonts.add(disc.trackFont);
@@ -897,6 +906,7 @@ export default function App() {
   // Materialised per-disc label data (multi-disc entries become N) for export + twins.
   const outputs = expandDiscs(discs);
   const layoutFrontSize = orientedFrontSize(frontSize, data.verticalMode);
+  const layoutTracklistSize = orientedTracklistSize(tracklistSize, data.tlVerticalMode);
 
   return (
     <div className="flex h-svh overflow-hidden">
@@ -1204,7 +1214,7 @@ export default function App() {
             <section className="relative flex w-full flex-wrap items-start gap-8 border-t border-border pt-24 pb-20">
               <div className="flex shrink-0 flex-col gap-2">
                 {!data.showTracklist ? (
-                  <DisabledLabelPreview size={tracklistSize} />
+                  <DisabledLabelPreview size={layoutTracklistSize} />
                 ) : data.multiDisc ? (
                   <div className="flex flex-col gap-3">
                     {Array.from({ length: data.discTotal }, (_, i) => (
@@ -1243,6 +1253,28 @@ export default function App() {
                   presets={TRACKLIST_PRESETS}
                   onChange={setTracklistSize}
                 />
+                <div className="flex items-center justify-between">
+                  <Label htmlFor="tl-vertical" className="text-xs">
+                    Vertical mode
+                  </Label>
+                  <Switch
+                    id="tl-vertical"
+                    checked={data.tlVerticalMode}
+                    onCheckedChange={(v) => update({ tlVerticalMode: v })}
+                  />
+                </div>
+                {!data.doubleAlbum && (
+                  <div className="flex items-center justify-between">
+                    <Label htmlFor="tl-double-columns" className="text-xs">
+                      Double columns
+                    </Label>
+                    <Switch
+                      id="tl-double-columns"
+                      checked={data.tlDoubleColumns}
+                      onCheckedChange={(v) => update({ tlDoubleColumns: v })}
+                    />
+                  </div>
+                )}
                 <div className="flex flex-wrap gap-2">
                   <Button
                     variant="outline"

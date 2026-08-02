@@ -2,7 +2,7 @@ import { useState, type ReactNode } from 'react';
 import { createPortal } from 'react-dom';
 import { Printer, X } from 'lucide-react';
 import type { LabelData } from '@/lib/types';
-import type { SizePreset } from '@/lib/dimensions';
+import { orientedTracklistSize, type SizePreset } from '@/lib/dimensions';
 import { effFor, tlEffFor, expandDiscs } from '@/lib/derive';
 import { Button } from '@/components/ui/button';
 import FrontLabel from './FrontLabel';
@@ -140,7 +140,13 @@ export default function PrintView({
       }
     }
     if (disc.showTracklist) {
-      items.push({ key: `${i}-tl`, w: tracklistSize.width, h: tracklistSize.height, node: <TracklistSheet {...te} size={tracklistSize} /> });
+      const layout = orientedTracklistSize(tracklistSize, disc.tlVerticalMode);
+      items.push({
+        key: `${i}-tl`,
+        w: layout.width,
+        h: layout.height,
+        node: <TracklistSheet {...te} size={tracklistSize} />,
+      });
     }
   });
   const rows = buildRows(items, pw - 2 * MARGIN);

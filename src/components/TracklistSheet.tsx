@@ -1,6 +1,11 @@
 import { forwardRef } from 'react';
 import type { LabelData } from '@/lib/types';
-import { TRACKLIST, PREVIEW_PX_PER_MM, type SizePreset } from '@/lib/dimensions';
+import {
+  TRACKLIST,
+  PREVIEW_PX_PER_MM,
+  orientedTracklistSize,
+  type SizePreset,
+} from '@/lib/dimensions';
 import { wrapText } from '@/lib/text';
 import { splitBoldArtist, splitTrack } from '@/lib/tracklist';
 import { qrPath, shareDataFor, shareUrl } from '@/lib/share';
@@ -37,6 +42,8 @@ const TracklistSheet = forwardRef<SVGSVGElement, Props>(function TracklistSheet(
     showTrackDuration,
     showTracklistCover,
     tlShowQr,
+    tlVerticalMode,
+    tlDoubleColumns,
     textBgOpacity,
     trackSize,
     titleOpacity,
@@ -48,7 +55,7 @@ const TracklistSheet = forwardRef<SVGSVGElement, Props>(function TracklistSheet(
     discTotal,
     size,
   } = props;
-  const { width: W, height: H } = size;
+  const { width: W, height: H } = orientedTracklistSize(size, tlVerticalMode);
   const trackGap = trackSize * lineHeight;
 
   // QR code linking to the digital tracklist page, bottom-right, in the
@@ -118,9 +125,7 @@ const TracklistSheet = forwardRef<SVGSVGElement, Props>(function TracklistSheet(
       : maxFull;
     const thumbSize = ruleY - padding;
 
-    // Match the preview: stay one column until the list is long enough.
-    const maxOneCol = hasThumb ? 11 : hasTextHeader ? 12 : 15;
-    const innerCols = maxCols >= 2 && tracks.length > maxOneCol ? 2 : 1;
+    const innerCols = maxCols >= 2 ? 2 : 1;
     const innerW = (right - left) / innerCols;
     const colX = Array.from({ length: innerCols }, (_, i) => left + i * innerW);
     const colTextW = innerCols > 1 ? innerW - 2 : innerW;
@@ -314,7 +319,7 @@ const TracklistSheet = forwardRef<SVGSVGElement, Props>(function TracklistSheet(
           {column(W / 2, W / 2, album2, artist2, coverDataUrl2, tracklist2, 1, 'c2')}
         </>
       ) : (
-        column(0, W, album, artist, coverDataUrl, tracklist, 2, 'c1')
+        column(0, W, album, artist, coverDataUrl, tracklist, tlDoubleColumns ? 2 : 1, 'c1')
       )}
       {qrBlock}
     </svg>

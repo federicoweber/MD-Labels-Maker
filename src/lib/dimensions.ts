@@ -68,6 +68,11 @@ export function orientedFrontSize(size: SizePreset, verticalMode: boolean): Size
   return verticalMode ? { width: size.height, height: size.width } : size;
 }
 
+/** Swap the physical tracklist axes for its portrait/vertical mode. */
+export function orientedTracklistSize(size: SizePreset, verticalMode: boolean): SizePreset {
+  return verticalMode ? { width: size.height, height: size.width } : size;
+}
+
 /** Square artwork geometry for the standard front-cover layout. */
 export function standardCoverGeometry(
   size: SizePreset,
