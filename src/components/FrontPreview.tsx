@@ -4,6 +4,7 @@ import {
   ChevronLeft,
   ChevronRight,
   ChevronUp,
+  GripVertical,
   MoveHorizontal,
   MoveVertical,
 } from 'lucide-react';
@@ -38,6 +39,33 @@ const DOUBLE_TEXT_SCALE = 0.72;
  */
 export default function FrontPreview({ data, size, update, onCover, onCover2 }: Props) {
   const [pageDragging, setPageDragging] = useState(false);
+  const freeCoverRef = useRef<HTMLDivElement>(null);
+  const titlePanelRef = useRef<HTMLDivElement>(null);
+  const artistPanelRef = useRef<HTMLDivElement>(null);
+
+  const snapTextPanel = (panel: 'title' | 'artist', direction: 'top' | 'bottom') => {
+    const current = panel === 'title' ? titlePanelRef.current : artistPanelRef.current;
+    const other = panel === 'title' ? artistPanelRef.current : titlePanelRef.current;
+    const cover = freeCoverRef.current;
+    if (!current || !cover) return;
+    const currentRect = current.getBoundingClientRect();
+    const coverRect = cover.getBoundingClientRect();
+    const otherRect = other?.getBoundingClientRect();
+    const offset = panel === 'title' ? data.fullHeightTitleOffset : data.fullHeightArtistOffset;
+    let delta: number;
+    if (panel === 'title') {
+      delta = direction === 'top'
+        ? coverRect.top - currentRect.top
+        : (otherRect?.top ?? coverRect.bottom) - currentRect.bottom;
+    } else {
+      delta = direction === 'top'
+        ? (otherRect?.bottom ?? coverRect.top) - currentRect.top
+        : coverRect.bottom - currentRect.bottom;
+    }
+    const value = Math.max(-size.height, Math.min(size.height, offset + delta / S));
+    if (panel === 'title') update({ fullHeightTitleOffset: value });
+    else update({ fullHeightArtistOffset: value });
+  };
 
   // Detect a file being dragged anywhere on the page to prompt "DROP".
   useEffect(() => {
@@ -134,6 +162,7 @@ export default function FrontPreview({ data, size, update, onCover, onCover2 }: 
         </>
       ) : data.fullHeight ? (
         <CoverSlot
+          rootRef={freeCoverRef}
           src={data.coverDataUrl}
           onCover={onCover}
           pageDragging={pageDragging}
@@ -180,6 +209,7 @@ export default function FrontPreview({ data, size, update, onCover, onCover2 }: 
                   }}
                 >
                   <div
+                    ref={titlePanelRef}
                     className="group/block relative"
                     style={{
                       padding: `${PAD * 0.4}px ${PAD}px`,
@@ -191,6 +221,8 @@ export default function FrontPreview({ data, size, update, onCover, onCover2 }: 
                       offset={data.fullHeightTitleOffset}
                       maxMm={size.height}
                       onChange={(v) => update({ fullHeightTitleOffset: v })}
+                      onTop={() => snapTextPanel('title', 'top')}
+                      onBottom={() => snapTextPanel('title', 'bottom')}
                     />
                     <AutoTextarea
                       value={data.album}
@@ -209,6 +241,7 @@ export default function FrontPreview({ data, size, update, onCover, onCover2 }: 
                   </div>
                   {(data.showArtist || data.showYear || data.discTotal > 1) && (
                     <div
+                      ref={artistPanelRef}
                       className="group/block relative flex flex-col"
                       style={{
                         padding: `${PAD * 0.4}px ${PAD}px ${
@@ -227,6 +260,8 @@ export default function FrontPreview({ data, size, update, onCover, onCover2 }: 
                         offset={data.fullHeightArtistOffset}
                         maxMm={size.height}
                         onChange={(v) => update({ fullHeightArtistOffset: v })}
+                        onTop={() => snapTextPanel('artist', 'top')}
+                        onBottom={() => snapTextPanel('artist', 'bottom')}
                       />
                       {data.showArtist && (
                         <AutoTextarea
@@ -441,57 +476,59 @@ function TextBlockControls({
   offset,
   maxMm,
   onChange,
+  onTop,
+  onBottom,
 }: {
   offset: number;
   maxMm: number;
   onChange: (v: number) => void;
+  onTop: () => void;
+  onBottom: () => void;
 }) {
   const drag = useRef<{ y: number; offset: number } | null>(null);
   const clamp = (v: number) => Math.max(-maxMm, Math.min(maxMm, v));
-  const set = (e: React.MouseEvent, value: number) => {
+  const snap = (e: React.MouseEvent, action: () => void) => {
     e.stopPropagation();
-    onChange(clamp(value));
+    action();
   };
   return (
     <div
-      className="absolute top-1/2 right-1 z-20 flex -translate-y-1/2 cursor-ns-resize touch-none items-center gap-1 rounded-full bg-black/70 px-2 py-1.5 text-white opacity-0 transition-opacity group-hover/block:opacity-100"
-      onPointerDown={(e) => {
-        if ((e.target as HTMLElement).closest('button')) return;
-        drag.current = { y: e.clientY, offset };
-        e.currentTarget.setPointerCapture(e.pointerId);
-        e.stopPropagation();
-      }}
-      onPointerMove={(e) => {
-        if (!drag.current) return;
-        onChange(clamp(drag.current.offset + (e.clientY - drag.current.y) / S));
-      }}
-      onPointerUp={() => (drag.current = null)}
-      onPointerCancel={() => (drag.current = null)}
-      title="Drag to move this text block"
+      className="absolute top-1/2 right-1 z-20 flex -translate-y-1/2 touch-none items-center gap-1 rounded-full bg-black/70 px-2 py-1.5 text-white opacity-0 transition-opacity group-hover/block:opacity-100"
     >
       <button
         type="button"
-        aria-label="Move block up"
+        aria-label="Snap block to top"
         className="grid size-6 place-items-center rounded-full hover:bg-white/20"
-        onClick={(e) => set(e, offset - 1)}
+        onClick={(e) => snap(e, onTop)}
       >
         <ChevronUp className="size-4" />
       </button>
       <button
         type="button"
-        aria-label="Reset block position"
+        aria-label="Snap block to bottom"
         className="grid size-6 place-items-center rounded-full hover:bg-white/20"
-        onClick={(e) => set(e, 0)}
+        onClick={(e) => snap(e, onBottom)}
       >
-        <MoveVertical className="size-4" />
+        <ChevronDown className="size-4" />
       </button>
       <button
         type="button"
-        aria-label="Move block down"
-        className="grid size-6 place-items-center rounded-full hover:bg-white/20"
-        onClick={(e) => set(e, offset + 1)}
+        aria-label="Drag block vertically"
+        className="grid size-7 cursor-ns-resize place-items-center rounded-full bg-white/15 hover:bg-white/25"
+        onPointerDown={(e) => {
+          drag.current = { y: e.clientY, offset };
+          e.currentTarget.setPointerCapture(e.pointerId);
+          e.stopPropagation();
+        }}
+        onPointerMove={(e) => {
+          if (!drag.current) return;
+          onChange(clamp(drag.current.offset + (e.clientY - drag.current.y) / S));
+        }}
+        onPointerUp={() => (drag.current = null)}
+        onPointerCancel={() => (drag.current = null)}
+        title="Drag to move this text block"
       >
-        <ChevronDown className="size-4" />
+        <GripVertical className="size-4" />
       </button>
     </div>
   );
@@ -618,6 +655,7 @@ function CoverSlot({
   style,
   imgStyle,
   contain,
+  rootRef,
   children,
 }: {
   src: string | null;
@@ -626,10 +664,12 @@ function CoverSlot({
   style: React.CSSProperties;
   imgStyle?: React.CSSProperties;
   contain?: boolean;
+  rootRef?: React.RefObject<HTMLDivElement | null>;
   children?: React.ReactNode;
 }) {
   return (
     <div
+      ref={rootRef}
       className="group overflow-hidden"
       style={style}
       onDragOver={(e) => e.preventDefault()}
