@@ -39,6 +39,7 @@ import {
   FRONT_PRESETS,
   SPINE_PRESETS,
   TRACKLIST_PRESETS,
+  PREVIEW_PX_PER_MM,
   orientedFrontSize,
 } from '@/lib/dimensions';
 const DEFAULT_FONT = 'Inconsolata';
@@ -115,6 +116,23 @@ function slug(s: string): string {
     .replace(/[^a-z0-9]+/gi, '-')
     .replace(/^-+|-+$/g, '')
     .toLowerCase();
+}
+
+function DisabledLabelPreview({ size }: { size: { width: number; height: number } }) {
+  return (
+    <div
+      className="relative shrink-0 border border-foreground"
+      style={{
+        width: size.width * PREVIEW_PX_PER_MM,
+        height: size.height * PREVIEW_PX_PER_MM,
+      }}
+      aria-hidden
+    >
+      <svg className="absolute inset-0 size-full" viewBox="0 0 100 100" preserveAspectRatio="none">
+        <line x1="0" y1="0" x2="100" y2="100" stroke="currentColor" strokeWidth="0.5" />
+      </svg>
+    </div>
+  );
 }
 
 /**
@@ -1065,29 +1083,6 @@ export default function App() {
               onCheckedChange={(v) => update({ doubleHideText: v })}
             />
           </div>
-          <div className="flex w-full items-center justify-between">
-            <Label htmlFor="show-spine" className="text-xs">
-              Spine
-            </Label>
-            <Switch
-              id="show-spine"
-              checked={data.showSpine}
-              onCheckedChange={(v) => update({ showSpine: v })}
-            />
-          </div>
-          <div className="flex w-full items-center justify-between">
-            <Label htmlFor="show-tracklist" className="text-xs">
-              Tracklist
-            </Label>
-            <Switch
-              id="show-tracklist"
-              checked={data.showTracklist}
-              onCheckedChange={(v) => {
-                update({ showTracklist: v });
-                if (v && !data.tracklist.trim()) void autoFillTracklist();
-              }}
-            />
-          </div>
           </aside>
           <aside className="w-80 shrink-0">
           <LabelControls
@@ -1139,12 +1134,26 @@ export default function App() {
         </section>
 
         <>
-          {data.showSpine && (
             <section className="relative flex w-full flex-wrap items-start gap-8 border-t border-border pt-24 pb-20">
               <div className="flex shrink-0 flex-col gap-2">
-                <SpinePreview data={eff} size={spineSize} />
+                {data.showSpine ? (
+                  <SpinePreview data={eff} size={spineSize} />
+                ) : (
+                  <DisabledLabelPreview size={spineSize} />
+                )}
               </div>
               <aside className="flex w-80 flex-col gap-2">
+              <div className="flex w-80 items-center justify-between">
+                <Label htmlFor="show-spine" className="text-xs">
+                  Spine
+                </Label>
+                <Switch
+                  id="show-spine"
+                  checked={data.showSpine}
+                  onCheckedChange={(v) => update({ showSpine: v })}
+                />
+              </div>
+              <div className={`flex flex-col gap-2 ${data.showSpine ? '' : 'pointer-events-none opacity-40'}`}>
               <SizeSelect label="Spine size" value={spineSize} presets={SPINE_PRESETS} onChange={setSpineSize} />
               <div className="flex w-80 items-center justify-between">
                 <Label htmlFor="spine-count" className="text-xs">
@@ -1172,6 +1181,7 @@ export default function App() {
                   onCheckedChange={(v) => update({ spineShowArtist: v })}
                 />
               </div>
+              </div>
               </aside>
               <h2
                 aria-hidden
@@ -1184,12 +1194,12 @@ export default function App() {
                 Spine
               </h2>
             </section>
-          )}
 
-          {data.showTracklist && (
             <section className="relative flex w-full flex-wrap items-start gap-8 border-t border-border pt-24 pb-20">
               <div className="flex shrink-0 flex-col gap-2">
-                {data.multiDisc ? (
+                {!data.showTracklist ? (
+                  <DisabledLabelPreview size={tracklistSize} />
+                ) : data.multiDisc ? (
                   <div className="flex flex-col gap-3">
                     {Array.from({ length: data.discTotal }, (_, i) => (
                       <TracklistPreview
@@ -1207,6 +1217,20 @@ export default function App() {
                 )}
               </div>
               <aside className="flex w-80 flex-col gap-2">
+                <div className="flex items-center justify-between">
+                  <Label htmlFor="show-tracklist" className="text-xs">
+                    Tracklist
+                  </Label>
+                  <Switch
+                    id="show-tracklist"
+                    checked={data.showTracklist}
+                    onCheckedChange={(v) => {
+                      update({ showTracklist: v });
+                      if (v && !data.tracklist.trim()) void autoFillTracklist();
+                    }}
+                  />
+                </div>
+                <div className={`flex flex-col gap-2 ${data.showTracklist ? '' : 'pointer-events-none opacity-40'}`}>
                 <SizeSelect
                   label="Tracklist size"
                   value={tracklistSize}
@@ -1327,6 +1351,7 @@ export default function App() {
                   onLineHeight={(v) => update({ tlLineHeight: v })}
                 />
               )}
+              </div>
               </aside>
               <h2
                 aria-hidden
@@ -1339,7 +1364,6 @@ export default function App() {
                 Tracklist
               </h2>
             </section>
-          )}
         </>
       </main>
 
