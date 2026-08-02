@@ -454,7 +454,7 @@ function TextBlockControls({
   };
   return (
     <div
-      className="absolute top-1/2 right-0 z-20 flex -translate-y-1/2 cursor-ns-resize touch-none items-center rounded-full bg-black/60 px-1 py-0.5 text-white opacity-0 transition-opacity group-hover/block:opacity-100"
+      className="absolute top-1/2 right-1 z-20 flex -translate-y-1/2 cursor-ns-resize touch-none items-center gap-1 rounded-full bg-black/70 px-2 py-1.5 text-white opacity-0 transition-opacity group-hover/block:opacity-100"
       onPointerDown={(e) => {
         if ((e.target as HTMLElement).closest('button')) return;
         drag.current = { y: e.clientY, offset };
@@ -469,14 +469,29 @@ function TextBlockControls({
       onPointerCancel={() => (drag.current = null)}
       title="Drag to move this text block"
     >
-      <button type="button" aria-label="Move block up" onClick={(e) => set(e, offset - 1)}>
-        <ChevronUp className="size-3" />
+      <button
+        type="button"
+        aria-label="Move block up"
+        className="grid size-6 place-items-center rounded-full hover:bg-white/20"
+        onClick={(e) => set(e, offset - 1)}
+      >
+        <ChevronUp className="size-4" />
       </button>
-      <button type="button" aria-label="Reset block position" onClick={(e) => set(e, 0)}>
-        <MoveVertical className="size-3" />
+      <button
+        type="button"
+        aria-label="Reset block position"
+        className="grid size-6 place-items-center rounded-full hover:bg-white/20"
+        onClick={(e) => set(e, 0)}
+      >
+        <MoveVertical className="size-4" />
       </button>
-      <button type="button" aria-label="Move block down" onClick={(e) => set(e, offset + 1)}>
-        <ChevronDown className="size-3" />
+      <button
+        type="button"
+        aria-label="Move block down"
+        className="grid size-6 place-items-center rounded-full hover:bg-white/20"
+        onClick={(e) => set(e, offset + 1)}
+      >
+        <ChevronDown className="size-4" />
       </button>
     </div>
   );
