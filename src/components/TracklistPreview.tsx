@@ -10,6 +10,7 @@ import {
 import { wrapText } from '@/lib/text';
 import { qrPath, shareDataFor, shareUrl } from '@/lib/share';
 import { splitTrack } from '@/lib/tracklist';
+import { tracklistColumnCount } from '@/lib/tracklistLayout';
 
 interface Props {
   data: LabelData;
@@ -154,7 +155,10 @@ function TracklistColumn({
   const tracksTop = hasHeader ? ruleY + 4 : pad + data.trackSize * 0.9;
   const trackGap = data.trackSize * data.lineHeight;
   const qrSizeMm = hasQr ? qrPath(shareUrl(shareDataFor(data))).count * 0.3 + 2.4 : 0;
-  const maxFull = Math.max(1, Math.floor((heightMm - tracksTop - pad) / trackGap));
+  const maxFull = Math.max(
+    1,
+    Math.floor((heightMm - tracksTop - pad - 0.2 * data.trackSize) / trackGap) + 1,
+  );
   const qrTop = heightMm - pad - qrSizeMm;
   const maxShort = hasQr
     ? Math.max(1, Math.floor((qrTop - tracksTop - 0.2 * data.trackSize) / trackGap) + 1)
@@ -165,7 +169,15 @@ function TracklistColumn({
   const durationChars = data.showTrackDuration
     ? Math.max(0, ...tracklist.split('\n').map((t) => splitTrack(t).dur.length))
     : 0;
-  const useCols = cols >= 2 ? 2 : 1;
+  const useCols = tracklistColumnCount({
+    tracklist,
+    trackFont: data.trackFont,
+    trackSize: data.trackSize,
+    contentWidth: colWmm - 2 * pad,
+    showDuration: data.showTrackDuration,
+    maxOneColumnLines: hasQr ? maxShort : maxFull,
+    forceTwoColumns: cols >= 2,
+  });
   return (
     <div className="relative flex min-w-0 flex-1 flex-col" style={{ padding: PAD }}>
       {hasQr && useCols > 1 && (

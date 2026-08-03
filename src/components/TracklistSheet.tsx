@@ -8,6 +8,7 @@ import {
 } from '@/lib/dimensions';
 import { wrapText } from '@/lib/text';
 import { splitBoldArtist, splitTrack } from '@/lib/tracklist';
+import { tracklistColumnCount } from '@/lib/tracklistLayout';
 import { qrPath, shareDataFor, shareUrl } from '@/lib/share';
 import { QrGraphic } from '@/components/QrGraphic';
 
@@ -131,7 +132,15 @@ const TracklistSheet = forwardRef<SVGSVGElement, Props>(function TracklistSheet(
     const maxShort = qr
       ? Math.max(1, Math.floor((qrTop - tracksTop - 0.2 * trackSize) / trackGap) + 1)
       : maxFull;
-    const innerCols = maxCols >= 2 ? 2 : 1;
+    const innerCols = tracklistColumnCount({
+      tracklist: tracksStr,
+      trackFont,
+      trackSize,
+      contentWidth: right - left,
+      showDuration: showTrackDuration,
+      maxOneColumnLines: qr ? maxShort : maxFull,
+      forceTwoColumns: maxCols >= 2,
+    });
     const innerW = (right - left) / innerCols;
     const colX = Array.from({ length: innerCols }, (_, i) => left + i * innerW);
     const colTextW = innerCols > 1 ? innerW - 2 : innerW;
