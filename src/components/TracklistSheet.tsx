@@ -120,7 +120,13 @@ const TracklistSheet = forwardRef<SVGSVGElement, Props>(function TracklistSheet(
     // With the QR on (bottom-right), only the column that runs under it stops
     // above it (lines whose ink would reach the QR top are cut); other columns
     // keep the full height.
-    const maxFull = Math.max(1, Math.floor((H - tracksTop - padding) / trackGap));
+    // Count the first baseline as a row, matching the preview's line-box
+    // geometry. The previous gap-only calculation dropped the final visible
+    // preview row from the printed SVG.
+    const maxFull = Math.max(
+      1,
+      Math.floor((H - tracksTop - padding - 0.2 * trackSize) / trackGap) + 1,
+    );
     const qrTop = H - padding - qrSize;
     const maxShort = qr
       ? Math.max(1, Math.floor((qrTop - tracksTop - 0.2 * trackSize) / trackGap) + 1)
